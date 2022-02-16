@@ -20,7 +20,7 @@ export type PostMarkdownAttributes = {
 };
 
 // relative to the server output not the source!
-const postsPath = path.join(__dirname, "..", "app", "loaders", "posts", "markdown");
+const postsPath = path.join(__dirname, "..", "app", "components", "posts", "markdown");
 
 function isValidPostAttributes(
     attributes: any

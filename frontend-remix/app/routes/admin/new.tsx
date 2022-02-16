@@ -7,7 +7,7 @@ import {
 import type { ActionFunction } from "remix";
 import invariant from "tiny-invariant";
 
-import { createPost } from "~/loaders/posts";
+import { createPost } from "~/components/posts";
 
 type PostError = {
     title?: boolean;

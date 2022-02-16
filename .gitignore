@@ -8,10 +8,9 @@ typechain
 cache
 artifacts
 
-#Frontend
-frontend/node_modules
+frontend-remix/node_modules
 
-frontend/.cache
-frontend/build
-frontend/public/build
-frontend/.env
+frontend-remix/.cache
+frontend-remix/build
+frontend-remix/public/build
+frontend-remix/.env
