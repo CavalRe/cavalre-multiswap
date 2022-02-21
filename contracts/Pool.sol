@@ -24,12 +24,10 @@ contract Pool is ReentrancyGuard, ERC20 {
         uint256 k; // AMM parameter for this asset token
     }
 
-    constructor(string memory name, string memory symbol)
-        ERC20(name, symbol)
-        nonReentrant
-    {}
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
 
     function initialize(
+        uint256 poolSupply,
         address[] memory tokens,
         uint256[] memory reserves,
         uint256[] memory fees,
@@ -37,61 +35,29 @@ contract Pool is ReentrancyGuard, ERC20 {
         uint256[] memory ks
     ) public {
         uint256 checkWeight = 0;
-        address token;
-        uint256 reserve;
-        uint256 fee;
-        uint256 weight;
-        uint256 k;
         for (uint256 i = 0; i < weights.length; i++) {
-            token = tokens[i];
-            reserve = reserves[i];
-            fee = fees[i];
-            weight = weights[i];
-            k = ks[i];
-
-            assets[token] = Asset(
-                IERC20(token),
-                fee,
-                weight,
-                k
+            assets[tokens[i]] = Asset(
+                IERC20(tokens[i]),
+                fees[i],
+                weights[i],
+                ks[i]
             );
-            checkWeight = checkWeight.add(weight);
+            checkWeight = checkWeight.add(weights[i]);
 
             SafeERC20.safeTransferFrom(
-                IERC20(token),
+                IERC20(tokens[i]),
                 _msgSender(),
                 address(this),
-                reserve
+                reserves[i]
             );
+            _mint(_msgSender(), poolSupply);
         }
         require(checkWeight == 1e18, "Weights must sum to 1.");
     }
 
-    // constructor(
-    //     string memory name,
-    //     string memory symbol,
-    //     uint256 totalSupply,
-    //     Asset[] memory _assets
-    // ) ERC20(name, symbol) nonReentrant {
-    //     uint256 sumWeights = 0;
-
-    //     _mint(_msgSender(), totalSupply);
-    //     for (uint256 i=0; i<_assets.length; i++) {
-    //         Asset asset = _assets[i];
-    //         assets[asset.token()] = asset;
-    //         sumWeights = sumWeights.add(asset.weight());
-    //     }
-
-    //     require(sumWeights == SafeMath.UNIT,"Weights must sum to 1.");
-    // }
-
-    // function getAsset(address token) public view returns (Asset asset) {
-    //     asset = assets[token];
-    // }
-
-    // function addAsset() public nonReentrant {
-    //     alpha = 1;
-    // }
+    function asset(address token) public view returns (Asset memory asset) {
+        asset = assets[token];
+    }
 
     // function swap(
     //     address addressIn,
@@ -133,5 +99,9 @@ contract Pool is ReentrancyGuard, ERC20 {
 
     //     // SafeERC20.safeTransferFrom(IERC20(addressIn), addressIn, _msgSender(), amountIn);
     //     // SafeERC20.safeTransfer(IERC20(addressOut), addressTo, amountOut);
+    // }
+
+    // function addAsset() public nonReentrant {
+    //     alpha = 1;
     // }
 }

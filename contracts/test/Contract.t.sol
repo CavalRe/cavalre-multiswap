@@ -49,7 +49,10 @@ contract ContractTest is Context, DSTest {
             ks[i] = 1e18;
         }
 
-        pool.initialize(addresses, reserves, fees, weights, ks);
+        pool.initialize(1e23, addresses, reserves, fees, weights, ks);
+        for (uint i=0; i<ntokens; i++) {
+            console.log(tokens[i].name(),pool.asset(address(tokens[i])).token.totalSupply());
+        }
     }
 
     // function testSafeMath() public {
