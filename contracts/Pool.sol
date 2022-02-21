@@ -1,115 +1,137 @@
 // SPDX-License-Identifier: Unlicense
-pragma solidity 0.8.11;
+pragma solidity ^0.8.0;
 
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./libraries/SafeMath.sol";
 
-contract Pool is ERC20 {
+contract Pool is ReentrancyGuard, ERC20 {
     using SafeERC20 for IERC20;
-    using SafeMath for uint;
+    using SafeMath for uint256;
 
     // The `address` here is the address of the respective external asset token contract.
     mapping(address => Asset) private assets;
 
     // Parameter for exponentially weighted moving averages
-    uint private alpha;
+    uint256 private alpha;
 
     struct Asset {
+        IERC20 token;
+        uint256 fee; // Transaction fee, e.g. 0.003
+        uint256 weight; // Market value weight of this asset token, sum_i w_i = 10^18
+        uint256 k; // AMM parameter for this asset token
+    }
 
+    constructor(string memory name, string memory symbol)
+        ERC20(name, symbol)
+        nonReentrant
+    {}
+
+    function initialize(
+        address[] memory tokens,
+        uint256[] memory reserves,
+        uint256[] memory fees,
+        uint256[] memory weights,
+        uint256[] memory ks
+    ) public {
+        uint256 checkWeight = 0;
         address token;
-        uint fee; // Transaction fee, e.g. 0.003
-        uint reserve; // Number of asset tokens in pool
-        uint weight; // Market value weight of this asset token, sum_i w_i = 10^18
-        uint k; // AMM parameter for this asset token
-        bool isActive; // Flag to indicate whether this asset token is actively traded
+        uint256 reserve;
+        uint256 fee;
+        uint256 weight;
+        uint256 k;
+        for (uint256 i = 0; i < weights.length; i++) {
+            token = tokens[i];
+            reserve = reserves[i];
+            fee = fees[i];
+            weight = weights[i];
+            k = ks[i];
 
-    }
+            assets[token] = Asset(
+                IERC20(token),
+                fee,
+                weight,
+                k
+            );
+            checkWeight = checkWeight.add(weight);
 
-    // From Uniswap v2
-    uint private unlocked = 1;
-
-    modifier lock() {
-
-        require(unlocked == 1, "LOCKED");
-        unlocked = 0;
-        _;
-        unlocked = 1;
-
-    }
-
-    constructor(
-        string memory name,
-        string memory symbol,
-        uint totalSupply,
-        Asset[] memory _assets
-    ) ERC20(name, symbol) lock {
-
-        uint sumWeights = 0;
-
-        _mint(msg.sender, totalSupply);
-        for (uint i=0; i<_assets.length; i++) {
-            Asset memory asset = _assets[i];
-            assets[asset.token] = asset;
-            sumWeights = sumWeights.add(asset.weight);
+            SafeERC20.safeTransferFrom(
+                IERC20(token),
+                _msgSender(),
+                address(this),
+                reserve
+            );
         }
-
-        require(sumWeights == SafeMath.UNIT,"Weights must sum to 1.");
-
+        require(checkWeight == 1e18, "Weights must sum to 1.");
     }
 
-    function getAsset(address token) public view returns (Asset memory asset) {
+    // constructor(
+    //     string memory name,
+    //     string memory symbol,
+    //     uint256 totalSupply,
+    //     Asset[] memory _assets
+    // ) ERC20(name, symbol) nonReentrant {
+    //     uint256 sumWeights = 0;
 
-        asset = assets[token];
+    //     _mint(_msgSender(), totalSupply);
+    //     for (uint256 i=0; i<_assets.length; i++) {
+    //         Asset asset = _assets[i];
+    //         assets[asset.token()] = asset;
+    //         sumWeights = sumWeights.add(asset.weight());
+    //     }
 
-    }
+    //     require(sumWeights == SafeMath.UNIT,"Weights must sum to 1.");
+    // }
 
-    function addAsset() public lock {
+    // function getAsset(address token) public view returns (Asset asset) {
+    //     asset = assets[token];
+    // }
 
-        alpha = 1;
+    // function addAsset() public nonReentrant {
+    //     alpha = 1;
+    // }
 
-    }
+    // function swap(
+    //     address addressIn,
+    //     address addressOut,
+    //     address addressTo,
+    //     uint256 amountIn
+    // ) public nonReentrant {
+    //     Asset assetIn = assets[addressIn];
+    //     require(assetIn.isActive(),"Asset is not active");
 
-    function swap(address addressIn, address addressOut, address addressTo, uint amountIn) public lock {
+    //     Asset assetOut = assets[addressOut];
+    //     require(assetOut.isActive(),"Asset is not active");
 
-        Asset memory assetIn = assets[addressIn];
-        require(assetIn.isActive,"Asset is not active");
+    //     uint256 reserveIn = assetIn.totalSupply().add(amountIn);
+    //     uint256 weightIn;
+    //     uint256 weightOut;
+    //     uint256 amountOut;
 
-        Asset memory assetOut = assets[addressOut];
-        require(assetOut.isActive,"Asset is not active");
+    //     {
+    //         uint256 deltaWeight = assetIn.weight().dmul(amountIn).ddiv(assetIn.totalSupply());
+    //         weightIn = alpha.dmul(assetIn.weight().add(deltaWeight)).sub(alpha.sub(SafeMath.UNIT).dmul(assetIn.weight()));
+    //         weightOut = alpha.dmul(assetOut.weight().sub(deltaWeight)).sub(alpha.sub(SafeMath.UNIT).dmul(assetOut.weight()));
 
-        uint reserveIn = assetIn.reserve.add(amountIn);
-        uint weightIn;
-        uint weightOut;
-        uint amountOut;
+    //         require(assetIn.weight().add(assetOut.weight()) == weightIn.add(weightOut),"Weight 1 + Weight 2 must not change.");
 
-        {
+    //         uint256 weightRatio = weightIn.ddiv(weightOut);
+    //         uint256 invGrowthOut = weightRatio.dmul(amountIn.ddiv(reserveIn)).add(SafeMath.UNIT);
+    //         uint256 preFeeReserveOut = assetOut.totalSupply().ddiv(invGrowthOut);
+    //         uint256 preFeeAmountOut = preFeeReserveOut.sub(assetOut.totalSupply());
+    //         uint256 feeAmount = preFeeAmountOut.dmul(assetOut.fee());
+    //         amountOut = preFeeAmountOut - feeAmount;
+    //     }
 
-            uint deltaWeight = assetIn.weight.dmul(amountIn).ddiv(assetIn.reserve);
-            weightIn = alpha.dmul(assetIn.weight.add(deltaWeight)).sub(alpha.sub(SafeMath.UNIT).dmul(assetIn.weight));
-            weightOut = alpha.dmul(assetOut.weight.sub(deltaWeight)).sub(alpha.sub(SafeMath.UNIT).dmul(assetOut.weight));
+    //     // assetIn.reserve = reserveIn;
+    //     // assetOut.reserve = assetOut.totalSupply().sub(amountOut);
 
-            require(assetIn.weight.add(assetOut.weight) == weightIn.add(weightOut),"Weight 1 + Weight 2 must not change.");
+    //     // assetIn.weight = weightIn;
+    //     // assetOut.weight = weightOut;
 
-            uint weightRatio = weightIn.ddiv(weightOut);
-            uint invGrowthOut = weightRatio.dmul(amountIn.ddiv(reserveIn)).add(SafeMath.UNIT);
-            uint preFeeReserveOut = assetOut.reserve.ddiv(invGrowthOut);
-            uint preFeeAmountOut = preFeeReserveOut.sub(assetOut.reserve);
-            // uint preFeeAmountOut = assetOut.reserve.ddiv(invGrowthOut).sub(assetOut.reserve);
-            uint feeAmount = preFeeAmountOut.dmul(assetOut.fee);
-            amountOut = preFeeAmountOut - feeAmount;
-
-        }
-
-        assetIn.reserve = reserveIn;
-        assetOut.reserve = assetOut.reserve.sub(amountOut);
-
-        assetIn.weight = weightIn;
-        assetOut.weight = weightOut;
-
-        SafeERC20.safeTransferFrom(IERC20(addressIn), addressIn, msg.sender, amountIn);
-        SafeERC20.safeTransfer(IERC20(addressOut), addressTo, amountOut);
-
-    }
-
+    //     // SafeERC20.safeTransferFrom(IERC20(addressIn), addressIn, _msgSender(), amountIn);
+    //     // SafeERC20.safeTransfer(IERC20(addressOut), addressTo, amountOut);
+    // }
 }

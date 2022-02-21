@@ -24,23 +24,49 @@ async function main() {
   // If this script is run directly using `node` you may want to call compile
   // manually to make sure everything is compiled
   // await hre.run('compile');
-
+  
+  const one: BigNumber = BigNumber.from(10).pow(18);
+  
+  const mainAddress = "0x97FBc7Bb43EAce2013861B65C75e4A0198149537";
   const USDC = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+  const WETH = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+  const WBTC = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599";
 
   const assets: Asset[] = [
     {
       token: USDC,
       fee: BigNumber.from(1),
       reserve: BigNumber.from(1),
-      weight: one,
+      weight: one.div(100).mul(50),
+      k: BigNumber.from(1),
+      isActive: true
+    },
+    {
+      token: WETH,
+      fee: BigNumber.from(1),
+      reserve: BigNumber.from(1),
+      weight: one.div(100).mul(25),
+      k: BigNumber.from(1),
+      isActive: true
+    },
+    {
+      token: WBTC,
+      fee: BigNumber.from(1),
+      reserve: BigNumber.from(1),
+      weight: one.div(100).mul(25),
       k: BigNumber.from(1),
       isActive: true
     }
   ];
 
+  const Token = await ethers.getContractFactory("Token")
+
+  const T1 = await Token.deploy("Token 1","T1",one)
+
   // We get the contract to deploy
   const Pool = await ethers.getContractFactory("Pool");
-  const pool = await Pool.deploy("Test","T",1,assets);
+
+  const pool = await Pool.deploy("Test","T",one,assets);
 
   await pool.deployed();
 

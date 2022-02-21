@@ -5,12 +5,12 @@ import logo from './logo.svg';
 import './App.css';
 
 function App() {
-  const { authenticate, isAuthenticated } = useMoralis();
+  const { authenticate, isAuthenticated, logout } = useMoralis();
 
   if (!isAuthenticated) {
     return (
-      <div>
-        <button onClick={() => authenticate()}>Authenticate</button>
+      <div className="App-header">
+        <button className="App-login" onClick={() => authenticate()}>Connect Wallet</button>
       </div>
     );
   }
@@ -19,17 +19,9 @@ function App() {
     <div className="App">
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+        <button className="App-login" onClick={() => logout()}>
+          Logout
+        </button>
       </header>
     </div>
   );

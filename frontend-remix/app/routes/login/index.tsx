@@ -1,59 +1,31 @@
-import {
-    redirect,
-    useSubmit,
-} from "remix";
-import type { ActionFunction } from "remix";
+import { useLoaderData } from "remix";
+import type { LoaderFunction } from "remix";
+import { useMoralis } from "react-moralis";
 
-// import Moralis from "../../components/moralis/moralis.server";
-// import Moralis from "moralis/node";
+export const loader: LoaderFunction = async () => {
 
-declare global {
-    interface Window {
-        ethereum: any;
-    }
-}
-
-// const appId = process.env.MORALIS_APP_ID;
-// const serverUrl = process.env.MORALIS_SERVER_URL;
-
-// console.log(appId);
-// console.log(serverUrl);
-
-// let user: any;
-
-export const action: ActionFunction = async ({ request }) => {
-    
-    // user = Moralis.User.current();
+    return {};
 
 }
 
 export default function Login() {
-    const submit = useSubmit();
+    const { authenticate, isAuthenticated, user, logout } = useMoralis();
 
-    async function handleSubmit() {
-
-
-
-        // Moralis.start({ serverUrl, appId });
-
-        console.log("Yo!");
-        
-        // console.log(Moralis?.User?.current());
-    
-        // console.log(Moralis);
-
-        console.log(window);
-
-        const formData = new FormData();
-
-        submit(formData)
-    };
+    if (!isAuthenticated) {
+        return (
+            <div>
+                <button onClick={() => authenticate({
+                    // provider: "web3Auth",
+                    // clientId: "BGI0ENrYWUvYu1OIalzasfpf4MESazKKWFP874gfbqlrm_OMWU2jYsjJGTuetTz8r_rxnmvmFTC4qAArbLWXejQ",
+                })}>Connect Wallet</button>
+            </div>
+        );
+    }
 
     return (
         <div>
-            <button onClick={handleSubmit}>
-                Sign in with Moralis
-            </button>
+            <h1>Welcome {user?.get("username")}</h1>
+            <button onClick={() => logout()}>Logout</button>
         </div>
     );
 

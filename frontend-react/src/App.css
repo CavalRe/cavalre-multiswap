@@ -24,7 +24,9 @@
   color: white;
 }
 
-.App-link {
+.App-login {
+  font-size: xx-large;
+  background-color: #282c34;
   color: #61dafb;
 }
 
