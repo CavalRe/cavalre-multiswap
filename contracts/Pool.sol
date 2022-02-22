@@ -12,7 +12,8 @@ contract Pool is ReentrancyGuard, ERC20 {
     using SafeMath for uint256;
 
     // The `address` here is the address of the respective external asset token contract.
-    mapping(address => Asset) private assets;
+    mapping(address => uint256) private index;
+    Asset[] private assets;
 
     // Parameter for exponentially weighted moving averages
     uint256 private alpha;
@@ -36,12 +37,8 @@ contract Pool is ReentrancyGuard, ERC20 {
     ) public {
         uint256 checkWeight = 0;
         for (uint256 i = 0; i < weights.length; i++) {
-            assets[tokens[i]] = Asset(
-                IERC20(tokens[i]),
-                fees[i],
-                weights[i],
-                ks[i]
-            );
+            index[tokens[i]] = i;
+            assets.push(Asset(IERC20(tokens[i]), fees[i], weights[i], ks[i]));
             checkWeight = checkWeight.add(weights[i]);
 
             SafeERC20.safeTransferFrom(
@@ -56,7 +53,7 @@ contract Pool is ReentrancyGuard, ERC20 {
     }
 
     function asset(address token) public view returns (Asset memory asset) {
-        asset = assets[token];
+        asset = assets[index[token]];
     }
 
     // function swap(
