@@ -13,16 +13,31 @@ contract ContractTest is Context, DSTest {
     using SafeMath for uint;
 
     uint constant ntokens = 10;
-    Token[ntokens] tokens;
+    Token[] tokens;
 
     Pool pool;
 
-    function setUp() public {}
+    address sender;
+    Token tokenIn;
+    Token tokenOut;
+    Token tokenNew;
+    address addressIn;
+    address addressOut;
+    address addressNew;
+    uint amountIn;
+    uint amountOut;
+    uint amountNew;
 
-    function testCreatePool() public {
+    address[] addresses;
+    uint[] amounts;
+
+    function setUp() public {
+        tokens = new Token[](ntokens);
+
         pool = new Pool("Pool","P");
 
-        address[] memory addresses = new address[](ntokens);
+        addresses = new address[](ntokens);
+        amounts = new uint[](ntokens);
         uint256[] memory reserves = new uint256[](ntokens);
         uint256[] memory fees = new uint256[](ntokens);
         uint256[] memory weights = new uint256[](ntokens);
@@ -36,12 +51,9 @@ contract ContractTest is Context, DSTest {
             uint reserve = supply/10;
             Token token = new Token(name,symbol,supply);
             token.approve(address(pool),reserve);
-            assertEq(token.balanceOf(address(this)),supply);
-            assertEq(token.totalSupply(),supply);
-            assertEq(token.allowance(address(this), address(pool)), reserve);
             tokens[i] = token;
 
-            //Generate asset
+            //Generate asset info
             addresses[i] = address(token);
             reserves[i] = reserve;
             fees[i] = 3e15;
@@ -50,82 +62,220 @@ contract ContractTest is Context, DSTest {
         }
 
         pool.initialize(1e23, addresses, reserves, fees, weights, ks);
+        
+        sender = address(this);
+        tokenIn = tokens[0];
+        tokenOut = tokens[1];
+        addressIn = address(tokenIn);
+        addressOut = address(tokenOut);
+        amountIn = tokenIn.balanceOf(sender)/1000000;
+
+        tokenNew = new Token("Token 11","T11",11e18);
+        addressNew = address(tokenNew);
+        amountNew = 11e17;
+
         for (uint i=0; i<ntokens; i++) {
-            console.log(tokens[i].name(),pool.asset(address(tokens[i])).token.totalSupply());
+            amounts[i] = amountIn;
+            tokens[i].increaseAllowance(address(pool),amountIn);
         }
     }
 
-    // function testSafeMath() public {
-    //     uint x = 10 ** 9;
-    //     assertEq(x.dmul(x),1);
-    // }
+    function testPool() public {
+        assertEq(pool.totalSupply(),1e23);
+        for (uint i=0; i<ntokens; i++) {
+            Token token = tokens[i];
+            uint supply = i.add(1).mul(1e18);
+            uint reserve = supply/10;
+            assertEq(token.totalSupply(),supply);
+            assertEq(pool.reserve(address(token)),reserve);
+            assertEq(token.balanceOf(address(this)),supply.sub(reserve));
+        }
+    }
 
-    // function testCreateTokens() public {
-    //     // Generate tokens and mint for address(this)
-    //     tokens = new Token[](ntokens);
-    //     pool = new Pool("Pool","P");
-    //     assets = new Asset[](ntokens);
-    //     for (uint i=0; i<ntokens; i++) {
-    //         string memory name = string(abi.encodePacked("Token ", Strings.toString(i+1)));
-    //         string memory symbol = string(abi.encodePacked("T", Strings.toString(i+1)));
-    //         Token token = new Token(name,symbol,i.add(1).mul(1e18));
-    //         token.approve(address(pool),token.balanceOf(address(this))/10);
-    //         // console.log(name,symbol,address(token));
-    //         // console.log("Balance",token.balanceOf(address(this)));
-    //         assertEq(token.balanceOf(address(this)),i.add(1).mul(1e18));
-    //         assertEq(token.totalSupply(),i.add(1).mul(1e18));
-    //         tokens[i] = token;
-    //     }
-    // }
+    function testSwap() public {
+        tokenIn.increaseAllowance(address(pool),amountIn);
 
-    // function test2CreatePool() public {
-    //     // Generate pool
-    //     pool = new Pool("Pool","P");
-    //     // console.log("Pool",address(pool));
-    //     assertEq(pool.totalSupply(),0);
-    //     assertEq(pool.name(),"Pool");
-    //     assertEq(pool.symbol(),"P");
-    // }
+        amountOut = pool.swap(
+            addressIn,
+            addressOut,
+            amountIn,
+            sender
+        );
+    }
 
-    // function test3CreateAssets() public {
-    //     assets = new Asset[](ntokens);
-    //     for (uint i=0; i<ntokens; i++) {
-    //         Token token = tokens[i];
-    //         console.log("Balance",token.balanceOf(address(this)));
-    //         // token.approve(address(pool),token.balanceOf(address(this)));
-    //     }
-    // }
+    function testSwapVerbose() public {
+        tokenIn.increaseAllowance(address(pool),amountIn);
 
-    // function testInitializePool() public {
-        // console.log("Sender:",_msgSender());
-        /* struct Asset {
+        emit log("============");
+        emit log("Before swap:");
+        emit log("============");
+        emit log_named_uint("Weight 1", pool.weight(addressIn));
+        emit log_named_uint("Weight 2", pool.weight(addressOut));
+        emit log_named_uint("Reserve 0", pool.totalSupply());
+        emit log_named_uint("Balance 1", tokenIn.balanceOf(address(pool)));
+        emit log_named_uint("Reserve 1", pool.reserve(addressIn));
+        emit log_named_uint("Balance 2", tokenOut.balanceOf(address(pool)));
+        emit log_named_uint("Reserve 2", pool.reserve(addressOut));
+        emit log_named_uint("Swap In Amount", amountIn);
 
-            address token;
-            uint fee; // Transaction fee, e.g. 0.003
-            uint reserve; // Number of asset tokens in pool
-            uint weight; // Market value weight of this asset token, sum_i w_i = 10^18
-            uint k; // AMM parameter for this asset token
-            bool isActive; // Flag to indicate whether this asset token is actively traded
+        amountOut = pool.swap(
+            addressIn,
+            addressOut,
+            amountIn,
+            sender
+        );
 
-        } */
+        emit log("===========");
+        emit log("After swap:");
+        emit log("===========");
+        emit log_named_uint("Swap Out Amount", amountOut);
+        emit log_named_uint("Weight 1", pool.weight(addressIn));
+        emit log_named_uint("Weight 2", pool.weight(addressOut));
+        emit log_named_uint("Reserve 0", pool.totalSupply());
+        emit log_named_uint("Balance 1", tokenIn.balanceOf(address(pool)));
+        emit log_named_uint("Reserve 1", pool.reserve(addressIn));
+        emit log_named_uint("Balance 2", tokenOut.balanceOf(address(pool)));
+        emit log_named_uint("Reserve 2", pool.reserve(addressOut));
+    }
 
-        // Asset[] memory assets = new Asset[](3);
-        // console.log("Construct assets");
-        // assets[0] = new Asset("USDC","USDC",USDC,1,1,50e16,1,true);
-        // console.log("Finished USDC");
-        // assets[1] = new Asset("WETH","WETH",WETH,2,2,25e16,2,true);
-        // assets[2] = new Asset("WBTC","WBTC",WBTC,3,3,25e16,3,true);
+    function testStake() public {
+        tokenIn.increaseAllowance(address(pool),amountIn);
 
-        // pool = new Pool("Test","T",totalSupply,assets);
+        amountOut = pool.stake(
+            addressIn,
+            amountIn,
+            sender
+        );
+    }
 
-        // assertEq(pool.totalSupply(),totalSupply);
-        // assertEq(pool.name(),"Test");
-        // assertEq(pool.symbol(),"T");
-        // assertEq(pool.getAsset(USDC).totalSupply(),1);
-        // assertEq(pool.getAsset(WETH).totalSupply(),2);
-        // assertEq(pool.getAsset(WBTC).totalSupply(),3);
-        // console.log("Finished");
+    function testStakeVerbose() public {
+        tokenIn.increaseAllowance(address(pool),amountIn);
 
-    // }
+        emit log("=============");
+        emit log("Before stake:");
+        emit log("=============");
+        emit log_named_uint("Weight 1", pool.weight(addressIn));
+        emit log_named_uint("Weight 2", pool.weight(addressOut));
+        emit log_named_uint("Reserve 0", pool.totalSupply());
+        emit log_named_uint("Balance 1", tokenIn.balanceOf(address(pool)));
+        emit log_named_uint("Reserve 1", pool.reserve(addressIn));
+        emit log_named_uint("Balance 2", tokenOut.balanceOf(address(pool)));
+        emit log_named_uint("Reserve 2", pool.reserve(addressOut));
+        emit log_named_uint("Swap In Amount", amountIn);
+
+        amountOut = pool.stake(
+            addressIn,
+            amountIn,
+            sender
+        );
+
+        emit log("============");
+        emit log("After stake:");
+        emit log("============");
+        emit log_named_uint("Swap Out Amount", amountOut);
+        emit log_named_uint("Weight 1", pool.weight(addressIn));
+        emit log_named_uint("Weight 2", pool.weight(addressOut));
+        emit log_named_uint("Reserve 0", pool.totalSupply());
+        emit log_named_uint("Balance 1", tokenIn.balanceOf(address(pool)));
+        emit log_named_uint("Reserve 1", pool.reserve(addressIn));
+        emit log_named_uint("Balance 2", tokenOut.balanceOf(address(pool)));
+        emit log_named_uint("Reserve 2", pool.reserve(addressOut));
+    }
+
+    function testStakeBatch() public {
+        for (uint i=0; i<ntokens; i++) {
+            tokens[i].increaseAllowance(address(pool),amountIn);
+        }
+
+        amountOut = pool.stakeBatch(
+            addresses,
+            amounts,
+            sender
+        );
+    }
+
+    function testCompareStakes() public {
+        tokenIn.increaseAllowance(address(pool),2*amountIn);
+
+        uint amountSingle = pool.stake(
+            addressIn,
+            amountIn,
+            sender
+        );
+
+        setUp();
+
+        address[] memory addressInArray = new address[](1);
+        uint[] memory amountInArray = new uint[](1);
+        addressInArray[0] = addressIn;
+        amountInArray[0] = amountIn;
+
+        uint amountBatch = pool.stakeBatch(
+            addressInArray,
+            amountInArray,
+            sender
+        );
+
+        assertEq(amountSingle,amountBatch,"Single stake and batch stake do not agrees.");
+    }
+
+    function testUnstake() public {
+        pool.increaseAllowance(address(pool),amountIn);
+
+        amountOut = pool.unstake(
+            addressIn,
+            amountIn,
+            sender
+        );
+    }
+
+    function testUnstakeVerbose() public {
+        pool.increaseAllowance(address(pool),amountIn);
+
+        emit log("===============");
+        emit log("Before unstake:");
+        emit log("===============");
+        emit log_named_uint("Weight 1", pool.weight(addressIn));
+        emit log_named_uint("Weight 2", pool.weight(addressOut));
+        emit log_named_uint("Reserve 0", pool.totalSupply());
+        emit log_named_uint("Balance 1", tokenIn.balanceOf(address(pool)));
+        emit log_named_uint("Reserve 1", pool.reserve(addressIn));
+        emit log_named_uint("Balance 2", tokenOut.balanceOf(address(pool)));
+        emit log_named_uint("Reserve 2", pool.reserve(addressOut));
+        emit log_named_uint("Swap In Amount", amountIn);
+
+        amountOut = pool.unstake(
+            addressIn,
+            amountIn,
+            sender
+        );
+
+        emit log("==============");
+        emit log("After unstake:");
+        emit log("==============");
+        emit log_named_uint("Swap Out Amount", amountOut);
+        emit log_named_uint("Weight 1", pool.weight(addressIn));
+        emit log_named_uint("Weight 2", pool.weight(addressOut));
+        emit log_named_uint("Reserve 0", pool.totalSupply());
+        emit log_named_uint("Balance 1", tokenIn.balanceOf(address(pool)));
+        emit log_named_uint("Reserve 1", pool.reserve(addressIn));
+        emit log_named_uint("Balance 2", tokenOut.balanceOf(address(pool)));
+        emit log_named_uint("Reserve 2", pool.reserve(addressOut));
+    }
+
+    function testAddAsset() public {
+        tokenIn.increaseAllowance(address(pool),amountIn);
+        tokenNew.increaseAllowance(address(pool),amountNew);
+
+        pool.addAsset(
+            addressIn,
+            addressNew,
+            amountIn,
+            amountNew,
+            3e15,
+            1e18,
+            sender
+        );
+    }
 
 }
