@@ -1,7 +1,6 @@
 import { useMoralis, useWeb3Contract, useMoralisWeb3Api } from "react-moralis";
-import { BigNumber } from "ethers";
+// import { BigNumber } from "ethers";
 import { useState, useEffect } from 'react';
-import { ButtonComponent } from '@syncfusion/ej2-react-buttons';
 
 import Pool from "../../../../artifacts/contracts/Pool.sol/Pool.json";
 
@@ -30,41 +29,39 @@ export default function Login() {
         isAuthenticated,
         authenticate,
         isWeb3Enabled,
+        isWeb3EnableLoading,
         enableWeb3,
         // user,
         logout,
         // Moralis
     } = useMoralis();
-    const {
-        // runContractFunction,
-        // data,
-        // error,
-        isLoading,
-        isFetching,
-    } = useWeb3Contract({
-        contractAddress: "0x1C7e70F5b6031a3b39279D24F7C8b2E7dA0e5CF9",
-        functionName,
-        abi: poolABI.filter(x => x.name == functionName)
-    });
+    // const {
+    //     runContractFunction,
+    //     data,
+    //     error,
+    //     isLoading,
+    //     isFetching,
+    // } = useWeb3Contract({
+    //     contractAddress: "0x1C7e70F5b6031a3b39279D24F7C8b2E7dA0e5CF9",
+    //     functionName,
+    //     abi: poolABI.filter(x => x.name == functionName)
+    // });
     const { account } = useMoralisWeb3Api();
-    const [balances,setBalances] = useState<Balance[]>([]);
+    const [balances, setBalances] = useState<Balance[]>([]);
 
- 
-    // useEffect(() => {
-    //     if (isInitialized && isAuthenticated) {
-    //         if (!isWeb3Enabled) {
-    //             enableWeb3();
-    //         };
-    //         // if (isWeb3Enabled && !isLoading) {
-    //         //     fetchTokenBalances();
-    //         // }
-    //         // runContractFunction();
-    //     }
-    // }, [isInitialized, isAuthenticated, isWeb3Enabled])    
+    useEffect(() => {
+        if (
+            isAuthenticated &&
+            !isWeb3Enabled &&
+            !isWeb3EnableLoading
+        ) enableWeb3();
+        if (isWeb3Enabled) fetchTokenBalances();
 
-    // const fetchTokenBalances = async () => {
-    //     setBalances(await account.getTokenBalances({chain: "ropsten"}));
-    // };
+    }, [isAuthenticated, isWeb3Enabled]);
+
+    const fetchTokenBalances = async () => {
+        setBalances(await account.getTokenBalances({ chain: "ropsten" }));
+    };
 
     const handleLogin = async () => {
         authenticate(
@@ -76,23 +73,22 @@ export default function Login() {
         );
     };
 
-    if (!isAuthenticated) {
+    if (!isInitialized) {
+        return null
+    } else if (!isAuthenticated) {
         return (
-            <ButtonComponent onClick={handleLogin}>Connect Wallet</ButtonComponent>
-            // <button onClick={handleLogin}>Connect Wallet</button>
+            <button onClick={handleLogin}>Connect Wallet</button>
         );
-    }
-
-    // balances.length == 0 || console.log(balances);
-
-    return (<div>
-        {/* {error ? <pre>{JSON.stringify(error)}</pre> : null} */}
-        {/* {error ? && <pre>{JSON.stringify(error)}</pre>} */}
-        {/* <button onClick={() => runContractFunction()} disabled={isFetching}>Run contract function</button> */}
-        {/* {data ? <pre>{data.toString()}</pre> : <pre>No data</pre>} */}
-        {/* {data ? <pre>{JSON.stringify(data.map(x => x[1].div(BigNumber.from(10).pow(15)).toNumber() / 1000), undefined, 4)}</pre> : <pre>No data</pre>} */}
-        <ButtonComponent onClick={() => logout()}>Logout</ButtonComponent>
-        {balances.length !== 0 ? <pre>{JSON.stringify(balances, undefined, 4)}</pre> : <pre>No data</pre>}
-    </div>)
+    } else {
+        return (<div>
+            {/* {error ? <pre>{JSON.stringify(error)}</pre> : null} */}
+            {/* {error ? && <pre>{JSON.stringify(error)}</pre>} */}
+            {/* <button onClick={() => runContractFunction()} disabled={isFetching}>Run contract function</button> */}
+            {/* {data ? <pre>{data.toString()}</pre> : <pre>No data</pre>} */}
+            {/* {data ? <pre>{JSON.stringify(data.map(x => x[1].div(BigNumber.from(10).pow(15)).toNumber() / 1000), undefined, 4)}</pre> : <pre>No data</pre>} */}
+            <button onClick={() => logout()}>Logout</button>
+            {balances.length !== 0 ? <pre>{JSON.stringify(balances, undefined, 4)}</pre> : <pre>No data</pre>}
+        </div>)
+    };
 
 }

@@ -14,3 +14,4 @@ frontend-remix/.cache
 frontend-remix/build
 frontend-remix/public/build
 frontend-remix/.env
+frontend-remix/app/tailwind.css
