@@ -10,6 +10,7 @@ export default function Posts() {
     const posts = useLoaderData<Post[]>();
     return (
         <div>
+            <Link to="/admin">Admin</Link>
             <h1>Posts</h1>
             <ul>
                 {posts.map((post: Post) => (

@@ -2,17 +2,6 @@ import { ethers } from "hardhat";
 import { BigNumber } from "ethers";
 import { expect } from "chai";
 
-// type Asset = {
-//   name: string,
-//   symbol: string,
-//   token: string,
-//   fee: BigNumber,
-//   reserve: BigNumber,
-//   weight: BigNumber,
-//   k: BigNumber,
-//   isActive: boolean
-// };
-
 const ntokens = 10;
 const tokens: any[] = [];
 

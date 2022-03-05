@@ -10,9 +10,9 @@ import "../libraries/ds-test/src/test.sol";
 import "../libraries/SafeMath.sol";
 
 contract ContractTest is Context, DSTest {
-    using SafeMath for uint;
+    using SafeMath for uint256;
 
-    uint constant ntokens = 10;
+    uint256 constant ntokens = 10;
     Token[] tokens;
 
     Pool pool;
@@ -24,87 +24,86 @@ contract ContractTest is Context, DSTest {
     address addressIn;
     address addressOut;
     address addressNew;
-    uint amountIn;
-    uint amountOut;
-    uint amountNew;
+    uint256 amountIn;
+    uint256 amountOut;
+    uint256 amountNew;
 
     address[] addresses;
-    uint[] amounts;
+    uint256[] amounts;
 
     function setUp() public {
         tokens = new Token[](ntokens);
 
-        pool = new Pool("Pool","P");
+        pool = new Pool("Pool", "P");
 
         addresses = new address[](ntokens);
-        amounts = new uint[](ntokens);
+        amounts = new uint256[](ntokens);
         uint256[] memory reserves = new uint256[](ntokens);
         uint256[] memory fees = new uint256[](ntokens);
         uint256[] memory weights = new uint256[](ntokens);
         uint256[] memory ks = new uint256[](ntokens);
 
-        for (uint i=0; i<ntokens; i++) {
+        for (uint256 i = 0; i < ntokens; i++) {
             // Generate token
-            string memory name = string(abi.encodePacked("Token ", Strings.toString(i+1)));
-            string memory symbol = string(abi.encodePacked("T", Strings.toString(i+1)));
-            uint supply = i.add(1).mul(1e18);
-            uint reserve = supply/10;
-            Token token = new Token(name,symbol,supply);
-            token.approve(address(pool),reserve);
+            string memory name = string(
+                abi.encodePacked("Token ", Strings.toString(i + 1))
+            );
+            string memory symbol = string(
+                abi.encodePacked("T", Strings.toString(i + 1))
+            );
+            uint256 supply = i.add(1).mul(1e18);
+            uint256 reserve = supply / 10;
+            Token token = new Token(name, symbol, supply);
+            token.approve(address(pool), reserve);
             tokens[i] = token;
 
             //Generate asset info
             addresses[i] = address(token);
             reserves[i] = reserve;
             fees[i] = 3e15;
-            weights[i] = 1e18/ntokens;
+            weights[i] = 1e18 / ntokens;
             ks[i] = 1e18;
         }
 
         pool.initialize(1e23, addresses, reserves, fees, weights, ks);
-        
+
         sender = address(this);
         tokenIn = tokens[0];
         tokenOut = tokens[1];
         addressIn = address(tokenIn);
         addressOut = address(tokenOut);
-        amountIn = tokenIn.balanceOf(sender)/1000000;
+        amountIn = tokenIn.balanceOf(sender) / 1000000;
 
-        tokenNew = new Token("Token 11","T11",11e18);
+        tokenNew = new Token("Token 11", "T11", 11e18);
         addressNew = address(tokenNew);
         amountNew = 11e17;
 
-        for (uint i=0; i<ntokens; i++) {
+        for (uint256 i = 0; i < ntokens; i++) {
             amounts[i] = amountIn;
-            tokens[i].increaseAllowance(address(pool),amountIn);
+            tokens[i].increaseAllowance(address(pool), amountIn);
         }
     }
 
     function testPool() public {
-        assertEq(pool.totalSupply(),1e23);
-        for (uint i=0; i<ntokens; i++) {
+        assertEq(pool.totalSupply(), 1e23);
+        for (uint256 i = 0; i < ntokens; i++) {
             Token token = tokens[i];
-            uint supply = i.add(1).mul(1e18);
-            uint reserve = supply/10;
-            assertEq(token.totalSupply(),supply);
-            assertEq(pool.reserve(address(token)),reserve);
-            assertEq(token.balanceOf(address(this)),supply.sub(reserve));
+            uint256 supply = i.add(1).mul(1e18);
+            uint256 reserve = supply / 10;
+            assertEq(token.totalSupply(), supply);
+            assertEq(pool.reserve(address(token)), reserve);
+            assertEq(token.balanceOf(address(this)), supply.sub(reserve));
         }
     }
 
     function testSwap() public {
-        tokenIn.increaseAllowance(address(pool),amountIn);
+        tokenIn.increaseAllowance(address(pool), amountIn);
 
-        amountOut = pool.swap(
-            addressIn,
-            addressOut,
-            amountIn,
-            sender
-        );
+        amountOut = pool.swap(addressIn, addressOut, amountIn, sender);
     }
 
     function testSwapVerbose() public {
-        tokenIn.increaseAllowance(address(pool),amountIn);
+        tokenIn.increaseAllowance(address(pool), amountIn);
 
         emit log("============");
         emit log("Before swap:");
@@ -118,12 +117,7 @@ contract ContractTest is Context, DSTest {
         emit log_named_uint("Reserve 2", pool.reserve(addressOut));
         emit log_named_uint("Swap In Amount", amountIn);
 
-        amountOut = pool.swap(
-            addressIn,
-            addressOut,
-            amountIn,
-            sender
-        );
+        amountOut = pool.swap(addressIn, addressOut, amountIn, sender);
 
         emit log("===========");
         emit log("After swap:");
@@ -139,17 +133,13 @@ contract ContractTest is Context, DSTest {
     }
 
     function testStake() public {
-        tokenIn.increaseAllowance(address(pool),amountIn);
+        tokenIn.increaseAllowance(address(pool), amountIn);
 
-        amountOut = pool.stake(
-            addressIn,
-            amountIn,
-            sender
-        );
+        amountOut = pool.stake(addressIn, amountIn, sender);
     }
 
     function testStakeVerbose() public {
-        tokenIn.increaseAllowance(address(pool),amountIn);
+        tokenIn.increaseAllowance(address(pool), amountIn);
 
         emit log("=============");
         emit log("Before stake:");
@@ -163,11 +153,7 @@ contract ContractTest is Context, DSTest {
         emit log_named_uint("Reserve 2", pool.reserve(addressOut));
         emit log_named_uint("Swap In Amount", amountIn);
 
-        amountOut = pool.stake(
-            addressIn,
-            amountIn,
-            sender
-        );
+        amountOut = pool.stake(addressIn, amountIn, sender);
 
         emit log("============");
         emit log("After stake:");
@@ -183,54 +169,46 @@ contract ContractTest is Context, DSTest {
     }
 
     function testStakeBatch() public {
-        for (uint i=0; i<ntokens; i++) {
-            tokens[i].increaseAllowance(address(pool),amountIn);
+        for (uint256 i = 0; i < ntokens; i++) {
+            tokens[i].increaseAllowance(address(pool), amountIn);
         }
 
-        amountOut = pool.stakeBatch(
-            addresses,
-            amounts,
-            sender
-        );
+        amountOut = pool.stakeBatch(addresses, amounts, sender);
     }
 
     function testCompareStakes() public {
-        tokenIn.increaseAllowance(address(pool),2*amountIn);
+        tokenIn.increaseAllowance(address(pool), 2 * amountIn);
 
-        uint amountSingle = pool.stake(
-            addressIn,
-            amountIn,
-            sender
-        );
+        uint256 amountSingle = pool.stake(addressIn, amountIn, sender);
 
         setUp();
 
         address[] memory addressInArray = new address[](1);
-        uint[] memory amountInArray = new uint[](1);
+        uint256[] memory amountInArray = new uint256[](1);
         addressInArray[0] = addressIn;
         amountInArray[0] = amountIn;
 
-        uint amountBatch = pool.stakeBatch(
+        uint256 amountBatch = pool.stakeBatch(
             addressInArray,
             amountInArray,
             sender
         );
 
-        assertEq(amountSingle,amountBatch,"Single stake and batch stake do not agrees.");
-    }
-
-    function testUnstake() public {
-        pool.increaseAllowance(address(pool),amountIn);
-
-        amountOut = pool.unstake(
-            addressIn,
-            amountIn,
-            sender
+        assertEq(
+            amountSingle,
+            amountBatch,
+            "Single stake and batch stake do not agrees."
         );
     }
 
+    function testUnstake() public {
+        pool.increaseAllowance(address(pool), amountIn);
+
+        amountOut = pool.unstake(addressIn, amountIn, sender);
+    }
+
     function testUnstakeVerbose() public {
-        pool.increaseAllowance(address(pool),amountIn);
+        pool.increaseAllowance(address(pool), amountIn);
 
         emit log("===============");
         emit log("Before unstake:");
@@ -244,11 +222,7 @@ contract ContractTest is Context, DSTest {
         emit log_named_uint("Reserve 2", pool.reserve(addressOut));
         emit log_named_uint("Swap In Amount", amountIn);
 
-        amountOut = pool.unstake(
-            addressIn,
-            amountIn,
-            sender
-        );
+        amountOut = pool.unstake(addressIn, amountIn, sender);
 
         emit log("==============");
         emit log("After unstake:");
@@ -264,8 +238,8 @@ contract ContractTest is Context, DSTest {
     }
 
     function testAddAsset() public {
-        tokenIn.increaseAllowance(address(pool),amountIn);
-        tokenNew.increaseAllowance(address(pool),amountNew);
+        tokenIn.increaseAllowance(address(pool), amountIn);
+        tokenNew.increaseAllowance(address(pool), amountNew);
 
         pool.addAsset(
             addressIn,
@@ -277,5 +251,4 @@ contract ContractTest is Context, DSTest {
             sender
         );
     }
-
 }

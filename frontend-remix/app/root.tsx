@@ -9,12 +9,16 @@ import {
 import type { MetaFunction } from "remix";
 import { MoralisProvider } from "react-moralis";
 
+import styles from "../node_modules/@syncfusion/ej2-react-buttons/styles/material.css";
+
+// export const links = () => [{ rel: "stylesheet", href: styles }];
+
 export const meta: MetaFunction = () => {
   return { title: "New Remix App" };
 }
 
-const serverUrl = "https://vaddvut5cdnm.usemoralis.com:2053/server";
-const appId = "bSUtYH1vW3Etcx7NPH4EzFPgr82vAB5Ag1Zi7LRQ";
+const serverUrl = "https://sf5h683tvf93.usemoralis.com:2053/server";
+const appId = "2Q2fAUPZO5WIzeDn2VPGRVKfKStzMaTZj7h998eA";
 
 export default function App() {
   return (
@@ -22,6 +26,7 @@ export default function App() {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <link rel="stylesheet" href={styles}></link>
         <Meta />
         <Links />
       </head>
