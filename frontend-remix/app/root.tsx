@@ -8,10 +8,11 @@ import {
 } from "remix";
 import type { MetaFunction } from "remix";
 import { MoralisProvider } from "react-moralis";
+import { MantineProvider } from '@mantine/core';
 
-import styles from "./tailwind.css";
+// import styles from "./tailwind.css";
 
-export const links = () => [{ rel: "stylesheet", href: styles }];
+// export const links = () => [{ rel: "stylesheet", href: styles }];
 
 export const meta: MetaFunction = () => {
   return { title: "New Remix App" };
@@ -31,7 +32,9 @@ export default function App() {
       </head>
       <MoralisProvider serverUrl={serverUrl} appId={appId}>
         <body>
-          <Outlet />
+          <MantineProvider theme={{ colorScheme: "dark" }} withGlobalStyles>
+            <Outlet />
+          </MantineProvider>
           <ScrollRestoration />
           <Scripts />
           {process.env.NODE_ENV === "development" && <LiveReload />}
