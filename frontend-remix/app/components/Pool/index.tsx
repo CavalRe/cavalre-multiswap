@@ -1,3 +1,18 @@
+import {
+    Container,
+    Table
+} from '@mantine/core';
+
+const Assets = () => {
+    return (
+        <Container>
+            <h2>Pool Assets</h2>
+        </Container>
+    )
+};
+
+export default Assets;
+
 // import { useWeb3Contract } from "react-moralis";
 // import { useEffect } from 'react';
 
@@ -8,7 +23,6 @@ VERSION DEPLOYED TO ROPSTEN DOES NOT YET HAVE THE 'assets' FUNCTION
 */
 // import { abi } from "../../../../artifacts/contracts/Pool.sol/Pool.json";
 
-const Pool = () => {
     // const {
     //     runContractFunction,
     //     data,
@@ -21,13 +35,5 @@ const Pool = () => {
 
     // useEffect(() => {runContractFunction();});
 
-    return (
-        <div>
-            {/* {error ? <pre>{JSON.stringify(error)}</pre> : null} */}
-            {/* {data ? <pre>{JSON.stringify(data, undefined, 4)}</pre> : <pre>No data</pre>} */}
-            Test
-        </div>
-    )
-};
-
-export default Pool;
+            // {/* {error ? <pre>{JSON.stringify(error)}</pre> : null} */}
+            // {/* {data ? <pre>{JSON.stringify(data, undefined, 4)}</pre> : <pre>No data</pre>} */}

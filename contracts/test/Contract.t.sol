@@ -4,46 +4,44 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "./Token.sol";
+import "../Token.sol";
 import "../Pool.sol";
 import "../libraries/ds-test/src/test.sol";
-import "../libraries/SafeMath.sol";
 
 contract ContractTest is Context, DSTest {
-    using SafeMath for uint256;
 
-    uint256 constant ntokens = 10;
-    Token[] tokens;
+    uint256 private constant NTOKENS = 10;
+    Token[] private tokens;
 
-    Pool pool;
+    Pool private pool;
 
-    address sender;
-    Token tokenIn;
-    Token tokenOut;
-    Token tokenNew;
-    address addressIn;
-    address addressOut;
-    address addressNew;
-    uint256 amountIn;
-    uint256 amountOut;
-    uint256 amountNew;
+    address private sender;
+    Token private tokenIn;
+    Token private tokenOut;
+    Token private tokenNew;
+    address private addressIn;
+    address private addressOut;
+    address private addressNew;
+    uint256 private amountIn;
+    uint256 private amountOut;
+    uint256 private amountNew;
 
-    address[] addresses;
-    uint256[] amounts;
+    address[] private addresses;
+    uint256[] private amounts;
 
     function setUp() public {
-        tokens = new Token[](ntokens);
+        tokens = new Token[](NTOKENS);
 
         pool = new Pool("Pool", "P");
 
-        addresses = new address[](ntokens);
-        amounts = new uint256[](ntokens);
-        uint256[] memory reserves = new uint256[](ntokens);
-        uint256[] memory fees = new uint256[](ntokens);
-        uint256[] memory weights = new uint256[](ntokens);
-        uint256[] memory ks = new uint256[](ntokens);
+        addresses = new address[](NTOKENS);
+        amounts = new uint256[](NTOKENS);
+        uint256[] memory reserves = new uint256[](NTOKENS);
+        uint256[] memory fees = new uint256[](NTOKENS);
+        uint256[] memory weights = new uint256[](NTOKENS);
+        uint256[] memory ks = new uint256[](NTOKENS);
 
-        for (uint256 i = 0; i < ntokens; i++) {
+        for (uint256 i = 0; i < NTOKENS; i++) {
             // Generate token
             string memory name = string(
                 abi.encodePacked("Token ", Strings.toString(i + 1))
@@ -51,7 +49,7 @@ contract ContractTest is Context, DSTest {
             string memory symbol = string(
                 abi.encodePacked("T", Strings.toString(i + 1))
             );
-            uint256 supply = i.add(1).mul(1e18);
+            uint256 supply = (i+1)*1e18;
             uint256 reserve = supply / 10;
             Token token = new Token(name, symbol, supply);
             token.approve(address(pool), reserve);
@@ -61,7 +59,7 @@ contract ContractTest is Context, DSTest {
             addresses[i] = address(token);
             reserves[i] = reserve;
             fees[i] = 3e15;
-            weights[i] = 1e18 / ntokens;
+            weights[i] = 1e18 / NTOKENS;
             ks[i] = 1e18;
         }
 
@@ -78,7 +76,7 @@ contract ContractTest is Context, DSTest {
         addressNew = address(tokenNew);
         amountNew = 11e17;
 
-        for (uint256 i = 0; i < ntokens; i++) {
+        for (uint256 i = 0; i < NTOKENS; i++) {
             amounts[i] = amountIn;
             tokens[i].increaseAllowance(address(pool), amountIn);
         }
@@ -86,13 +84,13 @@ contract ContractTest is Context, DSTest {
 
     function testPool() public {
         assertEq(pool.totalSupply(), 1e23);
-        for (uint256 i = 0; i < ntokens; i++) {
+        for (uint256 i = 0; i < NTOKENS; i++) {
             Token token = tokens[i];
-            uint256 supply = i.add(1).mul(1e18);
+            uint256 supply = (i+1)*1e18;
             uint256 reserve = supply / 10;
             assertEq(token.totalSupply(), supply);
             assertEq(pool.reserve(address(token)), reserve);
-            assertEq(token.balanceOf(address(this)), supply.sub(reserve));
+            assertEq(token.balanceOf(address(this)), supply - reserve);
         }
     }
 
@@ -169,7 +167,7 @@ contract ContractTest is Context, DSTest {
     }
 
     function testStakeBatch() public {
-        for (uint256 i = 0; i < ntokens; i++) {
+        for (uint256 i = 0; i < NTOKENS; i++) {
             tokens[i].increaseAllowance(address(pool), amountIn);
         }
 

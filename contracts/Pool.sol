@@ -5,11 +5,11 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "./libraries/SafeMath.sol";
+import "./libraries/DMath.sol";
 
 contract Pool is ReentrancyGuard, ERC20 {
     using SafeERC20 for IERC20;
-    using SafeMath for uint256;
+    using DMath for uint256;
 
     // The `address` here is the address of the respective external asset token contract.
     mapping(address => uint256) private _index;
@@ -40,8 +40,8 @@ contract Pool is ReentrancyGuard, ERC20 {
     ) public {
         _scale = poolSupply;
         _mint(_msgSender(), poolSupply);
-        uint256 checkWeight = 0;
-        for (uint256 i = 0; i < weights.length; i++) {
+        uint256 checkWeight;
+        for (uint256 i; i < weights.length; i++) {
             _index[tokens[i]] = i;
             _assets.push(
                 Asset(
@@ -52,7 +52,7 @@ contract Pool is ReentrancyGuard, ERC20 {
                     ks[i]
                 )
             );
-            checkWeight = checkWeight.add(weights[i]);
+            checkWeight += weights[i];
 
             SafeERC20.safeTransferFrom(
                 IERC20(tokens[i]),
@@ -89,22 +89,21 @@ contract Pool is ReentrancyGuard, ERC20 {
         Asset memory assetIn = _assets[_index[addressIn]];
         Asset memory assetOut = _assets[_index[addressOut]];
 
-        uint256 reserveIn = assetIn.reserve.add(amountIn);
+        uint256 reserveIn = assetIn.reserve + amountIn;
         uint256 amountOut;
 
         {
             uint256 weightRatio = assetIn.scale.ddiv(assetOut.scale);
-            uint256 invGrowthOut = weightRatio
-                .dmul(amountIn.ddiv(reserveIn))
-                .add(SafeMath.UNIT);
+            uint256 invGrowthOut = weightRatio.dmul(amountIn.ddiv(reserveIn)) +
+                DMath.ONE;
             uint256 preFeeReserveOut = assetOut.reserve.ddiv(invGrowthOut);
-            uint256 preFeeAmountOut = assetOut.reserve.sub(preFeeReserveOut);
+            uint256 preFeeAmountOut = assetOut.reserve - preFeeReserveOut;
             uint256 feeAmount = preFeeAmountOut.dmul(assetOut.fee);
             amountOut = preFeeAmountOut - feeAmount;
         }
 
         _assets[_index[addressIn]].reserve = reserveIn;
-        _assets[_index[addressOut]].reserve = assetOut.reserve.sub(amountOut);
+        _assets[_index[addressOut]].reserve = assetOut.reserve - amountOut;
 
         SafeERC20.safeTransferFrom(
             IERC20(addressIn),
@@ -124,16 +123,15 @@ contract Pool is ReentrancyGuard, ERC20 {
     ) public nonReentrant returns (uint256) {
         Asset memory assetIn = _assets[_index[addressIn]];
 
-        uint256 reserveIn = assetIn.reserve.add(amountIn);
+        uint256 reserveIn = assetIn.reserve + amountIn;
         uint256 reserveOut = totalSupply();
         uint256 weightIn = assetIn.scale.ddiv(_scale);
         uint256 amountOut;
 
         {
-            uint256 invGrowthOut = SafeMath.UNIT.sub(
-                amountIn.dmul(weightIn).ddiv(reserveIn)
-            );
-            amountOut = reserveOut.ddiv(invGrowthOut).sub(reserveOut);
+            uint256 invGrowthOut = DMath.ONE -
+                amountIn.dmul(weightIn).ddiv(reserveIn);
+            amountOut = reserveOut.ddiv(invGrowthOut) - reserveOut;
         }
 
         _assets[_index[addressIn]].reserve = reserveIn;
@@ -160,22 +158,19 @@ contract Pool is ReentrancyGuard, ERC20 {
             "AddressIn and AmountIn should have the same length."
         );
 
-        uint256 amountOut = 0;
+        uint256 amountOut;
 
-        for (uint256 i = 0; i < n; i++) {
+        for (uint256 i; i < n; i++) {
             Asset memory assetIn = _assets[_index[addressIn[i]]];
 
-            uint256 reserveIn = assetIn.reserve.add(amountIn[i]);
+            uint256 reserveIn = assetIn.reserve + amountIn[i];
             uint256 reserveOut = totalSupply();
             uint256 weightIn = assetIn.scale.ddiv(_scale);
 
             {
-                uint256 invGrowthOut = SafeMath.UNIT.sub(
-                    amountIn[i].dmul(weightIn).ddiv(reserveIn)
-                );
-                amountOut = amountOut.add(
-                    reserveOut.ddiv(invGrowthOut).sub(reserveOut)
-                );
+                uint256 invGrowthOut = DMath.ONE -
+                    amountIn[i].dmul(weightIn).ddiv(reserveIn);
+                amountOut += reserveOut.ddiv(invGrowthOut) - reserveOut;
             }
 
             _assets[_index[addressIn[i]]].reserve = reserveIn;
@@ -208,20 +203,17 @@ contract Pool is ReentrancyGuard, ERC20 {
     ) public nonReentrant returns (uint256) {
         Asset memory assetOut = _assets[_index[addressOut]];
 
-        uint256 reserveIn = totalSupply().sub(amountIn);
+        uint256 reserveIn = totalSupply() - amountIn;
         uint256 weightOut = assetOut.scale.ddiv(_scale);
         uint256 amountOut;
 
         {
-            uint256 invGrowthOut = SafeMath.UNIT.sub(
-                amountIn.ddiv(weightOut.dmul(reserveIn))
-            );
-            amountOut = assetOut.reserve.ddiv(invGrowthOut).sub(
-                assetOut.reserve
-            );
+            uint256 invGrowthOut = DMath.ONE -
+                amountIn.ddiv(weightOut.dmul(reserveIn));
+            amountOut = assetOut.reserve.ddiv(invGrowthOut) - assetOut.reserve;
         }
 
-        _assets[_index[addressOut]].reserve = assetOut.reserve.sub(amountOut);
+        _assets[_index[addressOut]].reserve = assetOut.reserve - amountOut;
 
         SafeERC20.safeTransfer(IERC20(addressOut), addressTo, amountOut);
         _burn(_msgSender(), amountOut);
@@ -254,8 +246,8 @@ contract Pool is ReentrancyGuard, ERC20 {
             Asset(IERC20(addressNew), amountNew, feeNew, scaleIn, kNew)
         );
 
-        _assets[_index[addressIn]].reserve = assetIn.reserve.add(amountIn);
-        _assets[_index[addressIn]].scale = assetIn.scale.add(scaleIn);
+        _assets[_index[addressIn]].reserve = assetIn.reserve + amountIn;
+        _assets[_index[addressIn]].scale = assetIn.scale + scaleIn;
 
         address[] memory addresses = new address[](2);
         uint256[] memory amounts = new uint256[](2);
