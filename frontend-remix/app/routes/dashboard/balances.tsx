@@ -4,17 +4,17 @@ import {
     Container,
     Table
 } from '@mantine/core';
-import Moralis from "../../moralis.server";
+// import Moralis from "../../moralis.server";
 
-const serverUrl = "https://sf5h683tvf93.usemoralis.com:2053/server";
-const appId = "2Q2fAUPZO5WIzeDn2VPGRVKfKStzMaTZj7h998eA";
-const masterKey = "8v8AJX9Tanzb2sYiwTG8tlc55AeRwb9LSLSjg0Ej"
+// const serverUrl = "https://sf5h683tvf93.usemoralis.com:2053/server";
+// const appId = "2Q2fAUPZO5WIzeDn2VPGRVKfKStzMaTZj7h998eA";
+// const masterKey = "8v8AJX9Tanzb2sYiwTG8tlc55AeRwb9LSLSjg0Ej"
 
-Moralis.start({
-    serverUrl,
-    appId,
-    masterKey
-})
+// Moralis.start({
+//     serverUrl,
+//     appId,
+//     masterKey
+// })
 // import { fetchBalances } from "../../moralis.server";
 
 type Balance = {

@@ -57,7 +57,7 @@ const Assets = () => {
             addresses
         };
         const result = await Web3Api.token.getTokenMetadata(options);
-        console.log(result);
+        // console.log(result);
         setMetadata(result);
     };
 
