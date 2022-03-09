@@ -7,19 +7,22 @@ import {
   ScrollRestoration
 } from "remix";
 import type { MetaFunction } from "remix";
-import { MoralisProvider } from "react-moralis";
 import { MantineProvider } from '@mantine/core';
+// import Moralis from "./moralis.server";
 
-// import styles from "./tailwind.css";
+// const serverUrl = "https://sf5h683tvf93.usemoralis.com:2053/server";
+// const appId = "2Q2fAUPZO5WIzeDn2VPGRVKfKStzMaTZj7h998eA";
+// const masterKey = "8v8AJX9Tanzb2sYiwTG8tlc55AeRwb9LSLSjg0Ej"
 
-// export const links = () => [{ rel: "stylesheet", href: styles }];
+// Moralis.start({
+//     serverUrl,
+//     appId,
+//     masterKey
+// })
 
 export const meta: MetaFunction = () => {
   return { title: "New Remix App" };
 }
-
-const serverUrl = "https://sf5h683tvf93.usemoralis.com:2053/server";
-const appId = "2Q2fAUPZO5WIzeDn2VPGRVKfKStzMaTZj7h998eA";
 
 export default function App() {
   return (
@@ -30,7 +33,6 @@ export default function App() {
         <Meta />
         <Links />
       </head>
-      <MoralisProvider serverUrl={serverUrl} appId={appId}>
         <body>
           <MantineProvider theme={{ colorScheme: "dark" }} withGlobalStyles>
             <Outlet />
@@ -39,7 +41,6 @@ export default function App() {
           <Scripts />
           {process.env.NODE_ENV === "development" && <LiveReload />}
         </body>
-      </MoralisProvider>
     </html>
   );
 }
