@@ -1,5 +1,6 @@
 import {
     Container,
+    Table
 } from '@mantine/core';
 
 const Swap = () => {

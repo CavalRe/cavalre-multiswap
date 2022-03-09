@@ -43,7 +43,7 @@ const Balances = () => {
 
     return (
         <Container>
-            <h2>Balances</h2>
+            <h2>Account Balances</h2>
             <Table style={{ width: "100%" }} highlightOnHover>
                 <thead>
                     <tr>

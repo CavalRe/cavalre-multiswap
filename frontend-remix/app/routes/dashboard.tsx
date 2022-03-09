@@ -87,40 +87,42 @@ export default function Index() {
                 padding="md"
                 navbar={
                     <Navbar width={{ base: 300 }} height={500} padding="xs">
-                        <Table style={{ width: "100%" }} highlightOnHover>
-                            <tbody>
-                                <tr onClick={() => navigate("/dashboard/balances")}>
-                                    <td>
-                                        <ThemeIcon>
-                                            <MdOutlineAccountBalanceWallet />
-                                        </ThemeIcon>
-                                    </td>
-                                    <td>
-                                        Account Balances
-                                    </td>
-                                </tr>
-                                <tr onClick={() => navigate("/dashboard/assets")}>
-                                    <td>
-                                        <ThemeIcon>
-                                            <MdOutlineGroupWork />
-                                        </ThemeIcon>
-                                    </td>
-                                    <td>
-                                        Pool Assets
-                                    </td>
-                                </tr>
-                                <tr onClick={() => setOpened(true)}>
-                                    <td>
-                                        <ThemeIcon>
-                                            <MdOutlineSwapHorizontalCircle />
-                                        </ThemeIcon>
-                                    </td>
-                                    <td>
-                                        Multi-Asset Swap
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </Table>
+                        <Navbar.Section>
+                            <Table style={{ width: "100%" }} highlightOnHover>
+                                <tbody>
+                                    <tr onClick={() => navigate("/dashboard/balances")}>
+                                        <td width="28px">
+                                            <ThemeIcon>
+                                                <MdOutlineAccountBalanceWallet />
+                                            </ThemeIcon>
+                                        </td>
+                                        <td>
+                                            Account Balances
+                                        </td>
+                                    </tr>
+                                    <tr onClick={() => navigate("/dashboard/pool")}>
+                                        <td>
+                                            <ThemeIcon>
+                                                <MdOutlineGroupWork />
+                                            </ThemeIcon>
+                                        </td>
+                                        <td>
+                                            Liquidity Pool
+                                        </td>
+                                    </tr>
+                                    <tr onClick={() => setOpened(true)}>
+                                        <td>
+                                            <ThemeIcon>
+                                                <MdOutlineSwapHorizontalCircle />
+                                            </ThemeIcon>
+                                        </td>
+                                        <td>
+                                            Multi-Asset Swap
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </Table>
+                        </Navbar.Section>
                     </Navbar>
                 }
                 header={<Header height={60} padding="xs">
