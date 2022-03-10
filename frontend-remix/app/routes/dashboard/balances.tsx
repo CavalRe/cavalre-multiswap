@@ -20,7 +20,16 @@ const Balances = () => {
                 width="28px"
                 height="28px"
             /></td>
-            <td>{`${e.name} (${e.symbol})`}</td>
+            <td>
+                {/* <div>
+                    <img
+                        src={e.logo || "https://etherscan.io/images/main/empty-token.png"}
+                        width="28px"
+                        height="28px"
+                    /> */}
+                    {`${e.name} (${e.symbol})`}
+                {/* </div> */}
+            </td>
             <td align="right">{(parseInt(e.balance) / 1e18).toLocaleString()}</td>
             {/* <td>{e.token_address}</td> */}
         </tr>

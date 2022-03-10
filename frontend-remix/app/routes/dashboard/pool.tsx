@@ -5,17 +5,15 @@ import {
     List,
     Table
 } from '@mantine/core';
-import { fetchPoolTokens } from "../../moralis.server";
+import { fetchPool } from "../../moralis.server";
+import type { Asset } from "../../moralis.server";
 import { useLoaderData } from "remix";
 import type { LoaderFunction } from "remix";
 
-export const loader: LoaderFunction = fetchPoolTokens;
+export const loader: LoaderFunction = fetchPool;
 
 const Assets = () => {
-    const [assets, setAssets] = useState<any[] | null>(null);
-    const [metadata, setMetadata] = useState<any[] | null>(null);
-
-    const poolTokens = useLoaderData();
+    const { poolTokens, assets } = useLoaderData();
 
     // const {
     //     isWeb3Enabled,
@@ -59,29 +57,25 @@ const Assets = () => {
     //     (e1, e2) => parseInt(e2.reserve) - parseInt(e1.reserve)
     // )
 
-    const decimalNumber = (decimal: string) => {
-        return parseInt(decimal) / 1e18;
-    };
-
-    const rows = metadata && assets && poolTokens ? assets?.map((e,i) => (
-        <tr key={e.token}>
+    const rows = assets?.map((a: Asset,i: number) => (
+        <tr key={a.token_address}>
             {/* <td><img
                 src={e.logo || "https://etherscan.io/images/main/empty-token.png"}
                 width="28px"
                 height="28px"
             /></td>*/}
             <td>{i+1}</td>
-            <td>{`${metadata[i].name} (${metadata[i].symbol})`}</td>
-            <td align="right">{(0.1*poolTokens/decimalNumber(e.reserve)).toFixed(2)}</td>
+            <td>{`${a.name} (${a.symbol})`}</td>
+            <td align="right">{(0.1*poolTokens/a.reserve).toFixed(2)}</td>
             {/* <td>{e.token}</td> */}
             {/* <td>{`${e.name} (${e.symbol})`}</td> */}
             {/* <td align="right">{(parseInt(e.reserve) / 1e18).toLocaleString()}</td> */}
             <td align="right">{`${100/(assets.length)}%`}</td>
-            <td align="right">{decimalNumber(e.reserve).toLocaleString()}</td>
-            <td align="right">{(10000*decimalNumber(e.fee)).toLocaleString()}</td>
-            <td align="right">{decimalNumber(e.k).toLocaleString()}</td>
+            <td align="right">{a.reserve.toLocaleString()}</td>
+            <td align="right">{(10000*a.fee).toLocaleString()}</td>
+            <td align="right">{a.k.toLocaleString()}</td>
         </tr>
-    )) : [];
+    ));
 
     return (
         <Container>
