@@ -1,58 +1,15 @@
-import { useState, useEffect } from 'react';
-import type { LoaderFunction } from 'remix';
+import { LoaderFunction, useLoaderData } from 'remix';
 import {
     Container,
     Table
 } from '@mantine/core';
-// import Moralis from "../../moralis.server";
+import { fetchTokenBalances } from "../../moralis.server";
+import type { Balance } from "../../moralis.server";
 
-// const serverUrl = "https://sf5h683tvf93.usemoralis.com:2053/server";
-// const appId = "2Q2fAUPZO5WIzeDn2VPGRVKfKStzMaTZj7h998eA";
-// const masterKey = "8v8AJX9Tanzb2sYiwTG8tlc55AeRwb9LSLSjg0Ej"
-
-// Moralis.start({
-//     serverUrl,
-//     appId,
-//     masterKey
-// })
-// import { fetchBalances } from "../../moralis.server";
-
-type Balance = {
-    token_address: string;
-    name: string;
-    symbol: string;
-    logo?: string | undefined;
-    thumbnail?: string | undefined;
-    decimals: string;
-    balance: string;
-};
-
-const address = "0xDC1062712Dd033874d1d915adA2cFecDe1575c71";
-
-// const fetchBalances = async () => {
-//     // const data = await Moralis.Web3API.account.getTokenBalances({ address, chain: "ropsten" });
-//     const data = Moralis.User.current();
-// }
-
-// export const loader = async () => {
-//     const data: Balance[] = await Moralis.Web3API.account.getTokenBalances({ address: "0xDC1062712Dd033874d1d915adA2cFecDe1575c71", chain: "ropsten" })
-//     console.log(data);
-//     return data;
-// };
+export const loader: LoaderFunction = fetchTokenBalances;
 
 const Balances = () => {
-    const [balances, setBalances] = useState<Balance[] | null>(null);
-    // const { account } = useMoralisWeb3Api();
-
-    // const fetchTokenBalances = async () => {
-    //     setBalances(await account.getTokenBalances({ chain: "ropsten" }));
-    // };
-
-    // const fetchTokenBalances = async () => {
-    //     setBalances(await Moralis.Web3API.account.getTokenBalances({ chain: "ropsten" }));
-    // };
-
-    // useEffect(() => { if (!balances) fetchBalances(); }, [balances]);
+    const balances = useLoaderData<Balance[]>();
 
     const rows = balances?.sort(
         (e1, e2) => parseInt(e2.balance) - parseInt(e1.balance)
