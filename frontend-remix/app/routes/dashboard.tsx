@@ -50,8 +50,6 @@ export default function Index() {
 
     const navigate = useNavigate();
 
-    console.log(Moralis.User.current());
-
     // const handleLogin = async () => {
     //     authenticate(
     //         // {
