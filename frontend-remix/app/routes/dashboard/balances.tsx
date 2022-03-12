@@ -1,15 +1,21 @@
+import { useEffect } from 'react';
+import { useMoralis } from 'react-moralis';
 import { LoaderFunction, useLoaderData } from 'remix';
 import {
+    Button,
     Container,
     Table,
     Title
 } from '@mantine/core';
+
 import { fetchTokenBalances } from "~/moralis.server";
 import type { Balance } from "~/moralis.server";
 
 export const loader: LoaderFunction = fetchTokenBalances;
 
 const Balances = () => {
+    const { isAuthenticated, authenticate } = useMoralis();
+
     const balances = useLoaderData<Balance[]>();
 
     const rows = balances?.sort(
@@ -29,20 +35,27 @@ const Balances = () => {
         </tr>
     ));
 
+    const handleLogin = async () => {
+        await authenticate();
+    };
+
     return (
         <Container>
-            <Title>Account Balances</Title>
-            <Table style={{ width: "100%" }} highlightOnHover>
-                <thead>
-                    <tr>
-                        <th></th>
-                        <th>Token</th>
-                        <th>Balance</th>
-                        <th>Address</th>
-                    </tr>
-                </thead>
-                <tbody>{rows}</tbody>
-            </Table>
+            {isAuthenticated ? (<>
+                <Title>Account Balances</Title>
+                <Table style={{ width: "100%" }} highlightOnHover>
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>Token</th>
+                            <th>Balance</th>
+                            <th>Address</th>
+                        </tr>
+                    </thead>
+                    <tbody>{rows}</tbody>
+                </Table></>) : (
+                <Button onClick={handleLogin}>Connect Wallet</Button>
+            )}
         </Container>
     );
 };

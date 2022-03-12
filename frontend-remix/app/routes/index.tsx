@@ -1,16 +1,31 @@
+import { useNavigate } from 'remix';
 import {
     AppShell,
-    Container
+    Button,
+    Container,
+    Header
 } from '@mantine/core';
 
-import { Header } from "~/components/Dashboard";
+const GoToDashboard = () => {
+    const navigate = useNavigate();
+
+    const handleOnClick = () => {
+        navigate("/dashboard");
+    }
+
+    return (
+        <Header height={60} p="xs">
+            <Button onClick={handleOnClick}>Go to Dashboard</Button>
+        </Header>
+    )
+};
 
 const Welcome = () => {
 
     return (
         <AppShell
             padding="md"
-            header={<Header />}
+            header={<GoToDashboard />}
         >
             <Container>
                 <h1>Welcome</h1>

@@ -1,6 +1,6 @@
 import {
     useNavigate
-} from "remix";import {
+} from "remix"; import {
     // createStyles,
     Navbar,
     Table,
@@ -106,6 +106,16 @@ const DashboardNavBar = () => {
             <Navbar.Section>
                 <Table style={{ width: "100%" }} highlightOnHover>
                     <tbody>
+                        <tr onClick={() => navigate("/dashboard")}>
+                            <td>
+                                <ThemeIcon>
+                                    <MdOutlineGroupWork />
+                                </ThemeIcon>
+                            </td>
+                            <td>
+                                Liquidity Pool
+                            </td>
+                        </tr>
                         <tr onClick={() => navigate("/dashboard/balances")}>
                             <td width="28px">
                                 <ThemeIcon>
@@ -114,16 +124,6 @@ const DashboardNavBar = () => {
                             </td>
                             <td>
                                 Account Balances
-                            </td>
-                        </tr>
-                        <tr onClick={() => navigate("/dashboard/pool")}>
-                            <td>
-                                <ThemeIcon>
-                                    <MdOutlineGroupWork />
-                                </ThemeIcon>
-                            </td>
-                            <td>
-                                Liquidity Pool
                             </td>
                         </tr>
                         {/* <tr onClick={() => setOpened(true)}> */}
