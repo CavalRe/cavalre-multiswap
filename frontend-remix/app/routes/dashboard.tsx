@@ -1,129 +1,33 @@
-import { useState, useEffect } from 'react';
-// import Moralis from "moralis/node";
-
-// import { useMoralis } from "react-moralis";
+import { useEffect, useState } from 'react';
 import {
     Outlet,
     useNavigate
 } from "remix";
+import { useMoralis } from "react-moralis";
 import {
-    AppShell,
-    Button,
-    Header,
-    Modal,
-    Navbar,
-    Table,
-    ThemeIcon
+    AppShell
 } from '@mantine/core';
 
-import {
-    MdOutlineAccountBalanceWallet,
-    MdOutlineGroupWork,
-    MdOutlineSwapHorizontalCircle
-} from "react-icons/md";
-
-// import Swap from "~/components/Swap";
+import { Header, NavBar } from "~/components/Dashboard";
 
 export default function Index() {
-    // const {
-    //     isInitialized,
-    //     isAuthenticated,
-    //     authenticate,
-    //     isWeb3Enabled,
-    //     isWeb3EnableLoading,
-    //     enableWeb3,
-    //     // user,
-    //     logout,
-    //     // Moralis
-    // } = useMoralis();
-
-
-    const [opened, setOpened] = useState(false);
-
-    // useEffect(() => {
-    //     if (
-    //         isAuthenticated &&
-    //         !isWeb3Enabled &&
-    //         !isWeb3EnableLoading
-    //     ) enableWeb3();
-    // }, [isAuthenticated, isWeb3Enabled, isWeb3EnableLoading]);
-
+    const { isAuthenticated } = useMoralis();
     const navigate = useNavigate();
 
-    // const handleLogin = async () => {
-    //     authenticate(
-    //         // {
-    //         //     provider: "web3Auth",
-    //         //     clientId: "BGI0ENrYWUvYu1OIalzasfpf4MESazKKWFP874gfbqlrm_OMWU2jYsjJGTuetTz8r_rxnmvmFTC4qAArbLWXejQ",
-    //         //     // chainId: Moralis.Chains.ETH_ROPSTEN
-    //         // }
-    //     );
-    // };
+    useEffect(() => {
+        if (!isAuthenticated) navigate("/");
+    },[isAuthenticated]);
 
-    // if (!isAuthenticated) {
-    //     return (
-    //         <Button onClick={handleLogin}>Connect Wallet</Button>
-    //     );
-    // } else {
-    return (<div>
-        <Modal
-            opened={opened}
-            onClose={() => setOpened(false)}
-            radius="lg"
-            title="Mulit-Asset Swap"
-        >
-            {/* <Swap /> */}
-        </Modal>
+    return (
         <AppShell
             padding="md"
-            navbar={
-                <Navbar width={{ base: 300 }} height={500} padding="xs">
-                    <Navbar.Section>
-                        <Table style={{ width: "100%" }} highlightOnHover>
-                            <tbody>
-                                <tr onClick={() => navigate("/dashboard/balances")}>
-                                    <td width="28px">
-                                        <ThemeIcon>
-                                            <MdOutlineAccountBalanceWallet />
-                                        </ThemeIcon>
-                                    </td>
-                                    <td>
-                                        Account Balances
-                                    </td>
-                                </tr>
-                                <tr onClick={() => navigate("/dashboard/pool")}>
-                                    <td>
-                                        <ThemeIcon>
-                                            <MdOutlineGroupWork />
-                                        </ThemeIcon>
-                                    </td>
-                                    <td>
-                                        Liquidity Pool
-                                    </td>
-                                </tr>
-                                <tr onClick={() => setOpened(true)}>
-                                    <td>
-                                        <ThemeIcon>
-                                            <MdOutlineSwapHorizontalCircle />
-                                        </ThemeIcon>
-                                    </td>
-                                    <td>
-                                        Multi-Asset Swap
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </Table>
-                    </Navbar.Section>
-                </Navbar>
-            }
-            // header={<Header height={60} padding="xs">
-            //     <Button onClick={() => logout()}>Logout</Button>
-            // </Header>}
-            styles={(theme) => ({
-                main: { backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[0] },
-            })}
+            navbar={<NavBar />}
+            header={<Header />}
+        // styles={(theme) => ({
+        //     main: { backgroundColor: theme.colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[0] },
+        // })}
         >
             <Outlet />
         </AppShell>
-    </div>)
+    )
 };

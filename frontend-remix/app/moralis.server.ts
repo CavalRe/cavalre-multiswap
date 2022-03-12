@@ -1,6 +1,8 @@
 import Moralis from "moralis/node";
 import { LoaderFunction } from "remix";
 
+import { abi as poolAbi } from "../../artifacts/contracts/Pool.sol/Pool.json";
+
 const serverUrl = "https://sf5h683tvf93.usemoralis.com:2053/server";
 const appId = "2Q2fAUPZO5WIzeDn2VPGRVKfKStzMaTZj7h998eA";
 const masterKey = "8v8AJX9Tanzb2sYiwTG8tlc55AeRwb9LSLSjg0Ej"
@@ -8,7 +10,7 @@ const address = "0xDC1062712Dd033874d1d915adA2cFecDe1575c71";
 const contractAddress = "0x83B141645dD821650b496b01729B98fc7D5e5c3F"
 const chain = "ropsten";
 
-import { abi as poolAbi } from "../../artifacts/contracts/Pool.sol/Pool.json";
+export const serverInfo = { serverUrl, appId, masterKey };
 
 Moralis.start({
     serverUrl,
@@ -41,16 +43,25 @@ const decimalNumber = (decimal: string) => {
 };
 
 export const fetchTokenBalances: LoaderFunction = async () => {
-    const data = await Moralis.Web3API.account.getTokenBalances({
+    const balances: Balance[] = await Moralis.Web3API.account.getTokenBalances({
         address,
         chain
     });
-    console.log("Hello token balances!");
-    return data;
+    return balances;
 };
 
 export const fetchPool: LoaderFunction = async () => {
-    const poolTokens = decimalNumber(await Moralis.Web3API.native.runContractFunction({
+
+    console.log("Subscribing to assets");
+
+    const query = new Moralis.Query("Asset");
+    const subscription = await query.subscribe();
+
+    subscription.on("open", () => {
+        console.log("Asset subscription connection established");
+    });
+
+    const poolTokens: number = decimalNumber(await Moralis.Web3API.native.runContractFunction({
         chain,
         address: contractAddress,
         function_name: "totalSupply",
@@ -70,7 +81,7 @@ export const fetchPool: LoaderFunction = async () => {
         addresses
     });
 
-    const assets: Asset[] = arrays.map((a, i) => {
+    const assets = arrays.map((a, i) => {
         return {
             token_address: addresses[i],
             name: metadata[i].name,
@@ -82,7 +93,7 @@ export const fetchPool: LoaderFunction = async () => {
         }
     });
 
-    console.log(assets);
+    // console.log(assets);
 
     return { poolTokens, assets };
 };

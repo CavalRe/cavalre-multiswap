@@ -1,13 +1,13 @@
 import {
     Container,
-    Table
+    Title
 } from '@mantine/core';
 
 const Swap = () => {
 
     return (
         <Container>
-            <h2>Multi-Asset Swap</h2>
+            <Title>Multi-Asset Swap</Title>
         </Container>
     );
 };

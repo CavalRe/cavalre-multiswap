@@ -1,61 +1,30 @@
-import { useState, useEffect } from "react";
+import { useLoaderData } from "remix";
+import type { LoaderFunction } from "remix";
 import {
     Container,
     Group,
     List,
-    Table
+    Table,
+    Title
 } from '@mantine/core';
-import { fetchPool } from "../../moralis.server";
-import type { Asset } from "../../moralis.server";
-import { useLoaderData } from "remix";
-import type { LoaderFunction } from "remix";
+
+import { fetchPool, Asset } from "~/moralis.server";
 
 export const loader: LoaderFunction = fetchPool;
 
+// export const init = async () => {
+//     console.log("Subscribing to assets");
+
+//     const query = new Moralis.Query("Asset");
+//     const subscription = await query.subscribe();
+
+//     subscription.on("open", () => {
+//         console.log("Asset subscription connection established");
+//     });
+// };
+
 const Assets = () => {
     const { poolTokens, assets } = useLoaderData();
-
-    // const {
-    //     isWeb3Enabled,
-    // } = useMoralis();
-
-    // const assetsFunction = useWeb3Contract({
-    //     contractAddress: "0x83B141645dD821650b496b01729B98fc7D5e5c3F",
-    //     functionName: "assets",
-    //     abi
-    // });
-
-    // const fetchAssets = async () => {
-    //     const { runContractFunction } = assetsFunction;
-    //     const result = await runContractFunction();
-    //     // console.log(result);
-    //     setAssets(result);
-    // };
-
-    // const Web3Api = useMoralisWeb3Api();
-
-    // const fetchTokenMetadata = async () => {
-    //     const addresses = assets?.map(asset => asset.token);
-    //     const options = {
-    //         chain: "ropsten",
-    //         addresses
-    //     };
-    //     const result = await Web3Api.token.getTokenMetadata(options);
-    //     // console.log(result);
-    //     setMetadata(result);
-    // };
-
-    // useEffect(() => {
-    //     if (isWeb3Enabled) {
-    //         if (!poolTokens) fetchPoolTokens();
-    //         if (!assets) fetchAssets();
-    //         if (assets && !metadata) fetchTokenMetadata();
-    //     };
-    // }, [isWeb3Enabled, poolTokens, assets, metadata]);
-
-    // .sort(
-    //     (e1, e2) => parseInt(e2.reserve) - parseInt(e1.reserve)
-    // )
 
     const rows = assets?.map((a: Asset,i: number) => (
         <tr key={a.token_address}>
@@ -79,7 +48,7 @@ const Assets = () => {
 
     return (
         <Container>
-            <h2>Liquidity Pool</h2>
+            <Title>Liquidity Pool</Title>
             <Group>
                 <h3>Pool Tokens</h3>
             </Group>

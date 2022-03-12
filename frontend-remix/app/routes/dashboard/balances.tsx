@@ -1,10 +1,11 @@
 import { LoaderFunction, useLoaderData } from 'remix';
 import {
     Container,
-    Table
+    Table,
+    Title
 } from '@mantine/core';
-import { fetchTokenBalances } from "../../moralis.server";
-import type { Balance } from "../../moralis.server";
+import { fetchTokenBalances } from "~/moralis.server";
+import type { Balance } from "~/moralis.server";
 
 export const loader: LoaderFunction = fetchTokenBalances;
 
@@ -17,34 +18,27 @@ const Balances = () => {
         <tr key={e.token_address}>
             <td><img
                 src={e.logo || "https://etherscan.io/images/main/empty-token.png"}
-                width="28px"
-                height="28px"
+                width="20px"
+                height="20px"
             /></td>
             <td>
-                {/* <div>
-                    <img
-                        src={e.logo || "https://etherscan.io/images/main/empty-token.png"}
-                        width="28px"
-                        height="28px"
-                    /> */}
-                    {`${e.name} (${e.symbol})`}
-                {/* </div> */}
+                {`${e.name} (${e.symbol})`}
             </td>
             <td align="right">{(parseInt(e.balance) / 1e18).toLocaleString()}</td>
-            {/* <td>{e.token_address}</td> */}
+            <td>{e.token_address}</td>
         </tr>
     ));
 
     return (
         <Container>
-            <h2>Account Balances</h2>
+            <Title>Account Balances</Title>
             <Table style={{ width: "100%" }} highlightOnHover>
                 <thead>
                     <tr>
                         <th></th>
                         <th>Token</th>
                         <th>Balance</th>
-                        {/* <th>Address</th> */}
+                        <th>Address</th>
                     </tr>
                 </thead>
                 <tbody>{rows}</tbody>
