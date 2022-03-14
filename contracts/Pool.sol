@@ -80,6 +80,10 @@ contract Pool is ReentrancyGuard, ERC20 {
         return asset(token).scale.ddiv(_scale);
     }
 
+    function scale() public view returns (uint) {
+        return _scale;
+    }
+
     function swap(
         address addressIn,
         address addressOut,

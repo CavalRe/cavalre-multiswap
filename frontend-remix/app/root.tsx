@@ -14,7 +14,7 @@ const serverUrl = "https://sf5h683tvf93.usemoralis.com:2053/server";
 const appId = "2Q2fAUPZO5WIzeDn2VPGRVKfKStzMaTZj7h998eA";
 
 export const meta: MetaFunction = () => {
-  return { title: "New Remix App" };
+  return { title: "CavalRe" };
 }
 
 export default function App() {

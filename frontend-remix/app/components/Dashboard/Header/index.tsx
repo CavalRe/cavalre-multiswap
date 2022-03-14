@@ -7,18 +7,18 @@ import {
 const DashboardHeader = () => {
     const {
         isAuthenticated,
+        authenticate,
         logout
     } = useMoralis();
 
-    const handleLogout = async () => {
-        await logout();
-    };
+    const handleLogin = async () => { await authenticate(); };
+    const handleLogout = async () => { await logout(); };
 
     return (
         <Header height={60} p="xs">
             {isAuthenticated ?
                 <Button onClick={handleLogout}>Logout</Button> :
-                null
+                <Button onClick={handleLogin}>Connect Wallet</Button>
             }
         </Header>
     )

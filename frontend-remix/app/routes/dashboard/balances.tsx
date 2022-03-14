@@ -1,9 +1,8 @@
-import { useEffect } from 'react';
-import { useMoralis } from 'react-moralis';
 import { LoaderFunction, useLoaderData } from 'remix';
 import {
-    Button,
+    Card,
     Container,
+    Group,
     Table,
     Title
 } from '@mantine/core';
@@ -11,11 +10,11 @@ import {
 import { fetchTokenBalances } from "~/moralis.server";
 import type { Balance } from "~/moralis.server";
 
+import { RequireAuth } from "~/components/Dashboard";
+
 export const loader: LoaderFunction = fetchTokenBalances;
 
 const Balances = () => {
-    const { isAuthenticated, authenticate } = useMoralis();
-
     const balances = useLoaderData<Balance[]>();
 
     const rows = balances?.sort(
@@ -31,32 +30,37 @@ const Balances = () => {
                 {`${e.name} (${e.symbol})`}
             </td>
             <td align="right">{(parseInt(e.balance) / 1e18).toLocaleString()}</td>
-            <td>{e.token_address}</td>
+            {/* <td>{e.token_address}</td> */}
         </tr>
     ));
 
-    const handleLogin = async () => {
-        await authenticate();
-    };
-
     return (
-        <Container>
-            {isAuthenticated ? (<>
+        <RequireAuth>
+            <Container>
                 <Title>Account Balances</Title>
-                <Table style={{ width: "100%" }} highlightOnHover>
-                    <thead>
-                        <tr>
-                            <th></th>
-                            <th>Token</th>
-                            <th>Balance</th>
-                            <th>Address</th>
-                        </tr>
-                    </thead>
-                    <tbody>{rows}</tbody>
-                </Table></>) : (
-                <Button onClick={handleLogin}>Connect Wallet</Button>
-            )}
-        </Container>
+                {/* <Group> */}
+                    <Card withBorder p="xl" radius="md" mt="lg">
+                        {/* <Group> */}
+                        <Table
+                            verticalSpacing="sm"
+                            style={{ width: "100%" }}
+                            highlightOnHover
+                        >
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Token</th>
+                                    <th>Balance</th>
+                                    {/* <th>Address</th> */}
+                                </tr>
+                            </thead>
+                            <tbody>{rows}</tbody>
+                        </Table>
+                        {/* </Group> */}
+                    </Card>
+                {/* </Group> */}
+            </Container>
+        </RequireAuth>
     );
 };
 

@@ -24,7 +24,7 @@ export type Asset = {
     symbol: string,
     reserve: number,
     fee: number,
-    scale: number,
+    weight: number,
     k: number
 };
 
@@ -43,6 +43,7 @@ const decimalNumber = (decimal: string) => {
 };
 
 export const fetchTokenBalances: LoaderFunction = async () => {
+    console.log("Fetching balances");
     const balances: Balance[] = await Moralis.Web3API.account.getTokenBalances({
         address,
         chain
@@ -52,14 +53,14 @@ export const fetchTokenBalances: LoaderFunction = async () => {
 
 export const fetchPool: LoaderFunction = async () => {
 
-    console.log("Subscribing to assets");
+    // console.log("Subscribing to assets");
 
-    const query = new Moralis.Query("Asset");
-    const subscription = await query.subscribe();
+    // const query = new Moralis.Query("Asset");
+    // const subscription = await query.subscribe();
 
-    subscription.on("open", () => {
-        console.log("Asset subscription connection established");
-    });
+    // subscription.on("open", () => {
+    //     console.log("Asset subscription connection established");
+    // });
 
     const poolTokens: number = decimalNumber(await Moralis.Web3API.native.runContractFunction({
         chain,
@@ -67,6 +68,16 @@ export const fetchPool: LoaderFunction = async () => {
         function_name: "totalSupply",
         abi: poolAbi
     }));
+
+    // ==================================
+    // Need a scale function for Pool.sol
+    // ==================================
+    // const poolScale: number = decimalNumber(await Moralis.Web3API.native.runContractFunction({
+    //     chain,
+    //     address: contractAddress,
+    //     function_name: "scale",
+    //     abi: poolAbi
+    // }));
 
     const arrays: any[] = await Moralis.Web3API.native.runContractFunction({
         chain,
@@ -88,14 +99,19 @@ export const fetchPool: LoaderFunction = async () => {
             symbol: metadata[i].symbol,
             reserve: decimalNumber(a[1]),
             fee: decimalNumber(a[2]),
-            scale: decimalNumber(a[3]),
+            weight: 1/addresses.length, // decimalNumber(a[3]),
             k: decimalNumber(a[4])
         }
     });
 
+    const balances: Balance[] = await Moralis.Web3API.account.getTokenBalances({
+        address,
+        chain
+    });
+
     // console.log(assets);
 
-    return { poolTokens, assets };
+    return { poolTokens, assets, balances };
 };
 
 export default Moralis;
