@@ -1,13 +1,11 @@
 import Moralis from "moralis/node";
-import { LoaderFunction } from "remix";
 
 import { abi as poolAbi } from "../../artifacts/contracts/Pool.sol/Pool.json";
 
 const serverUrl = "https://sf5h683tvf93.usemoralis.com:2053/server";
 const appId = "2Q2fAUPZO5WIzeDn2VPGRVKfKStzMaTZj7h998eA";
 const masterKey = "8v8AJX9Tanzb2sYiwTG8tlc55AeRwb9LSLSjg0Ej"
-const address = "0xDC1062712Dd033874d1d915adA2cFecDe1575c71";
-const contractAddress = "0x83B141645dD821650b496b01729B98fc7D5e5c3F"
+const contractAddress = "0x83B141645dD821650b496b01729B98fc7D5e5c3F".toLowerCase();
 const chain = "ropsten";
 
 export const serverInfo = { serverUrl, appId, masterKey };
@@ -42,25 +40,15 @@ const decimalNumber = (decimal: string) => {
     return parseInt(decimal) / 1e18;
 };
 
-export const fetchTokenBalances: LoaderFunction = async () => {
-    console.log("Fetching balances");
+export const getTokenBalances = async (address: string) => {
     const balances: Balance[] = await Moralis.Web3API.account.getTokenBalances({
-        address,
+        address: address.toLowerCase(),
         chain
     });
     return balances;
-};
+}
 
-export const fetchPool: LoaderFunction = async () => {
-
-    // console.log("Subscribing to assets");
-
-    // const query = new Moralis.Query("Asset");
-    // const subscription = await query.subscribe();
-
-    // subscription.on("open", () => {
-    //     console.log("Asset subscription connection established");
-    // });
+export const getPool = async (address: string | undefined) => {
 
     const poolTokens: number = decimalNumber(await Moralis.Web3API.native.runContractFunction({
         chain,
@@ -78,6 +66,12 @@ export const fetchPool: LoaderFunction = async () => {
     //     function_name: "scale",
     //     abi: poolAbi
     // }));
+
+    // if (address === undefined) {
+    //     const assets: Asset[] = [];
+    //     const balances: Balance[] = [];
+    //     return { contractAddress, address, poolTokens, assets, balances}
+    // }
 
     const arrays: any[] = await Moralis.Web3API.native.runContractFunction({
         chain,
@@ -99,19 +93,20 @@ export const fetchPool: LoaderFunction = async () => {
             symbol: metadata[i].symbol,
             reserve: decimalNumber(a[1]),
             fee: decimalNumber(a[2]),
-            weight: 1/addresses.length, // decimalNumber(a[3]),
+            weight: 1 / addresses.length,
             k: decimalNumber(a[4])
         }
     });
 
-    const balances: Balance[] = await Moralis.Web3API.account.getTokenBalances({
+    const balances: Balance[] = address === undefined ? [] : await Moralis.Web3API.account.getTokenBalances({
         address,
         chain
     });
 
     // console.log(assets);
+    // console.log(poolTokens);
 
-    return { poolTokens, assets, balances };
+    return { contractAddress, address, poolTokens, assets, balances };
 };
 
 export default Moralis;

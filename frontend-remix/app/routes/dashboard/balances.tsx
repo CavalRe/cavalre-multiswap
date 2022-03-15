@@ -7,12 +7,12 @@ import {
     Title
 } from '@mantine/core';
 
-import { fetchTokenBalances } from "~/moralis.server";
+// import { fetchTokenBalances } from "~/moralis.server";
 import type { Balance } from "~/moralis.server";
 
 import { RequireAuth } from "~/components/Dashboard";
 
-export const loader: LoaderFunction = fetchTokenBalances;
+// export const loader: LoaderFunction = fetchTokenBalances;
 
 const Balances = () => {
     const balances = useLoaderData<Balance[]>();

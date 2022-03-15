@@ -5,16 +5,17 @@ import DashboardComponent from "~/components/Dashboard";
 
 import { getPool } from "~/moralis.server";
 
-export const loader: LoaderFunction = async () => {
-    const pathname = "/dashboard";
-    const pool = await getPool(undefined);
+export const loader: LoaderFunction = async ({ params, request }) => {
+    const url = new URL(request.url);
+    const pathname = url.pathname;
+    const pool = await getPool(params.address);
     return { ...pool, pathname };
 };
 
 const Dashboard = () => {
     const pool = useLoaderData();
     // console.log("-----------------------------------");
-    // console.log("/dashboard called loader");
+    // console.log("Address called loader");
     const { contractAddress, address, poolTokens, assets, balances, pathname } = pool;
 
     return (
