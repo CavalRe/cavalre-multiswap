@@ -30,21 +30,26 @@ export type Balance = {
     token_address: string;
     name: string;
     symbol: string;
-    logo?: string | undefined;
-    thumbnail?: string | undefined;
-    decimals: string;
-    balance: string;
+    balance: number;
 };
 
-const decimalNumber = (decimal: string) => {
-    return parseInt(decimal) / 1e18;
+const decimalNumber = (value: string, decimals: string="18") => {
+    return parseInt(value) / (10 ** parseInt(decimals));
 };
 
 export const getTokenBalances = async (address: string) => {
-    const balances: Balance[] = await Moralis.Web3API.account.getTokenBalances({
+    const bs: any[] = await Moralis.Web3API.account.getTokenBalances({
         address: address.toLowerCase(),
         chain
     });
+    const balances: Balance[] = bs.map(b => {
+        return {
+            token_address: b.token_address,
+            name: b.name,
+            symbol: b.symbol,
+            balance: decimalNumber(b.balance,b.decimals)
+        };
+    })
     return balances;
 }
 
@@ -98,10 +103,18 @@ export const getPool = async (address: string | undefined) => {
         }
     });
 
-    const balances: Balance[] = address === undefined ? [] : await Moralis.Web3API.account.getTokenBalances({
+    const bs: any[] = address === undefined ? [] : await Moralis.Web3API.account.getTokenBalances({
         address,
         chain
     });
+    const balances: Balance[] = bs.map(b => {
+        return {
+            token_address: b.token_address,
+            name: b.name,
+            symbol: b.symbol,
+            balance: decimalNumber(b.balance,b.decimals)
+        };
+    })
 
     // console.log(assets);
     // console.log(poolTokens);

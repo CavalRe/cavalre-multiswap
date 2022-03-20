@@ -13,10 +13,14 @@ export const loader: LoaderFunction = async ({ params, request }) => {
 };
 
 const Dashboard = () => {
-    const pool = useLoaderData();
-    // console.log("-----------------------------------");
-    // console.log("Address called loader");
-    const { contractAddress, address, poolTokens, assets, balances, pathname } = pool;
+    const {
+        contractAddress,
+        address,
+        poolTokens,
+        assets,
+        balances,
+        pathname
+    } = useLoaderData();
 
     return (
         <DashboardComponent
@@ -27,7 +31,7 @@ const Dashboard = () => {
             balances={balances}
             pathname={pathname}
         />
-    )
-}
+    );
+};
 
 export default Dashboard;

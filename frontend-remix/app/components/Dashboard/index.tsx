@@ -2,17 +2,22 @@ import { useEffect, useState } from "react";
 import { useMoralis } from "react-moralis";
 import { useNavigate } from "remix";
 import {
+    Button,
     Card,
     Container,
     Group,
+    Modal,
     NativeSelect,
     SimpleGrid,
     Table,
     Text,
     Title
 } from '@mantine/core';
+import type { MantineSize } from "@mantine/core";
 
 import type { Asset, Balance } from "~/moralis.server";
+
+import { Swap } from "~/components/Dashboard";
 
 type Dict<T> = {
     [key: string]: T
@@ -27,6 +32,7 @@ type Numeraire = {
 export { default as Header } from "~/components/Dashboard/Header";
 export { default as NavBar } from "~/components/Dashboard/NavBar";
 export { default as RequireAuth } from "~/components/Dashboard/RequireAuth";
+export { default as Swap } from "~/components/Dashboard/Swap";
 
 type DashboardProps = {
     contractAddress: string,
@@ -47,6 +53,8 @@ const Dashboard = (props: DashboardProps) => {
     } = useMoralis();
     const { contractAddress, address, poolTokens, assets, balances, pathname } = props;
 
+    const [opened, setOpened] = useState<boolean>(true);
+
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -54,26 +62,8 @@ const Dashboard = (props: DashboardProps) => {
 
         const newPathname = isAuthenticated ? account ? `/dashboard/${account}` : pathname : "/dashboard";
 
-        // console.log("-----------------------------------");
-        // console.log(`isInitialized: ${isInitialized}`);
-        // console.log(`isAuthenticated: ${isAuthenticated}`);
-        // console.log(`account: ${account}`);
-        // console.log(`pathname: ${pathname}`);
-        // console.log(`newPathname: ${newPathname}`);
-        // console.log(`isWeb3Enabled: ${isWeb3Enabled}`);
-
-        if (isInitialized && newPathname !== pathname) {
-            // console.log("-----------------------------------");
-            // console.log("Navigating");
-            navigate(newPathname);
-        }
-
-        // if (isAuthenticated) {
-        //     if (isWeb3Enabled && newPathname !== pathname) navigate(newPathname);
-        // } else {
-        //     if (!isAuthenticating && !account && newPathname !== "/dashboard") navigate("/dashboard");
-        // };
-    },[isInitialized,isAuthenticated,account])
+        if (isInitialized && newPathname !== pathname) navigate(newPathname);
+    }, [isInitialized, isAuthenticated, account])
 
     const assetMap: Dict<Asset> = {};
     assets?.forEach((a: Asset) => { assetMap[a.token_address] = a });
@@ -109,53 +99,71 @@ const Dashboard = (props: DashboardProps) => {
         maximumFractionDigits: 2
     };
 
+    const cellTextSize: MantineSize = "md";
+    const headerTextSize: MantineSize = "lg";
+    const subTextSize: MantineSize = "sm";
     const rows = assets?.map((a: Asset, i: number) => (
         <tr key={a.token_address}>
             {/* <td>{i + 1}</td> */}
-            <td><span><Text size="md" color="bold" component="span">{`${a.name}`}</Text><Text size="xs" color="dimmed" component="span">{` (${a.symbol})`}</Text></span></td>
-            {address ? <td align="right">{(balance(a.token_address) / numeraire.price).toLocaleString(undefined, numberOptions)}</td> : null}
-            <td align="right">{(price(a.token_address) / numeraire.price).toLocaleString(undefined, numberOptions)}</td>
+            <td><span><Text size={cellTextSize} color="bold" component="span">{`${a.name}`}</Text><Text size="xs" color="dimmed" component="span">{` (${a.symbol})`}</Text></span></td>
+            {address ? <td align="right"><Text size={cellTextSize}>{(balance(a.token_address) / numeraire.price).toLocaleString(undefined, numberOptions)}</Text></td> : null}
+            <td align="right"><Text size={cellTextSize}>{(price(a.token_address) / numeraire.price).toLocaleString(undefined, numberOptions)}</Text></td>
             {/* <td align="right">{`${100 / (assets.length)}%`}</td> */}
-            <td align="right">{(a.reserve / numeraire.price).toLocaleString(undefined, numberOptions)}</td>
-            <td align="right">{(10000 * a.fee).toLocaleString()}</td>
-            <td align="right">{a.k.toLocaleString()}</td>
+            <td align="right"><Text size={cellTextSize}>{(a.reserve / numeraire.price).toLocaleString(undefined, numberOptions)}</Text></td>
+            <td align="right"><Text size={cellTextSize}>{(10000 * a.fee).toLocaleString()}</Text></td>
+            <td align="right"><Text size={cellTextSize}>{a.k.toLocaleString()}</Text></td>
         </tr>
     ));
 
     return (
         <Container>
             <Title>Liquidity Pool</Title>
+            {isAuthenticated ?
+                (<>
+                    <Button onClick={() => setOpened(true)} mt="xl">Swap</Button>
+                    <Modal
+                        size="xl"
+                        opened={opened}
+                        onClose={() => setOpened(false)}
+                        radius="lg"
+                        title={<Title align="center" order={3}>Mulit-Asset Swap</Title>}
+                    >
+                        <Swap assets={assets} balances={balances}/>
+                    </Modal>
+                </>) : null}
             <Card withBorder p="xl" radius="md" mt="lg">
                 <Title order={3}>Pool Tokens</Title>
                 <SimpleGrid cols={address ? 4 : 3}>
                     {address ?
                         (<div>
                             <Text size="xl" mt="md">{(poolBalance / numeraire.price).toLocaleString() + " " + numeraire.symbol}</Text>
-                            <Text size="sm" color="dimmed">Balance</Text>
+                            <Text size={subTextSize} color="dimmed">Balance</Text>
                         </div>) : null}
                     <div>
                         <Text size="xl" mt="md">{(poolTokens / numeraire.price).toLocaleString() + " " + numeraire.symbol}</Text>
-                        <Text size="sm" color="dimmed">TVL</Text>
+                        <Text size={subTextSize} color="dimmed">TVL</Text>
                     </div>
                     <div>
                         <Text size="xl" mt="md">{poolTokens?.toLocaleString()}</Text>
-                        <Text size="sm" color="dimmed">Outstanding</Text>
+                        <Text size={subTextSize} color="dimmed">Outstanding</Text>
                     </div>
-                    <NativeSelect
-                        mt="md"
-                        value={`${numeraire.name} (${numeraire.symbol})`}
-                        onChange={(event) => handleNumeraire(event.currentTarget.value)}
-                        data={numeraires.map(n => `${n.name} (${n.symbol})`)}
-                        description="Select numeraire"
-                        // label="Select numeraire"
-                        required
-                    />
+                    <div>
+                        <NativeSelect
+                            mt="md"
+                            value={`${numeraire.name} (${numeraire.symbol})`}
+                            onChange={(event) => handleNumeraire(event.currentTarget.value)}
+                            data={numeraires.map(n => `${n.name} (${n.symbol})`)}
+                            description="Select numeraire"
+                            // label="Select numeraire"
+                            required
+                        />
+                    </div>
                 </SimpleGrid>
             </Card>
             <Card withBorder p="xl" radius="md" mt="lg">
                 <Title order={3}>Asset Tokens</Title>
                 <Text size="xl" mt="md">{assets?.length.toLocaleString()}</Text>
-                <Text size="sm" color="dimmed">Number of assets</Text>
+                <Text size={subTextSize} color="dimmed">Number of assets</Text>
                 <Group mt="lg">
                     <Table
                         verticalSpacing="sm"
@@ -165,14 +173,14 @@ const Dashboard = (props: DashboardProps) => {
                         <thead>
                             <tr>
                                 {/* <th>#</th> */}
-                                <th><Text size="md" color="dimmed">Name</Text></th>
+                                <th><Text size={headerTextSize}>Name</Text></th>
                                 {address ?
-                                    <th><Text size="md" color="dimmed">Balance ({numeraire.symbol})</Text></th> : null}
-                                <th><Text size="md" color="dimmed">Price ({numeraire.symbol})</Text></th>
-                                {/* <th><Text size="md" color="dimmed">Weight</Text></th> */}
-                                <th><Text size="md" color="dimmed">Reserves ({numeraire.symbol})</Text></th>
-                                <th><Text size="md" color="dimmed">Fee (bps)</Text></th>
-                                <th><Text size="md" color="dimmed">Tuning (k)</Text></th>
+                                    <th><Text size={headerTextSize}>Balance ({numeraire.symbol})</Text></th> : null}
+                                <th><Text size={headerTextSize}>Price ({numeraire.symbol})</Text></th>
+                                {/* <th><Text size={headerTextSize}>Weight</Text></th> */}
+                                <th><Text size={headerTextSize}>Reserves ({numeraire.symbol})</Text></th>
+                                <th><Text size={headerTextSize}>Fee (bps)</Text></th>
+                                <th><Text size={headerTextSize}>Tuning (k)</Text></th>
                             </tr>
                         </thead>
                         <tbody>{rows}</tbody>
