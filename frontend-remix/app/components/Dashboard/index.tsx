@@ -15,7 +15,7 @@ import {
 } from '@mantine/core';
 import type { MantineSize } from "@mantine/core";
 
-import type { Asset, Balance } from "~/moralis.server";
+import type { Token } from "~/moralis.server";
 
 import { Swap } from "~/components/Dashboard";
 
@@ -38,8 +38,7 @@ type DashboardProps = {
     contractAddress: string,
     address: string,
     poolTokens: number,
-    assets: Asset[],
-    balances: Balance[],
+    assetTokens: Dict<Token>,
     pathname: string
 };
 
@@ -51,7 +50,10 @@ const Dashboard = (props: DashboardProps) => {
         isWeb3Enabled,
         enableWeb3
     } = useMoralis();
-    const { contractAddress, address, poolTokens, assets, balances, pathname } = props;
+    const { contractAddress, address, poolTokens, assetTokens, pathname } = props;
+
+    // console.log(assets);
+    // console.log(balances);
 
     const [opened, setOpened] = useState<boolean>(true);
 
@@ -65,28 +67,23 @@ const Dashboard = (props: DashboardProps) => {
         if (isInitialized && newPathname !== pathname) navigate(newPathname);
     }, [isInitialized, isAuthenticated, account])
 
-    const assetMap: Dict<Asset> = {};
-    assets?.forEach((a: Asset) => { assetMap[a.token_address] = a });
-
-    const balanceMap: Dict<Balance> = {};
-    balances?.forEach((b: Balance) => { balanceMap[b.token_address] = b });
-
     const poolToken = { name: "Pool Token", symbol: "P", price: 1 }
     const [numeraire, setNumeraire] = useState<Numeraire>(poolToken);
 
-    const poolBalance = balanceMap[contractAddress] ? parseInt(balanceMap[contractAddress].balance) / 1e18 : 0;
+    const poolBalance = assetTokens[contractAddress] ? assetTokens[contractAddress].balance : 0;
 
     const price = (address: string) => {
-        const asset: Asset = assetMap[address];
+        const lowerAddress = address.toLowerCase();
+        const asset: Token = assetTokens[lowerAddress];
         return poolTokens * asset.weight / asset.reserve;
     };
 
     const balance = (address: string) => {
         const lowerAddress = address.toLowerCase();
-        return balanceMap[lowerAddress] ? parseInt(balanceMap[lowerAddress].balance) / 1e18 : 0;
+        return assetTokens[lowerAddress] ? assetTokens[lowerAddress].balance : 0;
     };
 
-    const numeraires = [poolToken, ...assets?.map((a: Asset) => ({ name: a.name, symbol: a.symbol, price: price(a.token_address) }))];
+    const numeraires = [poolToken, ...Object.values(assetTokens)?.map((a: Token) => ({ name: a.name, symbol: a.symbol, price: price(a.token_address) }))];
     const numeraireMap: Dict<Numeraire> = {};
     numeraires.forEach((n: Numeraire) => { numeraireMap[`${n.name} (${n.symbol})`] = n; });
 
@@ -102,7 +99,7 @@ const Dashboard = (props: DashboardProps) => {
     const cellTextSize: MantineSize = "md";
     const headerTextSize: MantineSize = "lg";
     const subTextSize: MantineSize = "sm";
-    const rows = assets?.map((a: Asset, i: number) => (
+    const rows = Object.values(assetTokens)?.filter((a: Token) => a.reserve > 0).map((a: Token, i: number) => (
         <tr key={a.token_address}>
             {/* <td>{i + 1}</td> */}
             <td><span><Text size={cellTextSize} color="bold" component="span">{`${a.name}`}</Text><Text size="xs" color="dimmed" component="span">{` (${a.symbol})`}</Text></span></td>
@@ -122,13 +119,13 @@ const Dashboard = (props: DashboardProps) => {
                 (<>
                     <Button onClick={() => setOpened(true)} mt="xl">Swap</Button>
                     <Modal
-                        size="xl"
+                        size="800px"
                         opened={opened}
                         onClose={() => setOpened(false)}
                         radius="lg"
                         title={<Title align="center" order={3}>Mulit-Asset Swap</Title>}
                     >
-                        <Swap assets={assets} balances={balances}/>
+                        <Swap poolTokens={poolTokens} assetTokens={assetTokens}/>
                     </Modal>
                 </>) : null}
             <Card withBorder p="xl" radius="md" mt="lg">
@@ -162,7 +159,7 @@ const Dashboard = (props: DashboardProps) => {
             </Card>
             <Card withBorder p="xl" radius="md" mt="lg">
                 <Title order={3}>Asset Tokens</Title>
-                <Text size="xl" mt="md">{assets?.length.toLocaleString()}</Text>
+                <Text size="xl" mt="md">{Object.values(assetTokens)?.length.toLocaleString()}</Text>
                 <Text size={subTextSize} color="dimmed">Number of assets</Text>
                 <Group mt="lg">
                     <Table

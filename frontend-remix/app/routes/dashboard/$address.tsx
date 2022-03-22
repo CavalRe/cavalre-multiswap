@@ -17,8 +17,7 @@ const Dashboard = () => {
         contractAddress,
         address,
         poolTokens,
-        assets,
-        balances,
+        assetTokens,
         pathname
     } = useLoaderData();
 
@@ -27,8 +26,7 @@ const Dashboard = () => {
             contractAddress={contractAddress}
             address={address}
             poolTokens={poolTokens}
-            assets={assets}
-            balances={balances}
+            assetTokens={assetTokens}
             pathname={pathname}
         />
     );

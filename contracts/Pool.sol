@@ -11,6 +11,8 @@ contract Pool is ReentrancyGuard, ERC20 {
     using SafeERC20 for IERC20;
     using DMath for uint256;
 
+    uint256 private _isInitialized;
+
     // The `address` here is the address of the respective external asset token contract.
     mapping(address => uint256) private _index;
     Asset[] private _assets;
@@ -28,7 +30,11 @@ contract Pool is ReentrancyGuard, ERC20 {
         uint256 k; // AMM parameter for this asset token
     }
 
-    constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) {
+        _isInitialized = 0;
+    }
+
+    error AlreadyInitialized();
 
     function initialize(
         uint256 poolSupply,
@@ -37,7 +43,10 @@ contract Pool is ReentrancyGuard, ERC20 {
         uint256[] memory fees,
         uint256[] memory weights,
         uint256[] memory ks
-    ) public {
+    ) public nonReentrant {
+        if (_isInitialized == 1) revert AlreadyInitialized();
+
+        _isInitialized = 1;
         _scale = poolSupply;
         _mint(_msgSender(), poolSupply);
         uint256 checkWeight;
