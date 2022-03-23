@@ -1,7 +1,8 @@
 import { useState } from "react";
 import {
     Button,
-    SimpleGrid
+    SimpleGrid,
+    Text
 } from "@mantine/core";
 
 import type { Token } from "~/moralis.server";
@@ -22,35 +23,29 @@ type SwapProps = {
 
 const Swap = (props: SwapProps) => {
     const { contractAddress, poolTokens, assetTokens } = props;
-    const [selectedPayTokens, setSelectedPayTokens] = useState<string[]>(
+    const [selectedPayTokens, setSelectedPayTokens] = useState<Token[]>(
         Object.values(
             assetTokens
         ).filter(
             (t: Token) => t.isPay
-        ).map((t: Token) => t.token_address)
+        )//.map((t: Token) => t.token_address)
     );
-    const [selectedReceiveTokens, setSelectedReceiveTokens] = useState<string[]>(
+    const [selectedReceiveTokens, setSelectedReceiveTokens] = useState<Token[]>(
         Object.values(
             assetTokens
         ).filter(
             (t: Token) => t.isReceive
-        ).map((t: Token) => t.token_address)
+        )//.map((t: Token) => t.token_address)
     );
-    // const [totalAllocation, setTotalAllocation] = useState(0);
+    const [totalAllocation, setTotalAllocation] = useState(0);
 
-    // const handleSelectedReceiveTokens = (v: string[]) => {
-    //     console.log("Handling selected receive tokens");
-    //     setSelectedReceiveTokens(v);
-    //     setTotalAllocation(
-    //         Object.values(
-    //             assetTokens
-    //         ).map(
-    //             (a: Token) => a.allocation
-    //         ).reduce((p, c) => p + c)
-    //     );
-    // }
-
-
+    const handleAllocationChange = () => {
+        setTotalAllocation(
+            selectedReceiveTokens.map(
+                (token: Token) => token.allocation
+            ).reduce((p: number, c: number) => p + c, 0)
+        );
+    };
 
     const getPreTradePrice = (token: Token) => {
         return token.weight * poolTokens / token.reserve;
@@ -60,12 +55,11 @@ const Swap = (props: SwapProps) => {
         return token.weight * newPoolTokens / (token.reserve + token.amount);
     };
 
-    const getAssetAmountIn = (tokens: string[], newPoolTokens: number) => {
+    const getAssetAmountIn = (tokens: Token[], newPoolTokens: number) => {
         return tokens.filter(
-            (address: string) => address !== contractAddress
+            (token: Token) => token.token_address !== contractAddress
         ).map(
-            (address: string) => {
-                const token = assetTokens[address];
+            (token: Token) => {
                 return token.amount * getPostTradePrice(token, newPoolTokens);
             }
         ).reduce(
@@ -75,13 +69,13 @@ const Swap = (props: SwapProps) => {
 
     const getQuotes = () => {
         const poolToken: Token = assetTokens[contractAddress];
-        
+
         let newPoolTokens: number = poolTokens + poolToken.amount;
 
         let assetAmountIn: number = getAssetAmountIn(selectedPayTokens, newPoolTokens);
 
         let totalAmountIn: number = assetAmountIn - poolToken.amount;
- 
+
         if (poolToken.allocation !== 0) {
             const factor: number = (1 - poolToken.fee) *
                 poolToken.allocation -
@@ -97,12 +91,11 @@ const Swap = (props: SwapProps) => {
         };
 
         return selectedReceiveTokens.map(
-            (address: string) => {
-                const token = assetTokens[address];
+            (token: Token) => {
                 const allocation = token.allocation / 100;
-                const factor = (1-token.fee)*allocation*totalAmountIn/(token.weight * newPoolTokens);
+                const factor = (1 - token.fee) * allocation * totalAmountIn / (token.weight * newPoolTokens);
                 console.log(`factor: ${factor}`);
-                const amountOut = factor*token.reserve/(1+factor);
+                const amountOut = factor * token.reserve / (1 + factor);
                 token.amount = -amountOut;
                 const preTradePrice = getPreTradePrice(token);
                 const postTradePrice = getPostTradePrice(token, newPoolTokens);
@@ -140,15 +133,12 @@ const Swap = (props: SwapProps) => {
                     tokenComponent={ReceiveComponent}
                     selectedTokens={selectedReceiveTokens}
                     setSelectedTokens={setSelectedReceiveTokens}
+                    onNumberChange={handleAllocationChange}
                     isPay={false}
                     placeholder="Select tokens to withdraw:"
                 />
             </SimpleGrid>
-            {/* <Text>{`Total allocation: ${totalAllocation}`}</Text> */}
-            {/* {totalAllocation !== 100 ?
-                <Alert title="Bummer!" color="red" withCloseButton variant="outline" mt="xl">
-                    Something terrible happened! You made a mistake and there is no going back, your data was lost forever!
-                </Alert> : null} */}
+            <Text>{`Total allocation: ${totalAllocation}%`}</Text>
             <Button
                 onClick={handleSwap}
                 mt="xl"

@@ -9,10 +9,11 @@ import {
 import type { TokenComponentProps } from "../TokenSelect";
 
 const ReceiveComponent: FC<TokenComponentProps> = (props: TokenComponentProps) => {
-    const { token, assetTokens } = props;
+    const { token, assetTokens, onNumberChange } = props;
 
     const handleAllocationChange = (allocation: number) => {
         assetTokens[token.token_address].allocation = allocation;
+        onNumberChange && onNumberChange()
     };
 
     return (

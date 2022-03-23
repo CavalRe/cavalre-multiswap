@@ -17,14 +17,15 @@ type Dict<T> = {
 export type TokenComponentProps = {
     token: Token
     assetTokens: Dict<Token>
+    onNumberChange?: Function
 };
 
 type TokenSelectProps = {
     title: string
     assetTokens: Dict<Token>
     tokenComponent: FC<TokenComponentProps>
-    selectedTokens: string[]
-    setSelectedTokens: React.Dispatch<SetStateAction<string[]>>
+    selectedTokens: Token[]
+    setSelectedTokens: React.Dispatch<SetStateAction<Token[]>>
     onNumberChange?: Function
     isPay: boolean
     placeholder: string
@@ -37,6 +38,7 @@ const TokenSelect = (props: TokenSelectProps) => {
         tokenComponent,
         selectedTokens,
         setSelectedTokens,
+        onNumberChange,
         isPay,
         placeholder
     } = props;
@@ -68,7 +70,9 @@ const TokenSelect = (props: TokenSelectProps) => {
                 };
             };
         });
-        setSelectedTokens(v);
+        setSelectedTokens(v.map(
+            (address: string) => assetTokens[address]
+        ));
     });
 
     return (
@@ -79,7 +83,12 @@ const TokenSelect = (props: TokenSelectProps) => {
                     .filter((token: Token) => isPay ? token.isPay : token.isReceive)
                     .map((token: Token, i: number) => {
                         return (
-                            <TokenComponent token={token} assetTokens={assetTokens} key={i} />
+                            <TokenComponent
+                                token={token}
+                                assetTokens={assetTokens}
+                                onNumberChange={onNumberChange}
+                                key={token.token_address}
+                            />
                         )
                     })
             }
@@ -89,7 +98,7 @@ const TokenSelect = (props: TokenSelectProps) => {
                 // label="Select tokens to deposit:"
                 itemComponent={TokenItem}
                 // valueComponent={() => null}
-                value={selectedTokens}
+                value={selectedTokens.map((token: Token) => token.token_address)}
                 onChange={handleSelect}
                 mt="xs"
                 size="md"
