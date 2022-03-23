@@ -1,39 +1,17 @@
-import { FC, forwardRef, useEffect, useState } from "react";
+import { useState } from "react";
 import {
-    Alert,
     Button,
-    Card,
-    Group,
-    MultiSelect,
-    NumberInput,
-    Paper,
-    SelectItem,
-    SimpleGrid,
-    Text,
-    Title,
+    SimpleGrid
 } from "@mantine/core";
 
 import type { Token } from "~/moralis.server";
 
+import PayComponent from "./PayComponent";
+import ReceiveComponent from "./ReceiveComponent";
+import TokenSelect from "./TokenSelect";
+
 type Dict<T> = {
     [key: string]: T
-};
-
-type TokenItemProps = {
-    label: string,
-    value: string,
-    token: Token
-};
-
-type TokenComponentProps = {
-    token: Token
-};
-
-type TokenSelectProps = {
-    title: string,
-    tokenComponent: FC<TokenComponentProps>
-    isPay: boolean,
-    placeholder: string
 };
 
 type SwapProps = {
@@ -42,142 +20,37 @@ type SwapProps = {
     assetTokens: Dict<Token>
 };
 
-type SelectedState = {
-    payTokensSelected: string[],
-    receiveTokensSelected: string[]
-};
-
 const Swap = (props: SwapProps) => {
     const { contractAddress, poolTokens, assetTokens } = props;
-    const [selectedState, setSelectedState] = useState<SelectedState>(
-        {
-            payTokensSelected: [],
-            receiveTokensSelected: []
-        }
-    );
-    const [totalAllocation, setTotalAllocation] = useState(0);
-
-    const TokenSelect = (props: TokenSelectProps) => {
-        const { title, tokenComponent, isPay, placeholder } = props;
-
-        const TokenComponent: FC<TokenComponentProps> = tokenComponent;
-
-        const items: SelectItem[] = Object.values(
+    const [selectedPayTokens, setSelectedPayTokens] = useState<string[]>(
+        Object.values(
             assetTokens
         ).filter(
-            (t: Token) => isPay ? !t.isReceive : !t.isPay
-        ).map((t: Token) => {
-            return {
-                label: `${t.name} (${t.symbol})`,
-                value: t.token_address,
-                token: t
-            }
-        });
+            (t: Token) => t.isPay
+        ).map((t: Token) => t.token_address)
+    );
+    const [selectedReceiveTokens, setSelectedReceiveTokens] = useState<string[]>(
+        Object.values(
+            assetTokens
+        ).filter(
+            (t: Token) => t.isReceive
+        ).map((t: Token) => t.token_address)
+    );
+    // const [totalAllocation, setTotalAllocation] = useState(0);
 
-        const handleSelect = ((v: string[]) => {
-            let copiedSelectedState = { ...selectedState };
-            Object.values(assetTokens).forEach((a: Token) => {
-                if (v.includes(a.token_address)) {
-                    a.isPay = isPay;
-                    a.isReceive = !isPay;
-                } else {
-                    if (isPay) {
-                        a.isPay = !isPay;
-                    } else {
-                        a.isReceive = isPay;
-                    };
-                };
-            });
-            if (isPay) {
-                copiedSelectedState.payTokensSelected = v;
-            } else {
-                copiedSelectedState.receiveTokensSelected = v;
-            }
-            setSelectedState(copiedSelectedState);
-        });
+    // const handleSelectedReceiveTokens = (v: string[]) => {
+    //     console.log("Handling selected receive tokens");
+    //     setSelectedReceiveTokens(v);
+    //     setTotalAllocation(
+    //         Object.values(
+    //             assetTokens
+    //         ).map(
+    //             (a: Token) => a.allocation
+    //         ).reduce((p, c) => p + c)
+    //     );
+    // }
 
-        const TokenItem = forwardRef<HTMLDivElement, TokenItemProps>(
-            ({ label, value, token, ...others }: TokenItemProps, ref) => {
-                return (
-                    <div ref={ref} style={{ width: "100%" }} {...others}>
-                        <span>
-                            <Text size="md" color="bold" component="span">
-                                {`${token.name}`}
-                            </Text>
-                            <Text size="xs" color="dimmed" component="span">
-                                {` (${token.symbol})`}
-                            </Text>
-                        </span>
-                    </div>
-                );
-            }
-        );
 
-        return (
-            <Paper withBorder p="xl" radius="md" mt="lg">
-                <Title order={4} align="center">{title}</Title>
-                {
-                    Object.values(assetTokens)
-                        .filter((token: Token) => isPay ? token.isPay : token.isReceive)
-                        .map((token: Token, i: number) => {
-                            return (
-                                <TokenComponent token={token} key={i} />
-                            )
-                        })
-                }
-                {/* <Text color="dimmed" mt="lg">Select tokens to deposit:</Text> */}
-                <MultiSelect
-                    data={items}
-                    // label="Select tokens to deposit:"
-                    itemComponent={TokenItem}
-                    // valueComponent={() => null}
-                    value={isPay ? selectedState.payTokensSelected : selectedState.receiveTokensSelected}
-                    onChange={handleSelect}
-                    mt="xs"
-                    size="md"
-                    placeholder={placeholder}
-                    searchable
-                    nothingFound="Nothing found"
-                    clearable
-                    clearButtonLabel="Clear selected tokens"
-                />
-            </Paper >
-        );
-    };
-
-    const payerComponent: FC<TokenComponentProps> = (props: TokenComponentProps) => {
-        const { token } = props;
-
-        const handleAmountChange = (amount: number) => {
-            assetTokens[token.token_address].amount = amount;
-        }
-        return (
-            <Card radius="md" mt="xs">
-                <NumberInput
-                    // variant="unstyled"
-                    defaultValue={0.0}
-                    precision={2}
-                    size="lg"
-                    icon={<Text size="md">{token.symbol}</Text>}
-                    hideControls
-                    value={assetTokens[token.token_address].amount}
-                    onChange={(a: number) => handleAmountChange(a)}
-                    min={0}
-                // rightSection={<Text size="lg">{token.symbol}</Text>}
-                />
-                <Group mt="xs" position="left">
-                    <Text>Balance:</Text>
-                    <Text>{token.balance.toLocaleString()}</Text>
-                    <Text>{token.symbol}</Text>
-                </Group>
-                <Group mt="xs" position="left">
-                    <Text>Pool Reserve:</Text>
-                    <Text>{token.reserve.toLocaleString()}</Text>
-                    <Text>{token.symbol}</Text>
-                </Group>
-            </Card>
-        );
-    };
 
     const getPreTradePrice = (token: Token) => {
         return token.weight * poolTokens / token.reserve;
@@ -201,31 +74,29 @@ const Swap = (props: SwapProps) => {
     };
 
     const getQuotes = () => {
-        const { payTokensSelected, receiveTokensSelected } = selectedState;
-
         const poolToken: Token = assetTokens[contractAddress];
         
         let newPoolTokens: number = poolTokens + poolToken.amount;
 
-        let assetAmountIn: number = getAssetAmountIn(payTokensSelected, newPoolTokens);
+        let assetAmountIn: number = getAssetAmountIn(selectedPayTokens, newPoolTokens);
 
         let totalAmountIn: number = assetAmountIn - poolToken.amount;
  
         if (poolToken.allocation !== 0) {
             const factor: number = (1 - poolToken.fee) *
                 poolToken.allocation -
-                getAssetAmountIn(payTokensSelected, 1);
+                getAssetAmountIn(selectedPayTokens, 1);
 
             const poolTokensOut = totalAmountIn / factor;
 
             newPoolTokens -= poolTokensOut;
 
-            assetAmountIn = getAssetAmountIn(payTokensSelected, newPoolTokens);
+            assetAmountIn = getAssetAmountIn(selectedPayTokens, newPoolTokens);
 
             totalAmountIn = assetAmountIn + poolTokensOut;
         };
 
-        return receiveTokensSelected.map(
+        return selectedReceiveTokens.map(
             (address: string) => {
                 const token = assetTokens[address];
                 const allocation = token.allocation / 100;
@@ -246,102 +117,34 @@ const Swap = (props: SwapProps) => {
         );
     };
 
-    const receiverComponent: FC<TokenComponentProps> = (props: TokenComponentProps) => {
-        const { token } = props;
-
-        const handleAllocationChange = (allocation: number) => {
-            assetTokens[token.token_address].allocation = allocation;
-        };
-
-        return (
-            <Card radius="md" mt="xs">
-                <Text size="md" mt="sm" component="span" color="dimmed">
-                    {token.symbol}
-                </Text>
-                <Text size="lg" mt="sm" component="span" ml="md">
-                    0.00
-                </Text>
-                <Group mt="xs">
-                    <Text
-                        component="span"
-                        size="md"
-                        styles={{ width: "50%" }}
-                    >
-                        Allocation:
-                    </Text>
-                    <NumberInput
-                        // variant="filled"
-                        // width={"50%"}
-                        defaultValue={0}
-                        precision={2}
-                        size="md"
-                        // icon={<Text size="md">{token.symbol}</Text>}
-                        // hideControls
-                        value={assetTokens[token.token_address].allocation}
-                        onChange={(a: number) => handleAllocationChange(a)}
-                        rightSection={<>%</>}
-                        styles={{ root: { width: "50%" } }}
-                        min={0}
-                    />
-                </Group>
-                <Group mt="xs" position="left">
-                    <Text>Pool Reserve:</Text>
-                    <Text>{token.reserve.toLocaleString()}</Text>
-                    <Text>{token.symbol}</Text>
-                </Group>
-            </Card>
-        );
-    };
-
     const handleSwap = () => {
-        console.log(assetTokens);
         const quotes = getQuotes();
         console.log(quotes);
-        // const totalAllocation = Object.values(assetTokens)
-        //     .map((a: Token) => a.allocation)
-        //     .reduce((p, c) => p + c);
-        // setTotalAllocation(totalAllocation);
-        // console.log(totalAllocation);
-        // console.log(
-        //     Object.values(assetTokens)
-        //         .map((a: Token) => {
-        //             return {
-        //                 amount: a.amount,
-        //                 allocation: a.allocation
-        //             }
-        //         })
-        // );
     };
-
-    useEffect(() => {
-        const totalAllocation = Object.values(
-            assetTokens
-        ).map(
-            (a: Token) => a.allocation
-        ).reduce(
-            (p: number, c: number) => p + c
-        );
-        setTotalAllocation(totalAllocation);
-        console.log(totalAllocation);
-    }, []);
 
     return (
         <>
             <SimpleGrid cols={2}>
                 <TokenSelect
                     title="Pay Tokens"
-                    tokenComponent={payerComponent}
+                    assetTokens={assetTokens}
+                    tokenComponent={PayComponent}
+                    selectedTokens={selectedPayTokens}
+                    setSelectedTokens={setSelectedPayTokens}
                     isPay={true}
                     placeholder="Select tokens to deposit:"
                 />
                 <TokenSelect
                     title="Receive Tokens"
-                    tokenComponent={receiverComponent}
+                    assetTokens={assetTokens}
+                    tokenComponent={ReceiveComponent}
+                    selectedTokens={selectedReceiveTokens}
+                    setSelectedTokens={setSelectedReceiveTokens}
                     isPay={false}
                     placeholder="Select tokens to withdraw:"
                 />
             </SimpleGrid>
-            <Text>{`Total allocation: ${totalAllocation}`}</Text>
+            {/* <Text>{`Total allocation: ${totalAllocation}`}</Text> */}
             {/* {totalAllocation !== 100 ?
                 <Alert title="Bummer!" color="red" withCloseButton variant="outline" mt="xl">
                     Something terrible happened! You made a mistake and there is no going back, your data was lost forever!
