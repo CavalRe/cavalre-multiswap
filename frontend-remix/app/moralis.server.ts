@@ -100,7 +100,6 @@ export const getPool = async (address: string | undefined) => {
     const assetTokens: Dict<Token> = {};
 
     assetData.forEach((a: any, i: number) => {
-        console.log(`Creating ${a[0]}`);
         assetTokens[a[0].toLowerCase()] = {
             token_address: addresses[i],
             name: metadata[i].name,
@@ -124,10 +123,8 @@ export const getPool = async (address: string | undefined) => {
 
     balanceData.forEach((b: any) => {
         if (b.token_address in assetTokens) {
-            console.log(`Updating ${b.token_address}`);
             assetTokens[b.token_address].balance = decimalNumber(b.balance,b.decimals);
         } else {
-            console.log(`Adding ${b.token_address}`);
             assetTokens[b.token_address] = {
                 token_address: b.token_address,
                 name: b.name,

@@ -125,7 +125,11 @@ const Dashboard = (props: DashboardProps) => {
                         radius="lg"
                         title={<Title align="center" order={3}>Mulit-Asset Swap</Title>}
                     >
-                        <Swap poolTokens={poolTokens} assetTokens={assetTokens}/>
+                        <Swap
+                            contractAddress={contractAddress}
+                            poolTokens={poolTokens}
+                            assetTokens={assetTokens}
+                        />
                     </Modal>
                 </>) : null}
             <Card withBorder p="xl" radius="md" mt="lg">

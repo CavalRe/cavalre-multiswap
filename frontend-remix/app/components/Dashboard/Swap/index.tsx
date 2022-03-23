@@ -37,6 +37,7 @@ type TokenSelectProps = {
 };
 
 type SwapProps = {
+    contractAddress: string,
     poolTokens: number,
     assetTokens: Dict<Token>
 };
@@ -47,7 +48,7 @@ type SelectedState = {
 };
 
 const Swap = (props: SwapProps) => {
-    const { poolTokens, assetTokens } = props;
+    const { contractAddress, poolTokens, assetTokens } = props;
     const [selectedState, setSelectedState] = useState<SelectedState>(
         {
             payTokensSelected: [],
@@ -161,6 +162,7 @@ const Swap = (props: SwapProps) => {
                     hideControls
                     value={assetTokens[token.token_address].amount}
                     onChange={(a: number) => handleAmountChange(a)}
+                    min={0}
                 // rightSection={<Text size="lg">{token.symbol}</Text>}
                 />
                 <Group mt="xs" position="left">
@@ -177,21 +179,78 @@ const Swap = (props: SwapProps) => {
         );
     };
 
+    const getPreTradePrice = (token: Token) => {
+        return token.weight * poolTokens / token.reserve;
+    };
+
+    const getPostTradePrice = (token: Token, newPoolTokens: number) => {
+        return token.weight * newPoolTokens / (token.reserve + token.amount);
+    };
+
+    const getAssetAmountIn = (tokens: string[], newPoolTokens: number) => {
+        return tokens.filter(
+            (address: string) => address !== contractAddress
+        ).map(
+            (address: string) => {
+                const token = assetTokens[address];
+                return token.amount * getPostTradePrice(token, newPoolTokens);
+            }
+        ).reduce(
+            (p: number, c: number) => p + c
+        );
+    };
+
+    const getQuotes = () => {
+        const { payTokensSelected, receiveTokensSelected } = selectedState;
+
+        const poolToken: Token = assetTokens[contractAddress];
+        
+        let newPoolTokens: number = poolTokens + poolToken.amount;
+
+        let assetAmountIn: number = getAssetAmountIn(payTokensSelected, newPoolTokens);
+
+        let totalAmountIn: number = assetAmountIn - poolToken.amount;
+ 
+        if (poolToken.allocation !== 0) {
+            const factor: number = (1 - poolToken.fee) *
+                poolToken.allocation -
+                getAssetAmountIn(payTokensSelected, 1);
+
+            const poolTokensOut = totalAmountIn / factor;
+
+            newPoolTokens -= poolTokensOut;
+
+            assetAmountIn = getAssetAmountIn(payTokensSelected, newPoolTokens);
+
+            totalAmountIn = assetAmountIn + poolTokensOut;
+        };
+
+        return receiveTokensSelected.map(
+            (address: string) => {
+                const token = assetTokens[address];
+                const allocation = token.allocation / 100;
+                const factor = (1-token.fee)*allocation*totalAmountIn/(token.weight * newPoolTokens);
+                console.log(`factor: ${factor}`);
+                const amountOut = factor*token.reserve/(1+factor);
+                token.amount = -amountOut;
+                const preTradePrice = getPreTradePrice(token);
+                const postTradePrice = getPostTradePrice(token, newPoolTokens);
+
+                return {
+                    token,
+                    preTradePrice,
+                    postTradePrice,
+                    amountOut
+                }
+            }
+        );
+    };
+
     const receiverComponent: FC<TokenComponentProps> = (props: TokenComponentProps) => {
         const { token } = props;
 
         const handleAllocationChange = (allocation: number) => {
             assetTokens[token.token_address].allocation = allocation;
-            // setAllocation(allocation);
-            // setTotalAllocation(
-            //     Object.values(
-            //         assetTokens
-            //     ).map(
-            //         (a: Token) => a.allocation
-            //     ).reduce(
-            //         (p: number, c: number) => p + c
-            //     )
-            // );
         };
 
         return (
@@ -222,7 +281,13 @@ const Swap = (props: SwapProps) => {
                         onChange={(a: number) => handleAllocationChange(a)}
                         rightSection={<>%</>}
                         styles={{ root: { width: "50%" } }}
+                        min={0}
                     />
+                </Group>
+                <Group mt="xs" position="left">
+                    <Text>Pool Reserve:</Text>
+                    <Text>{token.reserve.toLocaleString()}</Text>
+                    <Text>{token.symbol}</Text>
                 </Group>
             </Card>
         );
@@ -230,6 +295,8 @@ const Swap = (props: SwapProps) => {
 
     const handleSwap = () => {
         console.log(assetTokens);
+        const quotes = getQuotes();
+        console.log(quotes);
         // const totalAllocation = Object.values(assetTokens)
         //     .map((a: Token) => a.allocation)
         //     .reduce((p, c) => p + c);
