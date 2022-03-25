@@ -15,7 +15,7 @@ import {
 } from '@mantine/core';
 import type { MantineSize } from "@mantine/core";
 
-import type { Token } from "~/moralis.server";
+import type { PoolToken, AssetToken } from "~/moralis.server";
 
 import { Swap } from "~/components/Dashboard";
 
@@ -35,10 +35,9 @@ export { default as RequireAuth } from "~/components/Dashboard/RequireAuth";
 export { default as Swap } from "~/components/Dashboard/Swap";
 
 type DashboardProps = {
-    contractAddress: string,
     address: string,
-    poolTokens: number,
-    assetTokens: Dict<Token>,
+    poolToken: PoolToken,
+    assetTokens: Dict<AssetToken>,
     pathname: string
 };
 
@@ -50,10 +49,7 @@ const Dashboard = (props: DashboardProps) => {
         isWeb3Enabled,
         enableWeb3
     } = useMoralis();
-    const { contractAddress, address, poolTokens, assetTokens, pathname } = props;
-
-    // console.log(assets);
-    // console.log(balances);
+    const { address, poolToken, assetTokens, pathname } = props;
 
     const [opened, setOpened] = useState<boolean>(true);
 
@@ -67,23 +63,23 @@ const Dashboard = (props: DashboardProps) => {
         if (isInitialized && newPathname !== pathname) navigate(newPathname);
     }, [isInitialized, isAuthenticated, account])
 
-    const poolToken = { name: "Pool Token", symbol: "P", price: 1 }
-    const [numeraire, setNumeraire] = useState<Numeraire>(poolToken);
+    const poolBalance = poolToken.balance;
+    const poolTokens = poolToken.outstanding;
 
-    const poolBalance = assetTokens[contractAddress] ? assetTokens[contractAddress].balance : 0;
-
-    const price = (address: string) => {
-        const lowerAddress = address.toLowerCase();
-        const asset: Token = assetTokens[lowerAddress];
+    const price = (asset: AssetToken) => {
         return poolTokens * asset.weight / asset.reserve;
     };
 
-    const balance = (address: string) => {
-        const lowerAddress = address.toLowerCase();
-        return assetTokens[lowerAddress] ? assetTokens[lowerAddress].balance : 0;
+    const balance = (asset: AssetToken) => {
+        return asset.balance;
     };
 
-    const numeraires = [poolToken, ...Object.values(assetTokens)?.map((a: Token) => ({ name: a.name, symbol: a.symbol, price: price(a.token_address) }))];
+    const poolTokenNumeraire = { name: poolToken.name, symbol: poolToken.symbol, price: 1 }
+    const [numeraire, setNumeraire] = useState<Numeraire>(poolTokenNumeraire);
+
+    const numeraires = [poolTokenNumeraire, ...Object.values(assetTokens)?.map((a: AssetToken) => { 
+        return { name: a.name, symbol: a.symbol, price: price(a) }
+    })];
     const numeraireMap: Dict<Numeraire> = {};
     numeraires.forEach((n: Numeraire) => { numeraireMap[`${n.name} (${n.symbol})`] = n; });
 
@@ -99,12 +95,12 @@ const Dashboard = (props: DashboardProps) => {
     const cellTextSize: MantineSize = "md";
     const headerTextSize: MantineSize = "lg";
     const subTextSize: MantineSize = "sm";
-    const rows = Object.values(assetTokens)?.filter((a: Token) => a.reserve > 0).map((a: Token, i: number) => (
-        <tr key={a.token_address}>
+    const rows = Object.values(assetTokens)?.filter((a: AssetToken) => (a.reserve > 0 && a.k !== undefined && a.fee !== undefined)).map((a: AssetToken, i: number) => (
+        <tr key={a.address}>
             {/* <td>{i + 1}</td> */}
             <td><span><Text size={cellTextSize} color="bold" component="span">{`${a.name}`}</Text><Text size="xs" color="dimmed" component="span">{` (${a.symbol})`}</Text></span></td>
-            {address ? <td align="right"><Text size={cellTextSize}>{(balance(a.token_address) / numeraire.price).toLocaleString(undefined, numberOptions)}</Text></td> : null}
-            <td align="right"><Text size={cellTextSize}>{(price(a.token_address) / numeraire.price).toLocaleString(undefined, numberOptions)}</Text></td>
+            {address ? <td align="right"><Text size={cellTextSize}>{(balance(a) / numeraire.price).toLocaleString(undefined, numberOptions)}</Text></td> : null}
+            <td align="right"><Text size={cellTextSize}>{(price(a) / numeraire.price).toLocaleString(undefined, numberOptions)}</Text></td>
             {/* <td align="right">{`${100 / (assets.length)}%`}</td> */}
             <td align="right"><Text size={cellTextSize}>{(a.reserve / numeraire.price).toLocaleString(undefined, numberOptions)}</Text></td>
             <td align="right"><Text size={cellTextSize}>{(10000 * a.fee).toLocaleString()}</Text></td>
@@ -126,8 +122,7 @@ const Dashboard = (props: DashboardProps) => {
                         title={<Title align="center" order={3}>Mulit-Asset Swap</Title>}
                     >
                         <Swap
-                            contractAddress={contractAddress}
-                            poolTokens={poolTokens}
+                            poolToken={poolToken}
                             assetTokens={assetTokens}
                         />
                     </Modal>
@@ -162,7 +157,7 @@ const Dashboard = (props: DashboardProps) => {
                 </SimpleGrid>
             </Card>
             <Card withBorder p="xl" radius="md" mt="lg">
-                <Title order={3}>Asset Tokens</Title>
+                <Title order={3}>AssetToken Tokens</Title>
                 <Text size="xl" mt="md">{Object.values(assetTokens)?.length.toLocaleString()}</Text>
                 <Text size={subTextSize} color="dimmed">Number of assets</Text>
                 <Group mt="lg">

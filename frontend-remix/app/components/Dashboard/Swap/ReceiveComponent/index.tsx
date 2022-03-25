@@ -9,11 +9,16 @@ import {
 import type { TokenComponentProps } from "../TokenSelect";
 
 const ReceiveComponent: FC<TokenComponentProps> = (props: TokenComponentProps) => {
-    const { token, assetTokens, onNumberChange } = props;
+    const { token, swapState, getQuote } = props;
+    const { poolToken, assetTokens } = swapState;
 
     const handleAllocationChange = (allocation: number) => {
-        assetTokens[token.token_address].allocation = allocation;
-        onNumberChange && onNumberChange()
+        if (token.address === poolToken.address) {
+            poolToken.allocation = allocation;
+        } else {
+            assetTokens[token.address].allocation = allocation;
+        }
+        getQuote({ poolToken, assetTokens });
     };
 
     return (
@@ -22,7 +27,7 @@ const ReceiveComponent: FC<TokenComponentProps> = (props: TokenComponentProps) =
                 {token.symbol}
             </Text>
             <Text size="lg" mt="sm" component="span" ml="md">
-                0.00
+                {(-token.amount).toFixed(4)}
             </Text>
             <Group mt="xs">
                 <Text
@@ -33,25 +38,27 @@ const ReceiveComponent: FC<TokenComponentProps> = (props: TokenComponentProps) =
                     Allocation:
                 </Text>
                 <NumberInput
-                    // variant="filled"
-                    // width={"50%"}
-                    defaultValue={0}
                     precision={2}
                     size="md"
-                    // icon={<Text size="md">{token.symbol}</Text>}
-                    // hideControls
-                    value={assetTokens[token.token_address].allocation}
+                    value={token.allocation}
                     onChange={(a: number) => handleAllocationChange(a)}
                     rightSection={<>%</>}
                     styles={{ root: { width: "50%" } }}
                     min={0}
                 />
             </Group>
-            <Group mt="xs" position="left">
-                <Text>Pool Reserve:</Text>
-                <Text>{token.reserve.toLocaleString()}</Text>
-                <Text>{token.symbol}</Text>
-            </Group>
+            {token.address == poolToken.address ?
+                <Group mt="xs" position="left">
+                    <Text>Outstanding:</Text>
+                    <Text>{token.outstanding.toLocaleString()}</Text>
+                    <Text>{token.symbol}</Text>
+                </Group> :
+                <Group mt="xs" position="left">
+                    <Text>Pool Reserve:</Text>
+                    <Text>{token.reserve.toLocaleString()}</Text>
+                    <Text>{token.symbol}</Text>
+                </Group>
+            }
         </Card>
     );
 };

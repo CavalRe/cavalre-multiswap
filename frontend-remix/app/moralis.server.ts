@@ -22,8 +22,21 @@ type Dict<T> = {
     [key: string]: T
 };
 
-export type Token = {
-    token_address: string,
+export type PoolToken = {
+    address: string,
+    name: string,
+    symbol: string,
+    fee: number,
+    outstanding: number,
+    balance: number;
+    amount: number;
+    allocation: number;
+    isPay: boolean;
+    isReceive: boolean;
+};
+
+export type AssetToken = {
+    address: string,
     name: string,
     symbol: string,
     k: number
@@ -37,22 +50,7 @@ export type Token = {
     isReceive: boolean;
 }
 
-// export type Asset = {
-//     token_address: string,
-//     name: string,
-//     symbol: string,
-//     reserve: number,
-//     fee: number,
-//     weight: number,
-//     k: number
-// };
-
-// export type Balance = {
-//     token_address: string;
-//     name: string;
-//     symbol: string;
-//     balance: number;
-// };
+export type Token = PoolToken | AssetToken;
 
 const decimalNumber = (value: string, decimals: string="18") => {
     return parseInt(value) / (10 ** parseInt(decimals));
@@ -78,7 +76,7 @@ export const getPool = async (address: string | undefined) => {
     // }));
 
     // if (address === undefined) {
-    //     const assets: Asset[] = [];
+    //     const assets: AssetToken[] = [];
     //     const balances: Balance[] = [];
     //     return { contractAddress, address, poolTokens, assets, balances}
     // }
@@ -90,23 +88,40 @@ export const getPool = async (address: string | undefined) => {
         abi: poolAbi
     });
 
-    const addresses = assetData.map((asset: any) => asset[0].toLowerCase());
+    const assetAddresses = assetData.map((asset: any) => asset[0].toLowerCase());
+
+    const addresses = assetAddresses.concat(contractAddress);
 
     const metadata = await Moralis.Web3API.token.getTokenMetadata({
         chain,
         addresses
     });
 
-    const assetTokens: Dict<Token> = {};
+    const poolTokenMetadata = metadata.pop();
+
+    const poolToken: PoolToken = {
+        address: poolTokenMetadata.address,
+        name: poolTokenMetadata.name,
+        symbol: poolTokenMetadata.symbol,
+        fee: 0.0001,
+        outstanding: poolTokens,
+        balance: 0,
+        amount: 0,
+        allocation: 0,
+        isPay: false,
+        isReceive: false
+    };
+
+    const assetTokens: Dict<AssetToken> = {};
 
     assetData.forEach((a: any, i: number) => {
         assetTokens[a[0].toLowerCase()] = {
-            token_address: addresses[i],
+            address: assetAddresses[i],
             name: metadata[i].name,
             symbol: metadata[i].symbol,
             k: decimalNumber(a[4]),
             fee: decimalNumber(a[2]),
-            weight: 1 / addresses.length,
+            weight: 1 / assetAddresses.length,
             reserve: decimalNumber(a[1]),
             balance: 0,
             amount: 0,
@@ -124,9 +139,11 @@ export const getPool = async (address: string | undefined) => {
     balanceData.forEach((b: any) => {
         if (b.token_address in assetTokens) {
             assetTokens[b.token_address].balance = decimalNumber(b.balance,b.decimals);
+        } else if (b.token_address == contractAddress) {
+            poolToken.balance = decimalNumber(b.balance,b.decimals);
         } else {
             assetTokens[b.token_address] = {
-                token_address: b.token_address,
+                address: b.token_address,
                 name: b.name,
                 symbol: b.symbol,
                 k: 1,
@@ -142,11 +159,7 @@ export const getPool = async (address: string | undefined) => {
         };
     })
 
-    // console.log(assets);
-    // console.log(balances);
-    // console.log(poolTokens);
-
-    return { contractAddress, address, poolTokens, assetTokens };
+    return { address, poolToken, assetTokens };
 };
 
 export default Moralis;

@@ -1,4 +1,5 @@
-import { FC, SetStateAction } from "react";
+import { useState } from "react";
+import type { FC } from "react";
 import {
     MultiSelect,
     Paper,
@@ -6,99 +7,139 @@ import {
     Title,
 } from "@mantine/core";
 
-import type { Token } from "~/moralis.server";
+import type { AssetToken, Token } from "~/moralis.server";
+import type { SwapState } from "../../Swap";
 
 import TokenItem from "./TokenItem";
 
-type Dict<T> = {
-    [key: string]: T
-};
-
 export type TokenComponentProps = {
     token: Token
-    assetTokens: Dict<Token>
-    onNumberChange?: Function
+    swapState: SwapState
+    getQuote: Function
 };
 
 type TokenSelectProps = {
     title: string
-    assetTokens: Dict<Token>
+    swapState: SwapState
+    getQuote: Function
     tokenComponent: FC<TokenComponentProps>
-    selectedTokens: Token[]
-    setSelectedTokens: React.Dispatch<SetStateAction<Token[]>>
-    onNumberChange?: Function
     isPay: boolean
     placeholder: string
 };
 
 const TokenSelect = (props: TokenSelectProps) => {
-    const { 
+    const {
         title,
-        assetTokens,
+        swapState,
+        getQuote,
         tokenComponent,
-        selectedTokens,
-        setSelectedTokens,
-        onNumberChange,
         isPay,
         placeholder
     } = props;
+    const { poolToken, assetTokens } = swapState;
+    const [selected, setSelected] = useState<string[]>([])
 
     const TokenComponent: FC<TokenComponentProps> = tokenComponent;
 
-    const items: SelectItem[] = Object.values(
-        assetTokens
-    ).filter(
-        (t: Token) => isPay ? !t.isReceive : !t.isPay
-    ).map((t: Token) => {
-        return {
-            label: `${t.name} (${t.symbol})`,
-            value: t.token_address,
-            token: t
-        }
-    });
+    const getItems = () => {
+        let items: SelectItem[] = [];
+        if ((isPay && poolToken.balance > 0 && !poolToken.isReceive) || (!isPay && !poolToken.isPay)) {
+            items.push({
+                label: `${poolToken.name} (${poolToken.symbol})`,
+                value: poolToken.address,
+                token: poolToken,
+                group: "Pool Token"
+            })
+        };
+        items = items.concat(
+            Object.values(
+                assetTokens
+            ).filter(
+                (t: AssetToken) => isPay ? !t.isReceive : (!t.isPay && t.reserve > 0)
+            ).map((t: AssetToken) => {
+                return {
+                    label: `${t.name} (${t.symbol})`,
+                    value: t.address,
+                    token: t,
+                    group: t.reserve > 0 ? "Asset Tokens" : "Not in Pool",
+                    disabled: isPay && t.reserve == 0
+                }
+            })
+        );
+        return items;
+    };
+
+    const items: SelectItem[] = getItems();
+
+    const setToken = (v: string[], token: Token, totalAllocation: number) => {
+        if (isPay) {
+            if (v.includes(token.address)) {
+                token.isPay = true;
+                token.isReceive = false;
+                token.amount = token.amount == 0 ? 1 : token.amount;
+            } else {
+                token.isPay = false;
+            };
+        } else {
+            if (v.includes(token.address)) {
+                token.isPay = false;
+                token.isReceive = true;
+                token.allocation = token.allocation == 0 ? Math.max(0,100-totalAllocation) : Math.min(token.allocation,100-totalAllocation);
+            } else {
+                token.isReceive = false;
+            };
+        };
+
+        if (!token.isPay && !token.isReceive) {
+            token.amount = 0;
+            token.allocation = 0;
+        };
+
+        return totalAllocation+token.allocation;
+    };
 
     const handleSelect = ((v: string[]) => {
-        Object.values(assetTokens).forEach((a: Token) => {
-            if (v.includes(a.token_address)) {
-                a.isPay = isPay;
-                a.isReceive = !isPay;
-            } else {
-                if (isPay) {
-                    a.isPay = !isPay;
-                } else {
-                    a.isReceive = isPay;
-                };
-            };
+
+        let totalAllocation = setToken(v,poolToken,0);
+
+        Object.values(assetTokens).forEach((asset: AssetToken) => {
+            totalAllocation = setToken(v,asset,totalAllocation);
         });
-        setSelectedTokens(v.map(
-            (address: string) => assetTokens[address]
-        ));
+
+        getQuote({ poolToken, assetTokens });
+        setSelected(v);
     });
 
     return (
         <Paper withBorder p="xl" radius="md" mt="lg">
             <Title order={4} align="center">{title}</Title>
             {
+                selected.includes(poolToken.address) ?
+                    <TokenComponent
+                        token={poolToken}
+                        swapState={swapState}
+                        getQuote={getQuote}
+                        key={poolToken.address}
+                    /> : null
+            }
+            {
                 Object.values(assetTokens)
-                    .filter((token: Token) => isPay ? token.isPay : token.isReceive)
-                    .map((token: Token, i: number) => {
+                    .filter((token: AssetToken) => isPay ? token.isPay : token.isReceive)
+                    .map((token: AssetToken, i: number) => {
                         return (
                             <TokenComponent
                                 token={token}
-                                assetTokens={assetTokens}
-                                onNumberChange={onNumberChange}
-                                key={token.token_address}
+                                swapState={swapState}
+                                getQuote={getQuote}
+                                key={token.address}
                             />
                         )
                     })
             }
-            {/* <Text color="dimmed" mt="lg">Select tokens to deposit:</Text> */}
             <MultiSelect
                 data={items}
-                // label="Select tokens to deposit:"
                 itemComponent={TokenItem}
-                // valueComponent={() => null}
-                value={selectedTokens.map((token: Token) => token.token_address)}
+                value={selected}
                 onChange={handleSelect}
                 mt="xs"
                 size="md"

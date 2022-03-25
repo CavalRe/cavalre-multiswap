@@ -14,18 +14,16 @@ export const loader: LoaderFunction = async ({ params, request }) => {
 
 const Dashboard = () => {
     const {
-        contractAddress,
         address,
-        poolTokens,
+        poolToken,
         assetTokens,
         pathname
     } = useLoaderData();
 
     return (
         <DashboardComponent
-            contractAddress={contractAddress}
             address={address}
-            poolTokens={poolTokens}
+            poolToken={poolToken}
             assetTokens={assetTokens}
             pathname={pathname}
         />

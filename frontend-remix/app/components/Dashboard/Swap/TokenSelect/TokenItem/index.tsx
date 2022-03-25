@@ -3,12 +3,12 @@ import {
     Text,
 } from "@mantine/core";
 
-import type { Token } from "~/moralis.server";
+import type { PoolToken, AssetToken } from "~/moralis.server";
 
 type TokenItemProps = {
     label: string,
     value: string,
-    token: Token
+    token: PoolToken | AssetToken
 };
 
 const TokenItem = forwardRef<HTMLDivElement, TokenItemProps>(
