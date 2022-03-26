@@ -10,7 +10,6 @@ import type { PoolToken, AssetToken } from "~/moralis.server";
 import PayComponent from "./PayComponent";
 import ReceiveComponent from "./ReceiveComponent";
 import TokenSelect from "./TokenSelect";
-import { poll } from "ethers/lib/utils";
 
 type Dict<T> = {
     [key: string]: T
@@ -38,7 +37,7 @@ const Swap = (props: SwapProps) => {
         return asset.weight * newPoolTokens / (asset.reserve + asset.amount);
     };
 
-    const getAssetAmountIn = (assets: AssetToken[], newPoolTokens: number) => {
+    const getAssetAmount = (assets: AssetToken[], newPoolTokens: number) => {
         return assets.reduce(
             (total: number, asset: AssetToken) => total + asset.amount * getPostTradePrice(asset, newPoolTokens),
             0
@@ -48,46 +47,48 @@ const Swap = (props: SwapProps) => {
     const getQuote = (swapState: SwapState) => {
         const { poolToken, assetTokens } = swapState;
 
-        let newPoolTokens: number = poolToken.outstanding - poolToken.amount;
+        const poolTokensPreAlloc: number = poolToken.outstanding - (poolToken.isPay ? poolToken.amount : 0); // check
 
         const selectedAssetPayTokens = Object.values(assetTokens).filter(
             (asset: AssetToken) => asset.isPay
         );
-        // const selectedPayTokens: (PoolToken | AssetToken)[] = poolToken.isPay ? [poolToken, ...selectedAssetPayTokens] : selectedAssetPayTokens
 
         const selectedAssetReceiveTokens = Object.values(assetTokens).filter(
             (asset: AssetToken) => asset.isReceive
         )
-        // const selectedReceiveTokens: (PoolToken | AssetToken)[] = poolToken.isReceive ? [poolToken, ...selectedAssetReceiveTokens] : selectedAssetReceiveTokens
 
-        let assetAmountIn: number = getAssetAmountIn(selectedAssetPayTokens, newPoolTokens);
+        const assetAmountInPreAlloc: number = getAssetAmount(selectedAssetPayTokens, poolTokensPreAlloc); // check
 
-        let totalAmountIn: number = assetAmountIn - poolToken.amount;
+        const totalAmountInPreAlloc: number = assetAmountInPreAlloc + (poolToken.isPay ? poolToken.amount : 0); // check
+
+        let poolTokens = poolTokensPreAlloc;
+        let totalAmountOut = totalAmountInPreAlloc;
 
         if (poolToken.allocation !== 0) {
-            const factor: number = (1 - poolToken.fee) *
-                poolToken.allocation -
-                getAssetAmountIn(selectedAssetPayTokens, 1);
+            const factor: number = 1 / poolToken.allocation -
+                getAssetAmount(selectedAssetPayTokens, 1);
 
-            const poolTokensOut = totalAmountIn / factor;
+            const totalAmountOutNoFee = totalAmountInPreAlloc / factor;
+
+            const poolTokensOutNoFee = poolToken.allocation * totalAmountOutNoFee;
+
+            const poolTokensOut = (1-poolToken.fee) * poolTokensOutNoFee;
 
             poolToken.amount = -poolTokensOut;
 
-            newPoolTokens -= poolTokensOut;
+            poolTokens = poolToken.outstanding + poolTokensOut;
 
-            assetAmountIn = getAssetAmountIn(selectedAssetPayTokens, newPoolTokens);
-
-            totalAmountIn = assetAmountIn + poolTokensOut;
+            totalAmountOut = totalAmountOutNoFee;
         };
 
         const quotes = selectedAssetReceiveTokens.map(
             (token: AssetToken) => {
-                const allocation = token.allocation / 100;
-                const factor = (1 - token.fee) * allocation * totalAmountIn / (token.weight * newPoolTokens);
+                const allocation = token.allocation;
+                const factor = (1 - token.fee) * allocation * totalAmountOut / (token.weight * poolTokens);
                 const amountOut = factor * token.reserve / (1 + factor);
                 token.amount = -amountOut;
                 const preTradePrice = getPreTradePrice(token);
-                const postTradePrice = getPostTradePrice(token, newPoolTokens);
+                const postTradePrice = getPostTradePrice(token, poolTokens);
 
                 return {
                     token,
@@ -98,27 +99,6 @@ const Swap = (props: SwapProps) => {
             }
         );
         setSwapState({ poolToken, assetTokens });
-        console.log([
-            {
-                name: poolToken.name,
-                isPay: poolToken.isPay,
-                isReceive: poolToken.isReceive,
-                amount: poolToken.amount,
-                allocation: poolToken.allocation
-            }
-        ].concat(
-            Object.values(assetTokens).map(
-                (asset: AssetToken) => {
-                    return {
-                        name: asset.name,
-                        isPay: asset.isPay,
-                        isReceive: asset.isReceive,
-                        amount: asset.amount,
-                        allocation: asset.allocation
-                    }
-                }
-            )
-        ));
         return quotes;
     };
 
@@ -151,12 +131,12 @@ const Swap = (props: SwapProps) => {
                     placeholder="Select tokens to withdraw:"
                 />
             </SimpleGrid>
-            <Text>{`Total allocation: ${totalAllocation}%`}</Text>
+            <Text>{`Total allocation: ${100 * totalAllocation}%`}</Text>
             <Button
                 onClick={handleSwap}
                 mt="xl"
                 size="md"
-                disabled={totalAllocation !== 100}
+                disabled={totalAllocation !== 1}
             >
                 Swap
             </Button>

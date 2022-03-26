@@ -14,9 +14,9 @@ const ReceiveComponent: FC<TokenComponentProps> = (props: TokenComponentProps) =
 
     const handleAllocationChange = (allocation: number) => {
         if (token.address === poolToken.address) {
-            poolToken.allocation = allocation;
+            poolToken.allocation = allocation / 100;
         } else {
-            assetTokens[token.address].allocation = allocation;
+            assetTokens[token.address].allocation = allocation / 100;
         }
         getQuote({ poolToken, assetTokens });
     };
@@ -40,7 +40,7 @@ const ReceiveComponent: FC<TokenComponentProps> = (props: TokenComponentProps) =
                 <NumberInput
                     precision={2}
                     size="md"
-                    value={token.allocation}
+                    value={100 * token.allocation}
                     onChange={(a: number) => handleAllocationChange(a)}
                     rightSection={<>%</>}
                     styles={{ root: { width: "50%" } }}

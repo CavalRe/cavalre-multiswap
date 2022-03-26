@@ -84,7 +84,7 @@ const TokenSelect = (props: TokenSelectProps) => {
             if (v.includes(token.address)) {
                 token.isPay = false;
                 token.isReceive = true;
-                token.allocation = token.allocation == 0 ? Math.max(0,100-totalAllocation) : Math.min(token.allocation,100-totalAllocation);
+                token.allocation = token.allocation == 0 ? Math.max(0,1-totalAllocation) : Math.min(token.allocation,1-totalAllocation);
             } else {
                 token.isReceive = false;
             };
