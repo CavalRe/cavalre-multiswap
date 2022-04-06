@@ -16,7 +16,6 @@ export type TokenComponentProps = {
     token: Token
     swapState: SwapState
     getQuote: Function
-    address: string
 };
 
 type TokenSelectProps = {
@@ -26,7 +25,6 @@ type TokenSelectProps = {
     tokenComponent: FC<TokenComponentProps>
     isPay: boolean
     placeholder: string
-    address: string
 };
 
 const TokenSelect = (props: TokenSelectProps) => {
@@ -37,16 +35,30 @@ const TokenSelect = (props: TokenSelectProps) => {
         tokenComponent,
         isPay,
         placeholder,
-        address
     } = props;
     const { poolToken, assetTokens } = swapState;
-    const [selected, setSelected] = useState<string[]>([])
+    const [selected, setSelected] = useState<string[]>(
+        () => {
+            let selected: string[] = [];
+            if ((isPay && poolToken.selection == "Pay") || (!isPay && poolToken.selection == "Receive")) {
+                selected.push(poolToken.address);
+            };
+            Object.values(assetTokens).forEach(
+                (asset: AssetToken) => {
+                    if ((isPay && asset.selection == "Pay") || (!isPay && asset.selection == "Receive")) {
+                        selected.push(asset.address);
+                    };
+                }
+            );
+            return selected;
+        }
+    );
 
     const TokenComponent: FC<TokenComponentProps> = tokenComponent;
 
     const getItems = () => {
         let items: SelectItem[] = [];
-        if ((isPay && poolToken.accountBalance > 0 && !poolToken.isReceive) || (!isPay && !poolToken.isPay)) {
+        if ((isPay && poolToken.selection !== "Receive") || (!isPay && poolToken.selection !== "Pay")) {
             items.push({
                 label: `${poolToken.name} (${poolToken.symbol})`,
                 value: poolToken.address,
@@ -58,7 +70,7 @@ const TokenSelect = (props: TokenSelectProps) => {
             Object.values(
                 assetTokens
             ).filter(
-                (t: AssetToken) => isPay ? !t.isReceive : (!t.isPay && t.contractBalance > 0)
+                (t: AssetToken) => isPay ? t.selection !== "Receive" : t.selection !== "Pay"
             ).map((t: AssetToken) => {
                 return {
                     label: `${t.name} (${t.symbol})`,
@@ -75,25 +87,14 @@ const TokenSelect = (props: TokenSelectProps) => {
     const items: SelectItem[] = getItems();
 
     const setToken = (v: string[], token: Token, totalAllocation: number) => {
-        if (isPay) {
-            if (v.includes(token.address)) {
-                token.isPay = true;
-                token.isReceive = false;
+        if (isPay && v.includes(token.address)) {
+                token.selection = "Pay";
                 token.amount = token.amount == 0 ? 1 : token.amount;
-            } else {
-                token.isPay = false;
-            };
-        } else {
-            if (v.includes(token.address)) {
-                token.isPay = false;
-                token.isReceive = true;
+        } else if (!isPay && v.includes(token.address)) {
+                token.selection = "Receive";
                 token.allocation = token.allocation == 0 ? Math.max(0,1-totalAllocation) : Math.min(token.allocation,1-totalAllocation);
-            } else {
-                token.isReceive = false;
-            };
-        };
-
-        if (!token.isPay && !token.isReceive) {
+         } else if ((isPay && token.selection == "Pay") || (!isPay && token.selection == "Receive")) {
+            token.selection = "Neither";
             token.amount = 0;
             token.allocation = 0;
         };
@@ -102,7 +103,6 @@ const TokenSelect = (props: TokenSelectProps) => {
     };
 
     const handleSelect = ((v: string[]) => {
-
         let totalAllocation = setToken(v,poolToken,0);
 
         Object.values(assetTokens).forEach((asset: AssetToken) => {
@@ -122,20 +122,18 @@ const TokenSelect = (props: TokenSelectProps) => {
                         token={poolToken}
                         swapState={swapState}
                         getQuote={getQuote}
-                        address={address}
                         key={poolToken.address}
                     /> : null
             }
             {
                 Object.values(assetTokens)
-                    .filter((token: AssetToken) => isPay ? token.isPay : token.isReceive)
+                    .filter((token: AssetToken) => isPay ? token.selection == "Pay" : token.selection == "Receive")
                     .map((token: AssetToken, i: number) => {
                         return (
                             <TokenComponent
                                 token={token}
                                 swapState={swapState}
                                 getQuote={getQuote}
-                                address={address}
                                 key={token.address}
                             />
                         )

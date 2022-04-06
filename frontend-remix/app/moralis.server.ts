@@ -21,17 +21,19 @@ type Dict<T> = {
     [key: string]: T
 };
 
+type Selection = "Pay" | "Receive" | "Neither";
+
 export type PoolToken = {
-    address: string,
-    name: string,
-    symbol: string,
-    fee: number,
-    contractBalance: number,
-    accountBalance: number;
-    amount: number;
-    allocation: number;
-    isPay: boolean;
-    isReceive: boolean;
+    address: string
+    name: string
+    symbol: string
+    decimals: number
+    fee: number
+    contractBalance: number
+    accountBalance: number
+    amount: number
+    allocation: number
+    selection: Selection
 };
 
 export type AssetToken = PoolToken & {
@@ -45,7 +47,7 @@ const decimalNumber = (value: string, decimals: string = "18") => {
     return parseInt(value) / (10 ** parseInt(decimals));
 };
 
-export const getPool = async (address: string | undefined) => {
+export const getPool = async () => {
 
     const poolTokens: number = decimalNumber(await Moralis.Web3API.native.runContractFunction({
         chain,
@@ -84,18 +86,17 @@ export const getPool = async (address: string | undefined) => {
         addresses
     });
 
-
     const poolToken: PoolToken = {
         address: contractAddress,
         name: "Pool",
         symbol: "P",
+        decimals: 18,
         fee: 0.0001,
         contractBalance: poolTokens,
         accountBalance: 0,
         amount: 0,
         allocation: 0,
-        isPay: false,
-        isReceive: false
+        selection: "Neither"
     };
 
     const assetTokens: Dict<AssetToken> = {};
@@ -105,6 +106,7 @@ export const getPool = async (address: string | undefined) => {
             address: addresses[i],
             name: metadata[i].name,
             symbol: metadata[i].symbol,
+            decimals: parseInt(metadata[i].decimals),
             k: decimalNumber(a[4]),
             fee: decimalNumber(a[2]),
             weight: 1 / addresses.length,
@@ -112,40 +114,39 @@ export const getPool = async (address: string | undefined) => {
             accountBalance: 0,
             amount: 0,
             allocation: 0,
-            isPay: false,
-            isReceive: false
+            selection: "Neither"
         }
     })
 
-    const balanceData: any[] = address === undefined ? [] : await Moralis.Web3API.account.getTokenBalances({
-        address,
-        chain
-    });
+    // const balanceData: any[] = address === undefined ? [] : await Moralis.Web3API.account.getTokenBalances({
+    //     address,
+    //     chain
+    // });
 
-    balanceData.forEach((b: any) => {
-        if (b.token_address in assetTokens) {
-            assetTokens[b.token_address].accountBalance = decimalNumber(b.balance, b.decimals);
-        } else if (b.token_address == contractAddress) {
-            poolToken.accountBalance = decimalNumber(b.balance, b.decimals);
-        } else {
-            assetTokens[b.token_address] = {
-                address: b.token_address,
-                name: b.name,
-                symbol: b.symbol,
-                k: 1,
-                fee: feeMax,
-                weight: 0,
-                contractBalance: 0,
-                accountBalance: decimalNumber(b.accountBalance, b.decimals),
-                amount: 0,
-                allocation: 0,
-                isPay: false,
-                isReceive: false
-            };
-        };
-    })
+    // balanceData.forEach((b: any) => {
+    //     if (b.token_address in assetTokens) {
+    //         assetTokens[b.token_address].accountBalance = decimalNumber(b.balance, b.decimals);
+    //     } else if (b.token_address == contractAddress) {
+    //         poolToken.accountBalance = decimalNumber(b.balance, b.decimals);
+    //     } else {
+    //         assetTokens[b.token_address] = {
+    //             address: b.token_address,
+    //             name: b.name,
+    //             symbol: b.symbol,
+    //             k: 1,
+    //             fee: feeMax,
+    //             weight: 0,
+    //             contractBalance: 0,
+    //             accountBalance: decimalNumber(b.accountBalance, b.decimals),
+    //             amount: 0,
+    //             allocation: 0,
+    //             isPay: false,
+    //             isReceive: false
+    //         };
+    //     };
+    // })
 
-    return { address, poolToken, assetTokens };
+    return { poolToken, assetTokens };
 };
 
 export const swap = async (address: string, payTokens: Token[], receiveTokens: Token[]) => {

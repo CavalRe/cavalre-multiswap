@@ -10,7 +10,7 @@ import {
 import type { TokenComponentProps } from "../TokenSelect";
 
 const PayComponent: FC<TokenComponentProps> = (props: TokenComponentProps) => {
-    const { token, swapState, getQuote, address } = props;
+    const { token, swapState, getQuote } = props;
     const { poolToken, assetTokens } = swapState;
 
     const handleAmountChange = (amount: number) => {
@@ -24,7 +24,7 @@ const PayComponent: FC<TokenComponentProps> = (props: TokenComponentProps) => {
 
     return (
         <Card radius="md" mt="xs">
-            <input type="hidden" name="address" value={address} />
+            <input type="hidden" name="address" />
             <input type="hidden" name="payToken" value={JSON.stringify(token)} />
             <NumberInput
                 precision={2}

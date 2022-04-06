@@ -24,11 +24,9 @@ export type SwapState = {
 type SwapProps = {
     poolToken: PoolToken,
     assetTokens: Dict<AssetToken>
-    address: string
 };
 
 const Swap = (props: SwapProps) => {
-    const { address } = props;
     const [swapState, setSwapState] = useState<SwapState>(props);
     const { poolToken, assetTokens } = swapState;
 
@@ -50,19 +48,19 @@ const Swap = (props: SwapProps) => {
     const getQuote = (swapState: SwapState) => {
         const { poolToken, assetTokens } = swapState;
 
-        const poolTokensPreAlloc: number = poolToken.contractBalance - (poolToken.isPay ? poolToken.amount : 0); // check
+        const poolTokensPreAlloc: number = poolToken.contractBalance - (poolToken.selection == "Pay" ? poolToken.amount : 0); // check
 
         const selectedAssetPayTokens = Object.values(assetTokens).filter(
-            (asset: AssetToken) => asset.isPay
+            (asset: AssetToken) => asset.selection == "Pay"
         );
 
         const selectedAssetReceiveTokens = Object.values(assetTokens).filter(
-            (asset: AssetToken) => asset.isReceive
+            (asset: AssetToken) => asset.selection == "Receive"
         )
 
         const assetAmountInPreAlloc: number = getAssetAmount(selectedAssetPayTokens, poolTokensPreAlloc); // check
 
-        const totalAmountInPreAlloc: number = assetAmountInPreAlloc + (poolToken.isPay ? poolToken.amount : 0); // check
+        const totalAmountInPreAlloc: number = assetAmountInPreAlloc + (poolToken.selection == "Pay" ? poolToken.amount : 0); // check
 
         let poolTokens = poolTokensPreAlloc;
         let totalAmountOut = totalAmountInPreAlloc;
@@ -124,7 +122,6 @@ const Swap = (props: SwapProps) => {
                     tokenComponent={PayComponent}
                     isPay={true}
                     placeholder="Select tokens to deposit:"
-                    address={address}
                 />
                 <TokenSelect
                     title="Receive Tokens"
@@ -133,7 +130,6 @@ const Swap = (props: SwapProps) => {
                     tokenComponent={ReceiveComponent}
                     isPay={false}
                     placeholder="Select tokens to withdraw:"
-                    address={address}
                 />
             </SimpleGrid>
             <Text>{`Total allocation: ${(100 * totalAllocation).toFixed(2)}%`}</Text>

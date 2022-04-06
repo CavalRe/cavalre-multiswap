@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useMoralis } from "react-moralis";
-import { useNavigate } from "remix";
 import {
     Button,
     Card,
@@ -35,33 +34,24 @@ export { default as RequireAuth } from "~/components/Dashboard/RequireAuth";
 export { default as Swap } from "~/components/Dashboard/Swap";
 
 type DashboardProps = {
-    address: string,
-    poolToken: PoolToken,
-    assetTokens: Dict<AssetToken>,
-    pathname: string
+    poolToken: PoolToken
+    assetTokens: Dict<AssetToken>
 };
 
 const Dashboard = (props: DashboardProps) => {
     const {
-        isInitialized,
         isAuthenticated,
-        account,
         isWeb3Enabled,
         enableWeb3
     } = useMoralis();
-    const { address, poolToken, assetTokens, pathname } = props;
+    const { poolToken, assetTokens } = props;
 
     const [opened, setOpened] = useState<boolean>(false);
-
-    const navigate = useNavigate();
 
     useEffect(() => {
         if (isAuthenticated && !isWeb3Enabled) enableWeb3();
 
-        const newPathname = isAuthenticated ? account ? `/dashboard/${account}` : pathname : "/dashboard";
-
-        if (isInitialized && newPathname !== pathname) navigate(newPathname);
-    }, [isInitialized, isAuthenticated, account])
+    }, [isAuthenticated, isWeb3Enabled])
 
     const contractBalance = poolToken.accountBalance;
     const poolTokens = poolToken.contractBalance;
@@ -98,7 +88,7 @@ const Dashboard = (props: DashboardProps) => {
     const rows = Object.values(assetTokens)?.filter((a: AssetToken) => (a.contractBalance > 0 && a.k !== undefined && a.fee !== undefined)).map((a: AssetToken, i: number) => (
         <tr key={a.address}>
             <td><span><Text size={cellTextSize} color="bold" component="span">{`${a.name}`}</Text><Text size="xs" color="dimmed" component="span">{` (${a.symbol})`}</Text></span></td>
-            {address ? <td align="right"><Text size={cellTextSize}>{(balance(a) / numeraire.price).toLocaleString(undefined, numberOptions)}</Text></td> : null}
+            {isAuthenticated ? <td align="right"><Text size={cellTextSize}>{(balance(a) / numeraire.price).toLocaleString(undefined, numberOptions)}</Text></td> : null}
             <td align="right"><Text size={cellTextSize}>{(price(a) / numeraire.price).toLocaleString(undefined, numberOptions)}</Text></td>
             <td align="right"><Text size={cellTextSize}>{(a.contractBalance / numeraire.price).toLocaleString(undefined, numberOptions)}</Text></td>
             <td align="right"><Text size={cellTextSize}>{(10000 * a.fee).toLocaleString()}</Text></td>
@@ -122,14 +112,13 @@ const Dashboard = (props: DashboardProps) => {
                         <Swap
                             poolToken={poolToken}
                             assetTokens={assetTokens}
-                            address={address}
                         />
                     </Modal>
                 </>) : null}
             <Card withBorder p="xl" radius="md" mt="lg">
                 <Title order={3}>Pool Tokens</Title>
-                <SimpleGrid cols={address ? 4 : 3}>
-                    {address ?
+                <SimpleGrid cols={isAuthenticated ? 4 : 3}>
+                    {isAuthenticated ?
                         (<div>
                             <Text size="xl" mt="md">{(contractBalance / numeraire.price).toLocaleString() + " " + numeraire.symbol}</Text>
                             <Text size={subTextSize} color="dimmed">Balance</Text>
@@ -169,7 +158,7 @@ const Dashboard = (props: DashboardProps) => {
                             <tr>
                                 {/* <th>#</th> */}
                                 <th><Text size={headerTextSize}>Name</Text></th>
-                                {address ?
+                                {isAuthenticated ?
                                     <th><Text size={headerTextSize}>Balance ({numeraire.symbol})</Text></th> : null}
                                 <th><Text size={headerTextSize}>Price ({numeraire.symbol})</Text></th>
                                 {/* <th><Text size={headerTextSize}>Weight</Text></th> */}
