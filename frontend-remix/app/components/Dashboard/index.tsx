@@ -51,7 +51,7 @@ const Dashboard = (props: DashboardProps) => {
     } = useMoralis();
     const { address, poolToken, assetTokens, pathname } = props;
 
-    const [opened, setOpened] = useState<boolean>(true);
+    const [opened, setOpened] = useState<boolean>(false);
 
     const navigate = useNavigate();
 
@@ -63,15 +63,15 @@ const Dashboard = (props: DashboardProps) => {
         if (isInitialized && newPathname !== pathname) navigate(newPathname);
     }, [isInitialized, isAuthenticated, account])
 
-    const poolBalance = poolToken.balance;
-    const poolTokens = poolToken.outstanding;
+    const contractBalance = poolToken.accountBalance;
+    const poolTokens = poolToken.contractBalance;
 
     const price = (asset: AssetToken) => {
-        return poolTokens * asset.weight / asset.reserve;
+        return poolTokens * asset.weight / asset.contractBalance;
     };
 
     const balance = (asset: AssetToken) => {
-        return asset.balance;
+        return asset.accountBalance;
     };
 
     const poolTokenNumeraire = { name: poolToken.name, symbol: poolToken.symbol, price: 1 }
@@ -95,14 +95,12 @@ const Dashboard = (props: DashboardProps) => {
     const cellTextSize: MantineSize = "md";
     const headerTextSize: MantineSize = "lg";
     const subTextSize: MantineSize = "sm";
-    const rows = Object.values(assetTokens)?.filter((a: AssetToken) => (a.reserve > 0 && a.k !== undefined && a.fee !== undefined)).map((a: AssetToken, i: number) => (
+    const rows = Object.values(assetTokens)?.filter((a: AssetToken) => (a.contractBalance > 0 && a.k !== undefined && a.fee !== undefined)).map((a: AssetToken, i: number) => (
         <tr key={a.address}>
-            {/* <td>{i + 1}</td> */}
             <td><span><Text size={cellTextSize} color="bold" component="span">{`${a.name}`}</Text><Text size="xs" color="dimmed" component="span">{` (${a.symbol})`}</Text></span></td>
             {address ? <td align="right"><Text size={cellTextSize}>{(balance(a) / numeraire.price).toLocaleString(undefined, numberOptions)}</Text></td> : null}
             <td align="right"><Text size={cellTextSize}>{(price(a) / numeraire.price).toLocaleString(undefined, numberOptions)}</Text></td>
-            {/* <td align="right">{`${100 / (assets.length)}%`}</td> */}
-            <td align="right"><Text size={cellTextSize}>{(a.reserve / numeraire.price).toLocaleString(undefined, numberOptions)}</Text></td>
+            <td align="right"><Text size={cellTextSize}>{(a.contractBalance / numeraire.price).toLocaleString(undefined, numberOptions)}</Text></td>
             <td align="right"><Text size={cellTextSize}>{(10000 * a.fee).toLocaleString()}</Text></td>
             <td align="right"><Text size={cellTextSize}>{a.k.toLocaleString()}</Text></td>
         </tr>
@@ -124,6 +122,7 @@ const Dashboard = (props: DashboardProps) => {
                         <Swap
                             poolToken={poolToken}
                             assetTokens={assetTokens}
+                            address={address}
                         />
                     </Modal>
                 </>) : null}
@@ -132,7 +131,7 @@ const Dashboard = (props: DashboardProps) => {
                 <SimpleGrid cols={address ? 4 : 3}>
                     {address ?
                         (<div>
-                            <Text size="xl" mt="md">{(poolBalance / numeraire.price).toLocaleString() + " " + numeraire.symbol}</Text>
+                            <Text size="xl" mt="md">{(contractBalance / numeraire.price).toLocaleString() + " " + numeraire.symbol}</Text>
                             <Text size={subTextSize} color="dimmed">Balance</Text>
                         </div>) : null}
                     <div>
@@ -157,7 +156,7 @@ const Dashboard = (props: DashboardProps) => {
                 </SimpleGrid>
             </Card>
             <Card withBorder p="xl" radius="md" mt="lg">
-                <Title order={3}>AssetToken Tokens</Title>
+                <Title order={3}>Token Tokens</Title>
                 <Text size="xl" mt="md">{Object.values(assetTokens)?.length.toLocaleString()}</Text>
                 <Text size={subTextSize} color="dimmed">Number of assets</Text>
                 <Group mt="lg">

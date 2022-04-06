@@ -16,6 +16,7 @@ export type TokenComponentProps = {
     token: Token
     swapState: SwapState
     getQuote: Function
+    address: string
 };
 
 type TokenSelectProps = {
@@ -25,6 +26,7 @@ type TokenSelectProps = {
     tokenComponent: FC<TokenComponentProps>
     isPay: boolean
     placeholder: string
+    address: string
 };
 
 const TokenSelect = (props: TokenSelectProps) => {
@@ -34,7 +36,8 @@ const TokenSelect = (props: TokenSelectProps) => {
         getQuote,
         tokenComponent,
         isPay,
-        placeholder
+        placeholder,
+        address
     } = props;
     const { poolToken, assetTokens } = swapState;
     const [selected, setSelected] = useState<string[]>([])
@@ -43,7 +46,7 @@ const TokenSelect = (props: TokenSelectProps) => {
 
     const getItems = () => {
         let items: SelectItem[] = [];
-        if ((isPay && poolToken.balance > 0 && !poolToken.isReceive) || (!isPay && !poolToken.isPay)) {
+        if ((isPay && poolToken.accountBalance > 0 && !poolToken.isReceive) || (!isPay && !poolToken.isPay)) {
             items.push({
                 label: `${poolToken.name} (${poolToken.symbol})`,
                 value: poolToken.address,
@@ -55,14 +58,14 @@ const TokenSelect = (props: TokenSelectProps) => {
             Object.values(
                 assetTokens
             ).filter(
-                (t: AssetToken) => isPay ? !t.isReceive : (!t.isPay && t.reserve > 0)
+                (t: AssetToken) => isPay ? !t.isReceive : (!t.isPay && t.contractBalance > 0)
             ).map((t: AssetToken) => {
                 return {
                     label: `${t.name} (${t.symbol})`,
                     value: t.address,
                     token: t,
-                    group: t.reserve > 0 ? "Asset Tokens" : "Not in Pool",
-                    disabled: isPay && t.reserve == 0
+                    group: t.contractBalance > 0 ? "Asset Tokens" : "Not in Pool",
+                    disabled: isPay && t.contractBalance == 0
                 }
             })
         );
@@ -119,6 +122,7 @@ const TokenSelect = (props: TokenSelectProps) => {
                         token={poolToken}
                         swapState={swapState}
                         getQuote={getQuote}
+                        address={address}
                         key={poolToken.address}
                     /> : null
             }
@@ -131,6 +135,7 @@ const TokenSelect = (props: TokenSelectProps) => {
                                 token={token}
                                 swapState={swapState}
                                 getQuote={getQuote}
+                                address={address}
                                 key={token.address}
                             />
                         )

@@ -23,6 +23,7 @@ const ReceiveComponent: FC<TokenComponentProps> = (props: TokenComponentProps) =
 
     return (
         <Card radius="md" mt="xs">
+            <input type="hidden" name="receiveToken" value={JSON.stringify(token)} />
             <Text size="md" mt="sm" component="span" color="dimmed">
                 {token.symbol}
             </Text>
@@ -50,12 +51,12 @@ const ReceiveComponent: FC<TokenComponentProps> = (props: TokenComponentProps) =
             {token.address == poolToken.address ?
                 <Group mt="xs" position="left">
                     <Text>Outstanding:</Text>
-                    <Text>{token.outstanding.toLocaleString()}</Text>
+                    <Text>{token.contractBalance.toLocaleString()}</Text>
                     <Text>{token.symbol}</Text>
                 </Group> :
                 <Group mt="xs" position="left">
                     <Text>Pool Reserve:</Text>
-                    <Text>{token.reserve.toLocaleString()}</Text>
+                    <Text>{token.contractBalance.toLocaleString()}</Text>
                     <Text>{token.symbol}</Text>
                 </Group>
             }

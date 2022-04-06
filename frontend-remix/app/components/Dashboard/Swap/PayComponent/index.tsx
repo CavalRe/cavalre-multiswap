@@ -10,7 +10,7 @@ import {
 import type { TokenComponentProps } from "../TokenSelect";
 
 const PayComponent: FC<TokenComponentProps> = (props: TokenComponentProps) => {
-    const { token, swapState, getQuote } = props;
+    const { token, swapState, getQuote, address } = props;
     const { poolToken, assetTokens } = swapState;
 
     const handleAmountChange = (amount: number) => {
@@ -24,6 +24,8 @@ const PayComponent: FC<TokenComponentProps> = (props: TokenComponentProps) => {
 
     return (
         <Card radius="md" mt="xs">
+            <input type="hidden" name="address" value={address} />
+            <input type="hidden" name="payToken" value={JSON.stringify(token)} />
             <NumberInput
                 precision={2}
                 size="lg"
@@ -34,22 +36,15 @@ const PayComponent: FC<TokenComponentProps> = (props: TokenComponentProps) => {
                 min={0}
             />
             <Group mt="xs" position="left">
-                <Text>Balance:</Text>
-                <Text>{token.balance.toLocaleString()}</Text>
+                <Text>Pool Balance:</Text>
+                <Text>{token.contractBalance.toLocaleString()}</Text>
                 <Text>{token.symbol}</Text>
             </Group>
-            {token.address == poolToken.address ?
-                <Group mt="xs" position="left">
-                    <Text>Outstanding:</Text>
-                    <Text>{token.outstanding.toLocaleString()}</Text>
-                    <Text>{token.symbol}</Text>
-                </Group> :
-                <Group mt="xs" position="left">
-                    <Text>Pool Reserve:</Text>
-                    <Text>{token.reserve.toLocaleString()}</Text>
-                    <Text>{token.symbol}</Text>
-                </Group>
-            }
+            <Group mt="xs" position="left">
+                <Text>Account Balance:</Text>
+                <Text>{token.accountBalance.toLocaleString()}</Text>
+                <Text>{token.symbol}</Text>
+            </Group>
         </Card>
     );
 };

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Form } from "remix";
 import {
     Button,
     SimpleGrid,
@@ -23,18 +24,20 @@ export type SwapState = {
 type SwapProps = {
     poolToken: PoolToken,
     assetTokens: Dict<AssetToken>
+    address: string
 };
 
 const Swap = (props: SwapProps) => {
+    const { address } = props;
     const [swapState, setSwapState] = useState<SwapState>(props);
     const { poolToken, assetTokens } = swapState;
 
     const getPreTradePrice = (asset: AssetToken) => {
-        return asset.weight * poolToken.outstanding / asset.reserve;
+        return asset.weight * poolToken.contractBalance / asset.contractBalance;
     };
 
     const getPostTradePrice = (asset: AssetToken, newPoolTokens: number) => {
-        return asset.weight * newPoolTokens / (asset.reserve + asset.amount);
+        return asset.weight * newPoolTokens / (asset.contractBalance + asset.amount);
     };
 
     const getAssetAmount = (assets: AssetToken[], newPoolTokens: number) => {
@@ -47,7 +50,7 @@ const Swap = (props: SwapProps) => {
     const getQuote = (swapState: SwapState) => {
         const { poolToken, assetTokens } = swapState;
 
-        const poolTokensPreAlloc: number = poolToken.outstanding - (poolToken.isPay ? poolToken.amount : 0); // check
+        const poolTokensPreAlloc: number = poolToken.contractBalance - (poolToken.isPay ? poolToken.amount : 0); // check
 
         const selectedAssetPayTokens = Object.values(assetTokens).filter(
             (asset: AssetToken) => asset.isPay
@@ -72,11 +75,11 @@ const Swap = (props: SwapProps) => {
 
             const poolTokensOutNoFee = poolToken.allocation * totalAmountOutNoFee;
 
-            const poolTokensOut = (1-poolToken.fee) * poolTokensOutNoFee;
+            const poolTokensOut = (1 - poolToken.fee) * poolTokensOutNoFee;
 
             poolToken.amount = -poolTokensOut;
 
-            poolTokens = poolToken.outstanding + poolTokensOut;
+            poolTokens = poolToken.contractBalance + poolTokensOut;
 
             totalAmountOut = totalAmountOutNoFee;
         };
@@ -85,7 +88,7 @@ const Swap = (props: SwapProps) => {
             (token: AssetToken) => {
                 const allocation = token.allocation;
                 const factor = (1 - token.fee) * allocation * totalAmountOut / (token.weight * poolTokens);
-                const amountOut = factor * token.reserve / (1 + factor);
+                const amountOut = factor * token.contractBalance / (1 + factor);
                 token.amount = -amountOut;
                 const preTradePrice = getPreTradePrice(token);
                 const postTradePrice = getPostTradePrice(token, poolTokens);
@@ -112,7 +115,7 @@ const Swap = (props: SwapProps) => {
     };
 
     return (
-        <>
+        <Form method="post">
             <SimpleGrid cols={2}>
                 <TokenSelect
                     title="Pay Tokens"
@@ -121,6 +124,7 @@ const Swap = (props: SwapProps) => {
                     tokenComponent={PayComponent}
                     isPay={true}
                     placeholder="Select tokens to deposit:"
+                    address={address}
                 />
                 <TokenSelect
                     title="Receive Tokens"
@@ -129,18 +133,20 @@ const Swap = (props: SwapProps) => {
                     tokenComponent={ReceiveComponent}
                     isPay={false}
                     placeholder="Select tokens to withdraw:"
+                    address={address}
                 />
             </SimpleGrid>
-            <Text>{`Total allocation: ${100 * totalAllocation}%`}</Text>
+            <Text>{`Total allocation: ${(100 * totalAllocation).toFixed(2)}%`}</Text>
             <Button
-                onClick={handleSwap}
+                type="submit"
+                // onClick={handleSwap}
                 mt="xl"
                 size="md"
-                disabled={totalAllocation !== 1}
+                disabled={Math.abs(totalAllocation - 1) > .0001}
             >
                 Swap
             </Button>
-        </>
+        </Form>
     );
 };
 

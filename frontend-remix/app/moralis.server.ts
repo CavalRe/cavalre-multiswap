@@ -1,5 +1,4 @@
 import Moralis from "moralis/node";
-
 import { abi as poolAbi } from "../../artifacts/contracts/Pool.sol/Pool.json";
 
 const serverUrl = "https://sf5h683tvf93.usemoralis.com:2053/server";
@@ -27,32 +26,22 @@ export type PoolToken = {
     name: string,
     symbol: string,
     fee: number,
-    outstanding: number,
-    balance: number;
+    contractBalance: number,
+    accountBalance: number;
     amount: number;
     allocation: number;
     isPay: boolean;
     isReceive: boolean;
 };
 
-export type AssetToken = {
-    address: string,
-    name: string,
-    symbol: string,
+export type AssetToken = PoolToken & {
     k: number
-    fee: number,
     weight: number,
-    reserve: number,
-    balance: number;
-    amount: number;
-    allocation: number;
-    isPay: boolean;
-    isReceive: boolean;
-}
+};
 
 export type Token = PoolToken | AssetToken;
 
-const decimalNumber = (value: string, decimals: string="18") => {
+const decimalNumber = (value: string, decimals: string = "18") => {
     return parseInt(value) / (10 ** parseInt(decimals));
 };
 
@@ -88,24 +77,21 @@ export const getPool = async (address: string | undefined) => {
         abi: poolAbi
     });
 
-    const assetAddresses = assetData.map((asset: any) => asset[0].toLowerCase());
-
-    const addresses = assetAddresses.concat(contractAddress);
+    const addresses = assetData.map((asset: any) => asset[0].toLowerCase());
 
     const metadata = await Moralis.Web3API.token.getTokenMetadata({
         chain,
         addresses
     });
 
-    const poolTokenMetadata = metadata.pop();
 
     const poolToken: PoolToken = {
-        address: poolTokenMetadata.address,
-        name: poolTokenMetadata.name,
-        symbol: poolTokenMetadata.symbol,
+        address: contractAddress,
+        name: "Pool",
+        symbol: "P",
         fee: 0.0001,
-        outstanding: poolTokens,
-        balance: 0,
+        contractBalance: poolTokens,
+        accountBalance: 0,
         amount: 0,
         allocation: 0,
         isPay: false,
@@ -116,14 +102,14 @@ export const getPool = async (address: string | undefined) => {
 
     assetData.forEach((a: any, i: number) => {
         assetTokens[a[0].toLowerCase()] = {
-            address: assetAddresses[i],
+            address: addresses[i],
             name: metadata[i].name,
             symbol: metadata[i].symbol,
             k: decimalNumber(a[4]),
             fee: decimalNumber(a[2]),
-            weight: 1 / assetAddresses.length,
-            reserve: decimalNumber(a[1]),
-            balance: 0,
+            weight: 1 / addresses.length,
+            contractBalance: decimalNumber(a[1]),
+            accountBalance: 0,
             amount: 0,
             allocation: 0,
             isPay: false,
@@ -138,9 +124,9 @@ export const getPool = async (address: string | undefined) => {
 
     balanceData.forEach((b: any) => {
         if (b.token_address in assetTokens) {
-            assetTokens[b.token_address].balance = decimalNumber(b.balance,b.decimals);
+            assetTokens[b.token_address].accountBalance = decimalNumber(b.balance, b.decimals);
         } else if (b.token_address == contractAddress) {
-            poolToken.balance = decimalNumber(b.balance,b.decimals);
+            poolToken.accountBalance = decimalNumber(b.balance, b.decimals);
         } else {
             assetTokens[b.token_address] = {
                 address: b.token_address,
@@ -149,8 +135,8 @@ export const getPool = async (address: string | undefined) => {
                 k: 1,
                 fee: feeMax,
                 weight: 0,
-                reserve: 0,
-                balance: decimalNumber(b.balance,b.decimals),
+                contractBalance: 0,
+                accountBalance: decimalNumber(b.accountBalance, b.decimals),
                 amount: 0,
                 allocation: 0,
                 isPay: false,
@@ -160,6 +146,58 @@ export const getPool = async (address: string | undefined) => {
     })
 
     return { address, poolToken, assetTokens };
+};
+
+export const swap = async (address: string, payTokens: Token[], receiveTokens: Token[]) => {
+    const totalAllocation = receiveTokens.reduce((acc: number, t: Token) => acc + t.allocation, 0);
+    if (Math.abs(totalAllocation - 1) > 0.0001) return { error: "Allocation must add up to 1" };
+
+    if (payTokens.length === 0) return { error: "Must select at least one pay token" };
+    if (receiveTokens.length === 0) return { error: "Must select at least one receive token" };
+
+    if (payTokens.length > 1) return { error: "Must select only one pay token" };
+    if (receiveTokens.length > 1) return { error: "Must select only one receive token" };
+
+    const payAddresses = payTokens.map((t: Token) => t.address);
+    const receiveAddresses = receiveTokens.map((t: Token) => t.address);
+
+    if (payAddresses.includes(contractAddress)) {
+        return { result: "Staking" };
+    } else if (receiveAddresses.includes(contractAddress)) {
+        return { result: "Unstaking" };
+    } else {
+        const { allowance } = await Moralis.Web3API.token.getTokenAllowance(
+            {
+                chain,
+                owner_address: address,
+                spender_address: contractAddress,
+                address: payTokens[0].address
+            }
+        );
+        console.log(`allowance: ${decimalNumber(allowance)}`);
+        console.log(`amount: ${payTokens[0].amount}`);
+        if (decimalNumber(allowance) < payTokens[0].amount) {
+            // await Moralis.Web3API.native.runContractFunction({
+
+            // })
+        }
+        // Moralis.authenticate({
+        //     chain,
+        //     address,
+        // })
+        // await Moralis.executeFunction({
+        //     contractAddress,
+        //     functionName: "swap",
+        //     abi: poolAbi,
+        //     params: { 
+        //         addressIn: payTokens[0].address, 
+        //         addressOut: receiveTokens[0].address,
+        //         amountIn: payTokens[0].amount,
+        //         addressTo: address
+        //     }
+        // });
+        return { result: "Swapping" };
+    };
 };
 
 export default Moralis;
