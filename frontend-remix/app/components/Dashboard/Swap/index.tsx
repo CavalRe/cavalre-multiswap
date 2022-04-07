@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Form } from "remix";
 import {
     Button,
     SimpleGrid,
@@ -113,7 +112,7 @@ const Swap = (props: SwapProps) => {
     };
 
     return (
-        <Form method="post">
+        <>
             <SimpleGrid cols={2}>
                 <TokenSelect
                     title="Pay Tokens"
@@ -135,14 +134,14 @@ const Swap = (props: SwapProps) => {
             <Text>{`Total allocation: ${(100 * totalAllocation).toFixed(2)}%`}</Text>
             <Button
                 type="submit"
-                // onClick={handleSwap}
+                onClick={handleSwap}
                 mt="xl"
                 size="md"
                 disabled={Math.abs(totalAllocation - 1) > .0001}
             >
                 Swap
             </Button>
-        </Form>
+        </>
     );
 };
 

@@ -34,24 +34,72 @@ export { default as RequireAuth } from "~/components/Dashboard/RequireAuth";
 export { default as Swap } from "~/components/Dashboard/Swap";
 
 type DashboardProps = {
+    chain: string
     poolToken: PoolToken
     assetTokens: Dict<AssetToken>
+};
+
+const decimalNumber = (value: string, decimals: string = "18") => {
+    return parseInt(value) / (10 ** parseInt(decimals));
 };
 
 const Dashboard = (props: DashboardProps) => {
     const {
         isAuthenticated,
         isWeb3Enabled,
-        enableWeb3
+        enableWeb3,
+        account,
+        Moralis
     } = useMoralis();
-    const { poolToken, assetTokens } = props;
-
+    const { chain, poolToken, assetTokens } = props;
     const [opened, setOpened] = useState<boolean>(false);
+    const [_, setTotalBalance] = useState<number>(0);
+
+    const setBalances = async () => {
+        await Moralis.Web3API.account.getTokenBalances({
+            account,
+            chain
+        }).then(
+            (balanceData: any) => {
+                let totalBalance = 0;
+                balanceData.forEach((b: any) => {
+                    const balance = decimalNumber(b.balance, b.decimals);
+                    totalBalance += balance;
+                    if (b.token_address in assetTokens) {
+                        assetTokens[b.token_address].accountBalance = balance;
+                    } else if (b.token_address == poolToken.address) {
+                        poolToken.accountBalance = balance;
+                    } else {
+                        assetTokens[b.token_address] = {
+                            address: b.token_address,
+                            name: b.name,
+                            symbol: b.symbol,
+                            decimals: parseInt(b.decimals),
+                            k: 1,
+                            fee: .01,
+                            weight: 0,
+                            contractBalance: 0,
+                            accountBalance: balance,
+                            amount: 0,
+                            allocation: 0,
+                            selection: "Not in Pool"
+                        };
+                    };
+                });
+                setTotalBalance(totalBalance);
+            }
+        );
+    };
 
     useEffect(() => {
-        if (isAuthenticated && !isWeb3Enabled) enableWeb3();
-
-    }, [isAuthenticated, isWeb3Enabled])
+        if (isAuthenticated) {
+            if (!isWeb3Enabled) {
+                enableWeb3();
+            } else {
+                setBalances();
+            };
+        }
+    }, [isAuthenticated, isWeb3Enabled, account])
 
     const contractBalance = poolToken.accountBalance;
     const poolTokens = poolToken.contractBalance;
@@ -67,7 +115,7 @@ const Dashboard = (props: DashboardProps) => {
     const poolTokenNumeraire = { name: poolToken.name, symbol: poolToken.symbol, price: 1 }
     const [numeraire, setNumeraire] = useState<Numeraire>(poolTokenNumeraire);
 
-    const numeraires = [poolTokenNumeraire, ...Object.values(assetTokens)?.map((a: AssetToken) => { 
+    const numeraires = [poolTokenNumeraire, ...Object.values(assetTokens)?.map((a: AssetToken) => {
         return { name: a.name, symbol: a.symbol, price: price(a) }
     })];
     const numeraireMap: Dict<Numeraire> = {};
@@ -145,8 +193,10 @@ const Dashboard = (props: DashboardProps) => {
                 </SimpleGrid>
             </Card>
             <Card withBorder p="xl" radius="md" mt="lg">
-                <Title order={3}>Token Tokens</Title>
-                <Text size="xl" mt="md">{Object.values(assetTokens)?.length.toLocaleString()}</Text>
+                <Title order={3}>Asset Tokens</Title>
+                <Text size="xl" mt="md">{Object.values(assetTokens).reduce(
+                    (acc, a) => acc + (a.selection !== "Not in Pool" ? 1 : 0), 0
+                ).toLocaleString()}</Text>
                 <Text size={subTextSize} color="dimmed">Number of assets</Text>
                 <Group mt="lg">
                     <Table

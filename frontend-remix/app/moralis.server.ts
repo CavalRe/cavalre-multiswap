@@ -21,7 +21,7 @@ type Dict<T> = {
     [key: string]: T
 };
 
-type Selection = "Pay" | "Receive" | "Neither";
+type Selection = "Pay" | "Receive" | "Neither" | "Not in Pool";
 
 export type PoolToken = {
     address: string
@@ -146,7 +146,7 @@ export const getPool = async () => {
     //     };
     // })
 
-    return { poolToken, assetTokens };
+    return { chain, poolToken, assetTokens };
 };
 
 export const swap = async (address: string, payTokens: Token[], receiveTokens: Token[]) => {

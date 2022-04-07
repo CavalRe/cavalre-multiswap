@@ -48,18 +48,11 @@ const ReceiveComponent: FC<TokenComponentProps> = (props: TokenComponentProps) =
                     min={0}
                 />
             </Group>
-            {token.address == poolToken.address ?
-                <Group mt="xs" position="left">
-                    <Text>Outstanding:</Text>
-                    <Text>{token.contractBalance.toLocaleString()}</Text>
-                    <Text>{token.symbol}</Text>
-                </Group> :
-                <Group mt="xs" position="left">
-                    <Text>Pool Reserve:</Text>
-                    <Text>{token.contractBalance.toLocaleString()}</Text>
-                    <Text>{token.symbol}</Text>
-                </Group>
-            }
+            <Group mt="xs" position="left">
+                <Text>Pool Balance:</Text>
+                <Text>{token.contractBalance.toLocaleString()}</Text>
+                <Text>{token.symbol}</Text>
+            </Group>
         </Card>
     );
 };

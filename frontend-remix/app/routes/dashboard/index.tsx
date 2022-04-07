@@ -12,10 +12,11 @@ export const loader: LoaderFunction = async () => {
 
 const Dashboard = () => {
     const pool = useLoaderData();
-    const { poolToken, assetTokens } = pool;
+    const { chain, poolToken, assetTokens } = pool;
 
     return (
         <DashboardComponent
+            chain={chain}
             poolToken={poolToken}
             assetTokens={assetTokens}
         />
