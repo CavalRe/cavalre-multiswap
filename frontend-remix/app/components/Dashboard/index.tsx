@@ -13,9 +13,8 @@ import {
     Title
 } from '@mantine/core';
 import type { MantineSize } from "@mantine/core";
-
 import type { PoolToken, AssetToken } from "~/moralis.server";
-
+import { decimalNumber } from "~/utils";
 import { Swap } from "~/components/Dashboard";
 
 type Dict<T> = {
@@ -37,10 +36,6 @@ type DashboardProps = {
     chain: string
     poolToken: PoolToken
     assetTokens: Dict<AssetToken>
-};
-
-const decimalNumber = (value: string, decimals: string = "18") => {
-    return parseInt(value) / (10 ** parseInt(decimals));
 };
 
 const Dashboard = (props: DashboardProps) => {
@@ -160,6 +155,9 @@ const Dashboard = (props: DashboardProps) => {
                         <Swap
                             poolToken={poolToken}
                             assetTokens={assetTokens}
+                            chain={chain}
+                            address={account}
+                            moralis={Moralis}
                         />
                     </Modal>
                 </>) : null}

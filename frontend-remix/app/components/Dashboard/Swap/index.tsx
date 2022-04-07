@@ -4,9 +4,10 @@ import {
     SimpleGrid,
     Text
 } from "@mantine/core";
-
-import type { PoolToken, AssetToken } from "~/moralis.server";
-
+import type MoralisType from "moralis";
+import { BigNumber } from "ethers";
+import type { PoolToken, AssetToken, Token } from "~/moralis.server";
+import { poolAbi, decimalNumber } from "~/utils";
 import PayComponent from "./PayComponent";
 import ReceiveComponent from "./ReceiveComponent";
 import TokenSelect from "./TokenSelect";
@@ -23,9 +24,13 @@ export type SwapState = {
 type SwapProps = {
     poolToken: PoolToken,
     assetTokens: Dict<AssetToken>
+    chain: string
+    address: string | null
+    moralis: MoralisType
 };
 
 const Swap = (props: SwapProps) => {
+    const { chain, address, moralis } = props;
     const [swapState, setSwapState] = useState<SwapState>(props);
     const { poolToken, assetTokens } = swapState;
 
@@ -102,6 +107,58 @@ const Swap = (props: SwapProps) => {
         return quotes;
     };
 
+    const swap = async (address: string, payTokens: Token[], receiveTokens: Token[]) => {
+        const totalAllocation = receiveTokens.reduce((acc: number, t: Token) => acc + t.allocation, 0);
+        if (Math.abs(totalAllocation - 1) > 0.0001) return { error: "Allocation must add up to 1" };
+    
+        if (payTokens.length === 0) return { error: "Must select at least one pay token" };
+        if (receiveTokens.length === 0) return { error: "Must select at least one receive token" };
+    
+        if (payTokens.length > 1) return { error: "Must select only one pay token" };
+        if (receiveTokens.length > 1) return { error: "Must select only one receive token" };
+    
+        const payAddresses = payTokens.map((t: Token) => t.address);
+        const receiveAddresses = receiveTokens.map((t: Token) => t.address);
+    
+        if (payAddresses.includes(poolToken.address)) {
+            return { result: "Staking" };
+        } else if (receiveAddresses.includes(poolToken.address)) {
+            return { result: "Unstaking" };
+        } else {
+            const { allowance } = await moralis.Web3API.token.getTokenAllowance(
+                {
+                    chain,
+                    owner_address: address,
+                    spender_address: poolToken.address,
+                    address: payTokens[0].address
+                }
+            );
+            console.log(`allowance: ${decimalNumber(allowance)}`);
+            console.log(`amount: ${payTokens[0].amount}`);
+            if (decimalNumber(allowance) < payTokens[0].amount) {
+                // await Moralis.Web3API.native.runContractFunction({
+    
+                // })
+            }
+            // Moralis.authenticate({
+            //     chain,
+            //     address,
+            // })
+            await moralis.executeFunction({
+                contractAddress: poolToken.address,
+                functionName: "swap",
+                abi: poolAbi,
+                params: { 
+                    addressIn: payTokens[0].address, 
+                    addressOut: receiveTokens[0].address,
+                    amountIn: BigNumber.from(10).pow(payTokens[0].decimals).mul(payTokens[0].amount),
+                    addressTo: address
+                }
+            });
+            return { result: "Swapping" };
+        };
+    };
+
     const totalAllocation = Object.values(assetTokens).reduce(
         (total: number, { allocation }) => total + allocation,
         poolToken.allocation
@@ -109,6 +166,26 @@ const Swap = (props: SwapProps) => {
 
     const handleSwap = () => {
         const quotes = getQuote(swapState);
+        const payTokens: Token[] = [];
+        const receiveTokens: Token[] = [];
+
+        if (poolToken.selection == "Pay") {
+            payTokens.push(poolToken);
+        } else if (poolToken.selection == "Receive") {
+            receiveTokens.push(poolToken);
+        };
+
+        Object.values(assetTokens).forEach(
+            (asset: AssetToken) => {
+                if (asset.selection == "Pay") {
+                    payTokens.push(asset);
+                } else if (asset.selection == "Receive") {
+                    receiveTokens.push(asset);
+                }
+            }
+        );
+
+        address && swap(address, payTokens, receiveTokens);
     };
 
     return (

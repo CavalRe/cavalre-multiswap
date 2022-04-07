@@ -7,7 +7,7 @@ import { getPool } from "~/moralis.server";
 
 export const loader: LoaderFunction = async () => {
     const pool = await getPool();
-    return { ...pool };
+    return pool;
 };
 
 const Dashboard = () => {
