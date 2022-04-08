@@ -4,13 +4,8 @@
   "description": "",
   "license": "",
   "scripts": {
-    "build": "run-p build:*",
-    "build:css": "npm run generate:css -- --minify",
-    "build:remix": "remix build",
-    "dev": "run-p dev:*",
-    "dev:css": "npm run generate:css -- --watch",
-    "dev:remix": "node -r dotenv/config node_modules/.bin/remix dev",
-    "generate:css": "npx tailwindcss -o ./app/tailwind.css",
+    "build": "remix build",
+    "dev": "node -r dotenv/config node_modules/.bin/remix dev",
     "postinstall": "remix setup node",
     "start": "remix-serve build"
   },
