@@ -110,46 +110,67 @@ const Swap = (props: SwapProps) => {
     const swap = async (address: string, payTokens: Token[], receiveTokens: Token[]) => {
         const totalAllocation = receiveTokens.reduce((acc: number, t: Token) => acc + t.allocation, 0);
         if (Math.abs(totalAllocation - 1) > 0.0001) return { error: "Allocation must add up to 1" };
-    
-        if (payTokens.length === 0) return { error: "Must select at least one pay token" };
-        if (receiveTokens.length === 0) return { error: "Must select at least one receive token" };
-    
-        if (payTokens.length > 1) return { error: "Must select only one pay token" };
-        if (receiveTokens.length > 1) return { error: "Must select only one receive token" };
-    
+
+        if (payTokens.length !== 1) return { error: "Must select one pay token" };
+        if (receiveTokens.length !== 1) return { error: "Must select one receive token" };
+
         const payAddresses = payTokens.map((t: Token) => t.address);
         const receiveAddresses = receiveTokens.map((t: Token) => t.address);
-    
-        if (payAddresses.includes(poolToken.address)) {
+
+        const { allowance } = await moralis.Web3API.token.getTokenAllowance(
+            {
+                chain,
+                owner_address: address,
+                spender_address: poolToken.address,
+                address: payTokens[0].address
+            }
+        );
+        console.log(`allowance: ${decimalNumber(allowance)}`);
+        console.log(`amount: ${payTokens[0].amount}`);
+        if (decimalNumber(allowance) < payTokens[0].amount) {
+            // await Moralis.Web3API.native.runContractFunction({
+
+            // })
+        }
+        // Moralis.authenticate({
+        //     chain,
+        //     address,
+        // })
+
+        if (receiveAddresses.includes(poolToken.address)) {
+            console.log("Trying to stake");
+            await moralis.executeFunction({
+                contractAddress: poolToken.address,
+                functionName: "stake",
+                abi: poolAbi,
+                params: {
+                    addressIn: payTokens[0].address,
+                    amountIn: BigNumber.from(10).pow(payTokens[0].decimals).mul(payTokens[0].amount),
+                    addressTo: address
+                }
+            });
             return { result: "Staking" };
-        } else if (receiveAddresses.includes(poolToken.address)) {
+        } else if (payAddresses.includes(poolToken.address)) {
+            console.log("Trying to unstake");
+            await moralis.executeFunction({
+                contractAddress: poolToken.address,
+                functionName: "unstake",
+                abi: poolAbi,
+                params: {
+                    addressOut: receiveTokens[0].address,
+                    amountIn: BigNumber.from(10).pow(payTokens[0].decimals).mul(payTokens[0].amount),
+                    addressTo: address
+                }
+            });
             return { result: "Unstaking" };
         } else {
-            const { allowance } = await moralis.Web3API.token.getTokenAllowance(
-                {
-                    chain,
-                    owner_address: address,
-                    spender_address: poolToken.address,
-                    address: payTokens[0].address
-                }
-            );
-            console.log(`allowance: ${decimalNumber(allowance)}`);
-            console.log(`amount: ${payTokens[0].amount}`);
-            if (decimalNumber(allowance) < payTokens[0].amount) {
-                // await Moralis.Web3API.native.runContractFunction({
-    
-                // })
-            }
-            // Moralis.authenticate({
-            //     chain,
-            //     address,
-            // })
+            console.log("Trying to swap");
             await moralis.executeFunction({
                 contractAddress: poolToken.address,
                 functionName: "swap",
                 abi: poolAbi,
-                params: { 
-                    addressIn: payTokens[0].address, 
+                params: {
+                    addressIn: payTokens[0].address,
                     addressOut: receiveTokens[0].address,
                     amountIn: BigNumber.from(10).pow(payTokens[0].decimals).mul(payTokens[0].amount),
                     addressTo: address
@@ -185,6 +206,7 @@ const Swap = (props: SwapProps) => {
             }
         );
 
+        console.log(address);
         address && swap(address, payTokens, receiveTokens);
     };
 
