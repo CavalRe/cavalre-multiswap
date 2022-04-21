@@ -68,8 +68,6 @@ contract Pool is ReentrancyGuard, ERC20 {
 
     uint256 private _scale;
 
-    uint256 private _fee;
-
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {
         _isInitialized = 0;
     }
@@ -159,10 +157,6 @@ contract Pool is ReentrancyGuard, ERC20 {
 
     function scale(address token) public view returns (uint256) {
         return asset(token).scale;
-    }
-
-    function fee() public view returns (uint256) {
-        return _fee;
     }
 
     function fee(address token) public view returns (uint256) {
@@ -261,7 +255,7 @@ contract Pool is ReentrancyGuard, ERC20 {
             for (uint256 i; i < receiveTokens.length; i++) {
                 address receiveToken = receiveTokens[i];
                 if (receiveToken == address(this)) {
-                    receiveFees[i] = fee();
+                    receiveFees[i] = 0;
                 } else {
                     receiveFees[i] = fee(receiveToken);
                 }
@@ -295,19 +289,22 @@ contract Pool is ReentrancyGuard, ERC20 {
             // Allocate tokens to the receiving addresses
             for (uint256 i; i < receiveTokens.length; i++) {
                 address receiveToken = receiveTokens[i];
-                uint256 allocation = allocations[i];
-                uint256 w = weight(receiveToken);
-                uint256 factor = (1e18 - receiveFees[i])
-                    .dmul(allocation)
-                    .dmul(totalAmountOut)
-                    .ddiv(w.dmul(_balance));
-                uint256 amountOut = factor.dmul(balance(receiveToken)).ddiv(
-                    1e18 + factor
-                );
-                receiveAmounts[i] = amountOut;
+                if (receiveToken == address(this)) {
+                    receiveAmounts[i] = totalAmountOut.dmul(poolAllocation);
+                } else {
+                    uint256 allocation = allocations[i];
+                    uint256 w = weight(receiveToken);
+                    uint256 factor = (1e18 - receiveFees[i])
+                        .dmul(allocation)
+                        .dmul(totalAmountOut)
+                        .ddiv(w.dmul(_balance));
+                    uint256 amountOut = factor.dmul(balance(receiveToken)).ddiv(
+                        1e18 + factor
+                    );
+                    receiveAmounts[i] = amountOut;
+                }
             }
         }
-
         // Transfer tokens and update balances
         {
             // Transfer tokens to the pool
@@ -329,10 +326,10 @@ contract Pool is ReentrancyGuard, ERC20 {
                 }
             }
 
+            // Transfer tokens to the receiving address
             for (uint256 i; i < receiveTokens.length; i++) {
                 address receiveToken = receiveTokens[i];
                 uint256 amountOut = receiveAmounts[i];
-
                 // Update _balance and asset balances.
                 if (receiveToken == address(this)) {
                     _balance += amountOut;
@@ -340,7 +337,6 @@ contract Pool is ReentrancyGuard, ERC20 {
                 } else {
                     _assets[_index[receiveToken]].balance -= amountOut;
                 }
-                // Transfer tokens to the receiving address
                 SafeERC20.safeTransfer(
                     IERC20(receiveToken),
                     _msgSender(),
