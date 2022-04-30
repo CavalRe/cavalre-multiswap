@@ -8,9 +8,18 @@ import "../Token.sol";
 import "../Pool.sol";
 import "../libraries/ds-test/src/test.sol";
 
+interface VM {
+    // Expects an error on next call
+    function expectRevert() external;
+    function expectRevert(bytes calldata) external;
+    function expectRevert(bytes4) external;
+}
+
 contract ContractTest is Context, DSTest {
 
     uint256 private constant NTOKENS = 10;
+    VM private vm = VM(HEVM_ADDRESS);
+
     Token[] private tokens;
 
     Pool private pool;
@@ -18,6 +27,10 @@ contract ContractTest is Context, DSTest {
     address private sender;
 
     address[] private addresses;
+    uint256[] private reserves;
+    uint256[] private fees;
+    uint256[] private weights;
+    uint256[] private ks;
     uint256[] private amounts;
 
     address private pay1Asset;
@@ -27,6 +40,7 @@ contract ContractTest is Context, DSTest {
     uint256 private pay1Amount;
 
     address[] private pay1Assets = new address[](1);
+    address[] private pay1Pools = new address[](1);
     uint256[] private pay1Amounts = new uint256[](1);
     address[] private receive1Assets = new address[](1);
     address[] private receive1Pools = new address[](1);
@@ -45,10 +59,10 @@ contract ContractTest is Context, DSTest {
 
         addresses = new address[](NTOKENS);
         amounts = new uint256[](NTOKENS);
-        uint256[] memory reserves = new uint256[](NTOKENS);
-        uint256[] memory fees = new uint256[](NTOKENS);
-        uint256[] memory weights = new uint256[](NTOKENS);
-        uint256[] memory ks = new uint256[](NTOKENS);
+        reserves = new uint256[](NTOKENS);
+        fees = new uint256[](NTOKENS);
+        weights = new uint256[](NTOKENS);
+        ks = new uint256[](NTOKENS);
 
         for (uint256 i = 0; i < NTOKENS; i++) {
             // Generate token
@@ -81,12 +95,15 @@ contract ContractTest is Context, DSTest {
             tokens[i].increaseAllowance(address(pool), amounts[i]);
         }
 
+        pool.increaseAllowance(address(pool), amounts[0]);
+        
         pay1Asset = addresses[0];
         receive1Asset = addresses[1];
         poolAddress = address(pool);
         pay1Amount = amounts[0];
         
         pay1Assets[0] = addresses[0];
+        pay1Pools[0] = address(pool);
         pay1Amounts[0] = amounts[0];
 
         receive1Assets[0] = addresses[1];
@@ -105,61 +122,79 @@ contract ContractTest is Context, DSTest {
         receive1Asset1Pool[1] = address(pool);
     }
 
-    // function testPool() public {
-    //     assertEq(pool.totalSupply(), 1e23);
-    //     for (uint256 i = 0; i < NTOKENS; i++) {
-    //         Token token = tokens[i];
-    //         uint256 supply = (i+1)*1e18;
-    //         uint256 balance = supply / 10;
-    //         assertEq(token.totalSupply(), supply);
-    //         assertEq(pool.balance(address(token)), balance);
-    //         assertEq(token.balanceOf(address(this)), supply - balance);
-    //     }
-    // }
-
-    function testSwap() public {
-        pool.swap(pay1Asset, receive1Asset, pay1Amount, sender);
+    function test0Pool() public {
+        assertEq(pool.totalSupply(), 1e23);
+        for (uint256 i = 0; i < NTOKENS; i++) {
+            Token token = tokens[i];
+            uint256 supply = (i+1)*1e22;
+            uint256 balance = supply / 10;
+            assertEq(token.totalSupply(), supply);
+            assertEq(pool.balance(address(token)), balance);
+            assertEq(token.balanceOf(address(this)), supply - balance);
+        }
+        vm.expectRevert(abi.encodeWithSelector(Pool.AlreadyInitialized.selector));
+        pool.initialize(1e23, addresses, reserves, fees, weights, ks);
     }
 
-    function testSwapVerbose() public {
-        // console.log("2-asset swap");
-        // console.log("Pool:", pool.balance());
-        // console.log("Token in:", pool.balance(addresses[0]));
-        // console.log("Token out:", pool.balance(addresses[1]));
-        // console.log("Fee out:", pool.fee(addresses[1]));
-        // console.log("Amount in", pay1Amount);
-        uint256 amountOut = pool.swap(pay1Asset, receive1Asset, pay1Amount, sender);
-        console.log("Amount out", amountOut);
-    }
-
-    function testMultiswapP1AssetR1Asset() public {
+    function test1Multiswap1to2() public {
         pool.multiswap(pay1Assets, pay1Amounts, receive1Assets, allocations1);
     }
 
-    function testMultiswapP1AssetR1AssetVerbose() public {
-        // console.log("Multiswap (2 assets)");
-        // console.log("Pool:", pool.balance());
-        // console.log("Token in:", pool.balance(pay1Assets[0]));
-        // console.log("Token out:", pool.balance(receive1Assets[0]));
-        // console.log("Fee out:", pool.fee(receive1Assets[0]));
-        // console.log("Amount in", pay1Amounts[0]);
-        uint256[] memory amountsOut = pool.multiswap(pay1Assets, pay1Amounts, receive1Assets, allocations1);
-        console.log("Amount out", amountsOut[0]);
+    function test2Swap() public {
+        pool.swap(pay1Asset, receive1Asset, pay1Amount, sender);
     }
 
-    function testMultiswapP1AssetR1Pool() public {
+    function test3Multiswap1to0() public {
         pool.multiswap(pay1Assets, pay1Amounts, receive1Pools, allocations1);
     }
 
-    function testMultiswapP1AssetR1PoolVerbose() public {
-        // console.log("Multiswap (stake)");
-        // console.log("Pool:", pool.balance());
-        // console.log("Token in:", pool.balance(pay1Assets[0]));
-        // console.log("Fee out:", pool.fee());
-        // console.log("Amount in", pay1Amounts[0]);
-        uint256[] memory amountsOut = pool.multiswap(pay1Assets, pay1Amounts, receive1Pools, allocations1);
-        console.log("Amount out", amountsOut[0]);
+    function test4Stake() public {
+        pool.stake(pay1Asset, amounts[0], sender);
     }
+
+    function test5Multiswap0to1() public {
+        pool.multiswap(pay1Pools, pay1Amounts, pay1Assets, allocations1);
+    }
+
+    function test6Unstake() public {
+        pool.unstake(pay1Asset, pay1Amount, sender);
+    }
+
+    function testMultiswapVerbose() public {
+        // 2-Asset Swaps
+        console.log("********************************************************");
+        emit log_named_uint("amountIn", pay1Amounts[0]);
+        emit log_named_uint("balance", pool.balance(addresses[0]));
+        uint256[] memory amountsOut = pool.multiswap(pay1Assets, pay1Amounts, receive1Assets, allocations1);
+        emit log_named_uint("Multiswap (2-asset) Amount out", amountsOut[0]);
+        vm.expectRevert(abi.encodeWithSelector(Pool.InsufficientAllowance.selector,0,pay1Amount));
+        pool.multiswap(pay1Assets, pay1Amounts, receive1Assets, allocations1);
+        setUp();
+        console.log("********************************************************");
+        uint256 amountOut = pool.swap(pay1Asset, receive1Asset, pay1Amount, sender);
+        emit log_named_uint("Swap Amount out", amountOut);
+        vm.expectRevert(abi.encodeWithSelector(Pool.InsufficientAllowance.selector,0,pay1Amount));
+        pool.swap(pay1Asset, receive1Asset, pay1Amount, sender);
+        // Staking
+        setUp();
+        console.log("********************************************************");
+        amountsOut = pool.multiswap(pay1Assets, pay1Amounts, receive1Pools, allocations1);
+        emit log_named_uint("Multiswap (stake) Amount out", amountsOut[0]);
+        setUp();
+        console.log("********************************************************");
+        amountOut = pool.stake(pay1Asset, amounts[0], sender);
+        emit log_named_uint("Stake Amount out:", amountOut);
+        // Unstaking
+        setUp();
+        console.log("********************************************************");
+        amountsOut = pool.multiswap(pay1Pools, pay1Amounts, receive1Assets, allocations1);
+        emit log_named_uint("Multiswap (unstake) Amount out", amountsOut[0]);
+        setUp();
+        console.log("********************************************************");
+        amountOut = pool.unstake(receive1Asset, pay1Amount, sender);
+        emit log_named_uint("Unstake Amount out:", amountOut);
+    }
+
 
     // function testSwapVerbose() public {
     //     emit log("============");
@@ -188,12 +223,6 @@ contract ContractTest is Context, DSTest {
     //     emit log_named_uint("Balance 2", tokens[1].balanceOf(address(pool)));
     //     emit log_named_uint("Reserve 2", pool.balance(addresses[1]));
     // }
-
-    function testStake() public {
-        // amountOut = 
-        pool.stake(pay1Asset, amounts[0], sender);
-        // console.log("Amount out:", amountOut);
-    }
 
     // function testStakeVerbose() public {
     //     emit log("=============");
@@ -256,11 +285,7 @@ contract ContractTest is Context, DSTest {
     //     );
     // }
 
-    // function testUnstake() public {
-    //     pool.increaseAllowance(address(pool), amountIn);
 
-    //     amountOut = pool.unstake(addresses[0], amountIn, sender);
-    // }
 
     // function testFailUnstakeNoAllowance() public {
     //     amountOut = pool.unstake(addresses[0], amountIn, sender);
