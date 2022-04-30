@@ -17,10 +17,10 @@ struct Asset {
 
 error LengthMismatch(uint256 expected, uint256 actual);
 
-library Multiswap {
+library Lib {
     using DMath for uint256;
 
-    function getPostTradePrice(
+    function _postTradePrice(
         Asset memory asset,
         uint256 amount,
         uint256 poolTokens,
@@ -30,7 +30,7 @@ library Multiswap {
         return weight.dmul(poolTokens).ddiv(asset.balance + amount);
     }
 
-    function getAssetAmount(
+    function _assetAmount(
         Asset[] memory payAssets,
         uint256[] memory amounts,
         uint256 poolTokens,
@@ -44,7 +44,7 @@ library Multiswap {
             Asset memory payAsset = payAssets[i];
             uint256 amount = amounts[i];
             assetAmount += amount.dmul(
-                getPostTradePrice(payAsset, amount, poolTokens, poolScale)
+                _postTradePrice(payAsset, amount, poolTokens, poolScale)
             );
         }
         return assetAmount;
@@ -169,31 +169,12 @@ contract Pool is ReentrancyGuard, ERC20 {
         address[] memory receiveTokens,
         uint256[] memory allocations
     ) public nonReentrant returns (uint256[] memory receiveAmounts) {
-        // Check allowances
+        // Check length mismatch
         {
             if (payTokens.length != amounts.length)
                 revert LengthMismatch(payTokens.length, amounts.length);
-
-            for (uint256 i; i < payTokens.length; i++) {
-                uint256 available = IERC20(payTokens[i]).allowance(
-                    _msgSender(),
-                    address(this)
-                );
-                if (amounts[i] > available)
-                    revert InsufficientAllowance(available, amounts[i]);
-            }
-        }
-        // Check allocations
-        {
             if (receiveTokens.length != allocations.length)
                 revert LengthMismatch(receiveTokens.length, allocations.length);
-
-            uint256 totalAllocation;
-            for (uint256 i; i < allocations.length; i++) {
-                totalAllocation += allocations[i];
-            }
-            if (totalAllocation != 1e18)
-                revert IncorrectAllocation(1e18, totalAllocation);
         }
         // Check duplicates
         {
@@ -205,9 +186,45 @@ contract Pool is ReentrancyGuard, ERC20 {
                 }
             }
         }
+        // Check allocations
+        {
+            uint256 totalAllocation;
+            for (uint256 i; i < allocations.length; i++) {
+                totalAllocation += allocations[i];
+            }
+            if (totalAllocation != 1e18)
+                revert IncorrectAllocation(1e18, totalAllocation);
+        }
+        // Check for simple swaps
+        /*
+        {
+            if (payTokens.length == 1 && receiveTokens.length == 1) {
+                receiveAmounts = new uint256[](1);
+                if (receiveTokens[0] == address(this)) {
+                    receiveAmounts[0] = _stake(payTokens[0], amounts[0], _msgSender());
+                } else if (payTokens[0] == address(this)) {
+                    receiveAmounts[0] = _unstake(receiveTokens[0], allocations[0], _msgSender());
+                } else {
+                    receiveAmounts[0] = _swap(payTokens[0], receiveTokens[0], amounts[0], _msgSender());
+                }
+                return receiveAmounts;
+            }
+        }
+        */
+        // Check allowances
+        {
+            uint256 available;
+            for (uint256 i; i < payTokens.length; i++) {
+                available = IERC20(payTokens[i]).allowance(
+                    _msgSender(),
+                    address(this)
+                );
+                if (amounts[i] > available)
+                    revert InsufficientAllowance(available, amounts[i]);
+            }
+        }
 
-        uint256 isUnstaking;
-        uint256 isStaking;
+        uint256 poolAmount;
         uint256 poolAllocation;
         uint256 totalAmountOut;
 
@@ -217,47 +234,54 @@ contract Pool is ReentrancyGuard, ERC20 {
         uint256[] memory receiveFees = new uint256[](receiveTokens.length);
 
         // Check to see if unstaking.
-        for (uint256 i; i < payTokens.length; i++) {
-            if (payTokens[i] == address(this)) {
-                isUnstaking = 1;
-                break;
+        {
+            for (uint256 i; i < payTokens.length; i++) {
+                if (payTokens[i] == address(this)) {
+                    poolAmount = amounts[i];
+                    break;
+                }
             }
         }
         // Check to see if staking.
-        if (isUnstaking == 0) {
-            for (uint256 i; i < receiveTokens.length; i++) {
-                if (receiveTokens[i] == address(this)) {
-                    isStaking = 1;
-                    poolAllocation = allocations[i];
-                    break;
+        {
+            if (poolAmount == 0) {
+                for (uint256 i; i < receiveTokens.length; i++) {
+                    if (receiveTokens[i] == address(this)) {
+                        poolAllocation = allocations[i];
+                        break;
+                    }
                 }
             }
         }
         // Set up payAssets, payAmounts, and receiveFees
         {
-            uint256 nPay = isUnstaking == 1
+            uint256 nPay = poolAmount > 0
                 ? payTokens.length - 1
                 : payTokens.length;
             payAssets = new Asset[](nPay);
             payAmounts = new uint256[](nPay);
 
-            uint256 iPay;
-            for (uint256 i; i < payTokens.length; i++) {
-                address payToken = payTokens[i];
-                if (payToken != address(this)) {
-                    uint256 amount = amounts[i];
-                    payAssets[iPay] = asset(payToken);
-                    payAmounts[iPay] = amount;
-                    iPay++;
+            {
+                uint256 iPay;
+                for (uint256 i; i < payTokens.length; i++) {
+                    address payToken = payTokens[i];
+                    if (payToken != address(this)) {
+                        uint256 amount = amounts[i];
+                        payAssets[iPay] = asset(payToken);
+                        payAmounts[iPay] = amount;
+                        iPay++;
+                    }
                 }
             }
 
-            for (uint256 i; i < receiveTokens.length; i++) {
-                address receiveToken = receiveTokens[i];
-                if (receiveToken == address(this)) {
-                    receiveFees[i] = 0;
-                } else {
-                    receiveFees[i] = fee(receiveToken);
+            {
+                for (uint256 i; i < receiveTokens.length; i++) {
+                    address receiveToken = receiveTokens[i];
+                    if (receiveToken == address(this)) {
+                        receiveFees[i] = 0;
+                    } else {
+                        receiveFees[i] = fee(receiveToken);
+                    }
                 }
             }
         }
@@ -266,16 +290,22 @@ contract Pool is ReentrancyGuard, ERC20 {
             // Compute the total value paid into the pool
             // (which will equal the total value taken out of the pool)
             // assuming no pool tokens are allocated, i.e. no staking.
-            totalAmountOut = Multiswap.getAssetAmount(
+            totalAmountOut = Lib._assetAmount(
                 payAssets,
                 payAmounts,
                 _balance,
                 _scale
             );
+            // console.log("totalAmountOut",totalAmountOut);
+            // Correct totalAmountOut if pool tokens are unstaked.
+            if (poolAmount > 0) {
+                _balance -= poolAmount;
+                totalAmountOut += poolAmount;
+            }
             // Correct totalAmountOut if pool tokens are allocated.
-            if (isStaking == 1) {
+            if (poolAllocation > 0) {
                 uint256 factor = DMath.ONE.ddiv(poolAllocation) -
-                    Multiswap.getAssetAmount(
+                    Lib._assetAmount(
                         payAssets,
                         payAmounts,
                         1e18,
@@ -283,27 +313,30 @@ contract Pool is ReentrancyGuard, ERC20 {
                     );
                 totalAmountOut = totalAmountOut.ddiv(factor);
             }
+            // console.log("totalAmountOut",totalAmountOut);
         }
         // Compute receiveAmounts
         {
-            // Allocate tokens to the receiving addresses
             for (uint256 i; i < receiveTokens.length; i++) {
                 address receiveToken = receiveTokens[i];
                 if (receiveToken == address(this)) {
                     receiveAmounts[i] = totalAmountOut.dmul(poolAllocation);
                 } else {
                     uint256 allocation = allocations[i];
+                    // console.log("allocation",allocation);
                     uint256 w = weight(receiveToken);
+                    // console.log("weight",w);
                     uint256 factor = (1e18 - receiveFees[i])
-                        .dmul(allocation)
-                        .dmul(totalAmountOut)
-                        .ddiv(w.dmul(_balance));
-                    uint256 amountOut = factor.dmul(balance(receiveToken)).ddiv(
-                        1e18 + factor
+                        .dmul(allocation).dmul(totalAmountOut).ddiv(
+                        w.dmul(_balance)
                     );
+                    // console.log("factor",factor);
+                    uint256 amountOut = factor.dmul(balance(receiveToken))
+                        .ddiv(1e18 + factor);
                     receiveAmounts[i] = amountOut;
                 }
             }
+            // console.log("receiveAmount",receiveAmounts[0]);
         }
         // Transfer tokens and update balances
         {
@@ -319,7 +352,7 @@ contract Pool is ReentrancyGuard, ERC20 {
                 );
                 // Update _balance and asset balances.
                 if (payToken == address(this)) {
-                    _balance -= amount;
+                    // _balance -= amount;
                     _burn(address(this), amount);
                 } else {
                     _assets[_index[payToken]].balance += amount;
@@ -346,12 +379,12 @@ contract Pool is ReentrancyGuard, ERC20 {
         }
     }
 
-    function swap(
+    function _swap(
         address payToken,
         address receiveToken,
         uint256 amountIn,
         address addressTo
-    ) public nonReentrant returns (uint256) {
+    ) internal returns (uint256) {
         // Check allowance
         {
             uint256 available = IERC20(payToken).allowance(
@@ -391,11 +424,20 @@ contract Pool is ReentrancyGuard, ERC20 {
         return amountOut;
     }
 
-    function stake(
+    function swap(
         address payToken,
+        address receiveToken,
         uint256 amountIn,
         address addressTo
     ) public nonReentrant returns (uint256) {
+        return _swap(payToken, receiveToken, amountIn, addressTo);
+    }
+
+    function _stake(
+        address payToken,
+        uint256 amountIn,
+        address addressTo
+    ) internal returns (uint256) {
         // Check allowance
         {
             uint256 available = IERC20(payToken).allowance(
@@ -432,11 +474,19 @@ contract Pool is ReentrancyGuard, ERC20 {
         return amountOut;
     }
 
-    function unstake(
-        address receiveToken,
+    function stake(
+        address payToken,
         uint256 amountIn,
         address addressTo
     ) public nonReentrant returns (uint256) {
+        return _stake(payToken, amountIn, addressTo);
+    }
+
+    function _unstake(
+        address receiveToken,
+        uint256 amountIn,
+        address addressTo
+    ) internal returns (uint256) {
         // Check allowance
         {
             uint256 available = this.allowance(_msgSender(), address(this));
@@ -468,6 +518,14 @@ contract Pool is ReentrancyGuard, ERC20 {
         _burn(address(this), amountIn);
 
         return amountOut;
+    }
+
+    function unstake(
+        address receiveToken,
+        uint256 amountIn,
+        address addressTo
+    ) public nonReentrant returns (uint256) {
+        return _unstake(receiveToken, amountIn, addressTo);
     }
 
     /*
