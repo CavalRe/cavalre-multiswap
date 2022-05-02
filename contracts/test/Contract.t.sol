@@ -156,43 +156,43 @@ contract ContractTest is Context, DSTest {
         pool.multiswap(pay1Pools, pay1Amounts, pay1Assets, allocations1);
     }
 
-    function test6Unstake() public {
-        pool.unstake(pay1Asset, pay1Amount, sender);
-    }
+    // function test6Unstake() public {
+    //     pool.unstake(pay1Asset, pay1Amount, sender);
+    // }
 
     function testMultiswapVerbose() public {
         // 2-Asset Swaps
-        console.log("********************************************************");
-        emit log_named_uint("amountIn", pay1Amounts[0]);
-        emit log_named_uint("balance", pool.balance(addresses[0]));
+        // console.log("********************************************************");
+        // emit log_named_uint("amountIn", pay1Amounts[0]);
+        // emit log_named_uint("balance", pool.balance(addresses[0]));
         uint256[] memory amountsOut = pool.multiswap(pay1Assets, pay1Amounts, receive1Assets, allocations1);
         emit log_named_uint("Multiswap (2-asset) Amount out", amountsOut[0]);
         vm.expectRevert(abi.encodeWithSelector(Pool.InsufficientAllowance.selector,0,pay1Amount));
         pool.multiswap(pay1Assets, pay1Amounts, receive1Assets, allocations1);
         setUp();
-        console.log("********************************************************");
+        // console.log("********************************************************");
         uint256 amountOut = pool.swap(pay1Asset, receive1Asset, pay1Amount, sender);
         emit log_named_uint("Swap Amount out", amountOut);
         vm.expectRevert(abi.encodeWithSelector(Pool.InsufficientAllowance.selector,0,pay1Amount));
         pool.swap(pay1Asset, receive1Asset, pay1Amount, sender);
         // Staking
         setUp();
-        console.log("********************************************************");
+        // console.log("********************************************************");
         amountsOut = pool.multiswap(pay1Assets, pay1Amounts, receive1Pools, allocations1);
         emit log_named_uint("Multiswap (stake) Amount out", amountsOut[0]);
         setUp();
-        console.log("********************************************************");
+        // console.log("********************************************************");
         amountOut = pool.stake(pay1Asset, amounts[0], sender);
         emit log_named_uint("Stake Amount out:", amountOut);
         // Unstaking
         setUp();
-        console.log("********************************************************");
+        // console.log("********************************************************");
         amountsOut = pool.multiswap(pay1Pools, pay1Amounts, receive1Assets, allocations1);
         emit log_named_uint("Multiswap (unstake) Amount out", amountsOut[0]);
-        setUp();
-        console.log("********************************************************");
-        amountOut = pool.unstake(receive1Asset, pay1Amount, sender);
-        emit log_named_uint("Unstake Amount out:", amountOut);
+        // setUp();
+        // console.log("********************************************************");
+        // amountOut = pool.unstake(receive1Asset, pay1Amount, sender);
+        // emit log_named_uint("Unstake Amount out:", amountOut);
     }
 
 

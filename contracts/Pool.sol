@@ -20,7 +20,7 @@ error LengthMismatch(uint256 expected, uint256 actual);
 library Lib {
     using DMath for uint256;
 
-    function _postTradePrice(
+    function postTradePrice(
         Asset memory asset,
         uint256 amount,
         uint256 poolTokens,
@@ -30,7 +30,7 @@ library Lib {
         return weight.dmul(poolTokens).ddiv(asset.balance + amount);
     }
 
-    function _assetAmount(
+    function totalAssetValue(
         Asset[] memory payAssets,
         uint256[] memory amounts,
         uint256 poolTokens,
@@ -44,10 +44,20 @@ library Lib {
             Asset memory payAsset = payAssets[i];
             uint256 amount = amounts[i];
             assetAmount += amount.dmul(
-                _postTradePrice(payAsset, amount, poolTokens, poolScale)
+                postTradePrice(payAsset, amount, poolTokens, poolScale)
             );
         }
         return assetAmount;
+    }
+
+    function fracValueOut(
+        Asset memory asset,
+        uint256 amount,
+        uint256 poolScale
+    ) internal pure returns (uint256) {
+        uint256 gamma = DMath.ONE - asset.fee;
+        uint256 weight = asset.scale.ddiv(poolScale);
+        return gamma.dmul(weight).dmul(amount).ddiv(asset.balance+amount);
     }
 }
 
@@ -226,12 +236,9 @@ contract Pool is ReentrancyGuard, ERC20 {
 
         uint256 poolAmount;
         uint256 poolAllocation;
-        uint256 totalAmountOut;
+        uint256 fracValueIn;
 
-        Asset[] memory payAssets;
-        uint256[] memory payAmounts;
         receiveAmounts = new uint256[](receiveTokens.length);
-        uint256[] memory receiveFees = new uint256[](receiveTokens.length);
 
         // Check to see if unstaking.
         {
@@ -253,90 +260,40 @@ contract Pool is ReentrancyGuard, ERC20 {
                 }
             }
         }
-        // Set up payAssets, payAmounts, and receiveFees
+        // Compute fracValueIn
         {
-            uint256 nPay = poolAmount > 0
-                ? payTokens.length - 1
-                : payTokens.length;
-            payAssets = new Asset[](nPay);
-            payAmounts = new uint256[](nPay);
-
-            {
-                uint256 iPay;
-                for (uint256 i; i < payTokens.length; i++) {
-                    address payToken = payTokens[i];
-                    if (payToken != address(this)) {
-                        uint256 amount = amounts[i];
-                        payAssets[iPay] = asset(payToken);
-                        payAmounts[iPay] = amount;
-                        iPay++;
-                    }
+            for (uint256 i; i < payTokens.length; i++) {
+                address payToken = payTokens[i];
+                uint256 amountIn = amounts[i];
+                if (payToken == address(this)) {
+                    fracValueIn += amountIn.ddiv(_balance+amountIn);
+                    _balance -= amountIn;
+                } else {
+                    Asset memory assetIn = asset(payToken);
+                    uint256 weightIn = assetIn.scale.ddiv(_scale);
+                    uint256 gamma = DMath.ONE - assetIn.fee;
+                    fracValueIn += gamma.dmul(weightIn).dmul(amountIn).ddiv(assetIn.balance+amountIn);
+                    _assets[_index[payToken]].balance += amountIn;
                 }
             }
-
-            {
-                for (uint256 i; i < receiveTokens.length; i++) {
-                    address receiveToken = receiveTokens[i];
-                    if (receiveToken == address(this)) {
-                        receiveFees[i] = 0;
-                    } else {
-                        receiveFees[i] = fee(receiveToken);
-                    }
-                }
-            }
-        }
-        // Compute totalAmountOut
-        {
-            // Compute the total value paid into the pool
-            // (which will equal the total value taken out of the pool)
-            // assuming no pool tokens are allocated, i.e. no staking.
-            totalAmountOut = Lib._assetAmount(
-                payAssets,
-                payAmounts,
-                _balance,
-                _scale
-            );
-            // console.log("totalAmountOut",totalAmountOut);
-            // Correct totalAmountOut if pool tokens are unstaked.
-            if (poolAmount > 0) {
-                _balance -= poolAmount;
-                totalAmountOut += poolAmount;
-            }
-            // Correct totalAmountOut if pool tokens are allocated.
-            if (poolAllocation > 0) {
-                uint256 factor = DMath.ONE.ddiv(poolAllocation) -
-                    Lib._assetAmount(
-                        payAssets,
-                        payAmounts,
-                        1e18,
-                        _scale
-                    );
-                totalAmountOut = totalAmountOut.ddiv(factor);
-            }
-            // console.log("totalAmountOut",totalAmountOut);
         }
         // Compute receiveAmounts
         {
+            address receiveToken;
+            uint256 allocation;
+            uint256 factor;
             for (uint256 i; i < receiveTokens.length; i++) {
-                address receiveToken = receiveTokens[i];
+                receiveToken = receiveTokens[i];
+                allocation = allocations[i];
                 if (receiveToken == address(this)) {
-                    receiveAmounts[i] = totalAmountOut.dmul(poolAllocation);
+                    factor = fracValueIn.dmul(allocation);
+                    receiveAmounts[i] = _balance.dmul(factor).ddiv(DMath.ONE - factor);
                 } else {
-                    uint256 allocation = allocations[i];
-                    // console.log("allocation",allocation);
-                    uint256 w = weight(receiveToken);
-                    // console.log("weight",w);
-                    uint256 factor = (1e18 - receiveFees[i])
-                        .dmul(allocation).dmul(totalAmountOut).ddiv(
-                        w.dmul(_balance)
-                    );
-                    // console.log("factor",factor);
-                    uint256 amountOut = factor.dmul(balance(receiveToken))
-                        .ddiv(1e18 + factor);
-                    receiveAmounts[i] = amountOut;
+                    Asset memory assetOut = asset(receiveToken);
+                    factor = fracValueIn.dmul(allocation).dmul(DMath.ONE - assetOut.fee).dmul(_scale).ddiv(assetOut.scale);
+                    receiveAmounts[i] = assetOut.balance.dmul(factor).ddiv(factor + DMath.ONE);
                 }
             }
-            // console.log("receiveAmount",receiveAmounts[0]);
         }
         // Transfer tokens and update balances
         {
@@ -401,13 +358,11 @@ contract Pool is ReentrancyGuard, ERC20 {
         uint256 amountOut;
 
         {
+            uint256 gamma = (DMath.ONE-assetIn.fee).dmul(DMath.ONE-assetOut.fee);
             uint256 weightRatio = assetIn.scale.ddiv(assetOut.scale);
-            uint256 invGrowthOut = weightRatio.dmul(amountIn.ddiv(reserveIn)) +
-                DMath.ONE;
-            uint256 preFeeReserveOut = assetOut.balance.ddiv(invGrowthOut);
-            uint256 preFeeAmountOut = assetOut.balance - preFeeReserveOut;
-            uint256 feeAmount = preFeeAmountOut.dmul(assetOut.fee);
-            amountOut = preFeeAmountOut - feeAmount;
+            uint256 invGrowthOut = DMath.ONE + gamma.dmul(weightRatio).dmul(amountIn.ddiv(reserveIn));
+            uint256 reserveOut = assetOut.balance.ddiv(invGrowthOut);
+            amountOut = assetOut.balance - reserveOut;
         }
 
         _assets[_index[payToken]].balance = reserveIn;
@@ -450,14 +405,14 @@ contract Pool is ReentrancyGuard, ERC20 {
         Asset memory assetIn = _assets[_index[payToken]];
 
         uint256 reserveIn = assetIn.balance + amountIn;
-        uint256 reserveOut = _balance;
         uint256 weightIn = assetIn.scale.ddiv(_scale);
         uint256 amountOut;
 
         {
-            uint256 invGrowthOut = DMath.ONE -
-                amountIn.dmul(weightIn).ddiv(reserveIn);
-            amountOut = reserveOut.ddiv(invGrowthOut) - reserveOut;
+            uint256 gamma = DMath.ONE-assetIn.fee;
+            uint256 invGrowthOut = DMath.ONE - gamma.dmul(weightIn).dmul(amountIn.ddiv(reserveIn));
+            uint256 reserveOut = _balance.ddiv(invGrowthOut);
+            amountOut = reserveOut - _balance;
         }
 
         _assets[_index[payToken]].balance = reserveIn;
