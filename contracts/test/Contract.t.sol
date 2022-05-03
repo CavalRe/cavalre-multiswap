@@ -156,9 +156,9 @@ contract ContractTest is Context, DSTest {
         pool.multiswap(pay1Pools, pay1Amounts, pay1Assets, allocations1);
     }
 
-    // function test6Unstake() public {
-    //     pool.unstake(pay1Asset, pay1Amount, sender);
-    // }
+    function test6Unstake() public {
+        pool.unstake(pay1Asset, pay1Amount, sender);
+    }
 
     function testMultiswapVerbose() public {
         // 2-Asset Swaps
@@ -183,16 +183,16 @@ contract ContractTest is Context, DSTest {
         setUp();
         // console.log("********************************************************");
         amountOut = pool.stake(pay1Asset, amounts[0], sender);
-        emit log_named_uint("Stake Amount out:", amountOut);
+        emit log_named_uint("Stake Amount out", amountOut);
         // Unstaking
         setUp();
         // console.log("********************************************************");
         amountsOut = pool.multiswap(pay1Pools, pay1Amounts, receive1Assets, allocations1);
         emit log_named_uint("Multiswap (unstake) Amount out", amountsOut[0]);
-        // setUp();
+        setUp();
         // console.log("********************************************************");
-        // amountOut = pool.unstake(receive1Asset, pay1Amount, sender);
-        // emit log_named_uint("Unstake Amount out:", amountOut);
+        amountOut = pool.unstake(receive1Asset, pay1Amount, sender);
+        emit log_named_uint("Unstake Amount out", amountOut);
     }
 
 
