@@ -11,4 +11,8 @@ contract Token is ERC20 {
     ) ERC20(name, symbol) {
         _mint(_msgSender(), totalSupply);
     }
+
+    function mint(uint256 amount) public virtual {
+        _mint(_msgSender(), amount);
+    }
 }
