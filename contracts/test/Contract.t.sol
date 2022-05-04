@@ -122,7 +122,7 @@ contract ContractTest is Context, DSTest {
         receive1Asset1Pool[1] = address(pool);
     }
 
-    function test0Pool() public {
+    function test1_0_Pool() public {
         assertEq(pool.totalSupply(), 1e23);
         for (uint256 i = 0; i < NTOKENS; i++) {
             Token token = tokens[i];
@@ -136,63 +136,139 @@ contract ContractTest is Context, DSTest {
         pool.initialize(1e23, addresses, reserves, fees, weights, ks);
     }
 
-    function test1Multiswap1to2() public {
+    function test1_1_Multiswap() public {
         pool.multiswap(pay1Assets, pay1Amounts, receive1Assets, allocations1);
     }
 
-    function test2Swap() public {
+    function test1_2_Swap() public {
         pool.swap(pay1Asset, receive1Asset, pay1Amount, sender);
     }
 
-    function test3Multiswap1to0() public {
+    function test1_3_Multistake() public {
         pool.multiswap(pay1Assets, pay1Amounts, receive1Pools, allocations1);
     }
 
-    function test4Stake() public {
+    function test1_4_Stake() public {
         pool.stake(pay1Asset, amounts[0], sender);
     }
 
-    function test5Multiswap0to1() public {
+    function test1_5_Multiunstake() public {
         pool.multiswap(pay1Pools, pay1Amounts, pay1Assets, allocations1);
     }
 
-    function test6Unstake() public {
+    function test1_6_Unstake() public {
         pool.unstake(pay1Asset, pay1Amount, sender);
     }
 
-    function testMultiswapVerbose() public {
+    function test2_1_Swapping() public {
         // 2-Asset Swaps
-        // console.log("********************************************************");
-        // emit log_named_uint("amountIn", pay1Amounts[0]);
-        // emit log_named_uint("balance", pool.balance(addresses[0]));
-        uint256[] memory amountsOut = pool.multiswap(pay1Assets, pay1Amounts, receive1Assets, allocations1);
-        emit log_named_uint("Multiswap (2-asset) Amount out", amountsOut[0]);
+        emit log_named_uint("Sender pay balance (before)", tokens[0].balanceOf(sender));
+        emit log_named_uint("Sender receive balance (before)", tokens[1].balanceOf(sender));
+        emit log_named_uint("Pool pay balance I (before)", pool.balance(addresses[0]));
+        emit log_named_uint("Pool pay balance II (before)", tokens[0].balanceOf(address(pool)));
+        emit log_named_uint("Pool receive balance I (before)", pool.balance(addresses[1]));
+        emit log_named_uint("Pool receive balance II (before)", tokens[1].balanceOf(address(pool)));
+        emit log_named_uint("Amount in", pay1Amounts[0]);
+        uint256 amountOut = pool.multiswap(pay1Assets, pay1Amounts, receive1Assets, allocations1)[0];
+        emit log_named_uint("Amount out", amountOut);
+        emit log_named_uint("Sender pay balance (after)", tokens[0].balanceOf(sender));
+        emit log_named_uint("Sender receive balance (after)", tokens[1].balanceOf(sender));
+        emit log_named_uint("Pool pay balance I (after)", pool.balance(addresses[0]));
+        emit log_named_uint("Pool pay balance II (after)", tokens[0].balanceOf(address(pool)));
+        emit log_named_uint("Pool receive balance I (after)", pool.balance(addresses[1]));
+        emit log_named_uint("Pool receive balance II (after)", tokens[1].balanceOf(address(pool)));
         vm.expectRevert(abi.encodeWithSelector(Pool.InsufficientAllowance.selector,0,pay1Amount));
         pool.multiswap(pay1Assets, pay1Amounts, receive1Assets, allocations1);
+        console.log("********************************************************");
         setUp();
-        // console.log("********************************************************");
-        uint256 amountOut = pool.swap(pay1Asset, receive1Asset, pay1Amount, sender);
-        emit log_named_uint("Swap Amount out", amountOut);
+        emit log_named_uint("Sender pay balance (before)", tokens[0].balanceOf(sender));
+        emit log_named_uint("Sender receive balance (before)", tokens[1].balanceOf(sender));
+        emit log_named_uint("Pool pay balance I (before)", pool.balance(addresses[0]));
+        emit log_named_uint("Pool pay balance II (before)", tokens[0].balanceOf(address(pool)));
+        emit log_named_uint("Pool receive balance I (before)", pool.balance(addresses[1]));
+        emit log_named_uint("Pool receive balance II (before)", tokens[1].balanceOf(address(pool)));
+        emit log_named_uint("Amount in", pay1Amounts[0]);
+        amountOut = pool.swap(pay1Asset, receive1Asset, pay1Amount, sender);
+        emit log_named_uint("Amount out", amountOut);
+        emit log_named_uint("Sender pay balance (after)", tokens[0].balanceOf(sender));
+        emit log_named_uint("Sender receive balance (after)", tokens[1].balanceOf(sender));
+        emit log_named_uint("Pool pay balance I (after)", pool.balance(addresses[0]));
+        emit log_named_uint("Pool pay balance II (after)", tokens[0].balanceOf(address(pool)));
+        emit log_named_uint("Pool receive balance I (after)", pool.balance(addresses[1]));
+        emit log_named_uint("Pool receive balance II (after)", tokens[1].balanceOf(address(pool)));
         vm.expectRevert(abi.encodeWithSelector(Pool.InsufficientAllowance.selector,0,pay1Amount));
         pool.swap(pay1Asset, receive1Asset, pay1Amount, sender);
+    }
+
+    function test2_2_Staking() public {
         // Staking
+        emit log_named_uint("Sender pay balance (before)", tokens[0].balanceOf(sender));
+        emit log_named_uint("Sender receive balance (before)", pool.balanceOf(sender));
+        emit log_named_uint("Pool pay balance I (before)", pool.balance(addresses[0]));
+        emit log_named_uint("Pool pay balance II (before)", tokens[0].balanceOf(address(pool)));
+        emit log_named_uint("Pool receive balance I (before)", pool.balance());
+        emit log_named_uint("Pool receive balance II (before)", pool.totalSupply());
+        emit log_named_uint("Amount in", pay1Amounts[0]);
+        uint256 amountOut = pool.multiswap(pay1Assets, pay1Amounts, receive1Pools, allocations1)[0];
+        emit log_named_uint("Amount out", amountOut);
+        emit log_named_uint("Sender pay balance (after)", tokens[0].balanceOf(sender));
+        emit log_named_uint("Sender receive balance (after)", pool.balanceOf(sender));
+        emit log_named_uint("Pool pay balance I (after)", pool.balance(addresses[0]));
+        emit log_named_uint("Pool pay balance II (after)", tokens[0].balanceOf(address(pool)));
+        emit log_named_uint("Pool receive balance I (after)", pool.balance());
+        emit log_named_uint("Pool receive balance II (after)", pool.totalSupply());
+        console.log("********************************************************");
         setUp();
-        // console.log("********************************************************");
-        amountsOut = pool.multiswap(pay1Assets, pay1Amounts, receive1Pools, allocations1);
-        emit log_named_uint("Multiswap (stake) Amount out", amountsOut[0]);
-        setUp();
-        // console.log("********************************************************");
+        emit log_named_uint("Sender pay balance (before)", tokens[0].balanceOf(sender));
+        emit log_named_uint("Sender receive balance (before)", pool.balanceOf(sender));
+        emit log_named_uint("Pool pay balance I (before)", pool.balance(addresses[0]));
+        emit log_named_uint("Pool pay balance II (before)", tokens[0].balanceOf(address(pool)));
+        emit log_named_uint("Pool receive balance I (before)", pool.balance());
+        emit log_named_uint("Pool receive balance II (before)", pool.totalSupply());
+        emit log_named_uint("Amount in", pay1Amounts[0]);
         amountOut = pool.stake(pay1Asset, amounts[0], sender);
-        emit log_named_uint("Stake Amount out", amountOut);
-        // Unstaking
+        emit log_named_uint("Amount out", amountOut);
+        emit log_named_uint("Sender pay balance (after)", tokens[0].balanceOf(sender));
+        emit log_named_uint("Sender receive balance (after)", pool.balanceOf(sender));
+        emit log_named_uint("Pool pay balance I (after)", pool.balance(addresses[0]));
+        emit log_named_uint("Pool pay balance II (after)", tokens[0].balanceOf(address(pool)));
+        emit log_named_uint("Pool receive balance I (after)", pool.balance());
+        emit log_named_uint("Pool receive balance II (after)", pool.totalSupply());
+    }
+
+    function test2_3_Unstaking() public {
+        emit log_named_uint("Sender pay balance (before)", pool.balanceOf(sender));
+        emit log_named_uint("Sender receive balance (before)", tokens[1].balanceOf(sender));
+        emit log_named_uint("Pool pay balance I (before)", pool.balance());
+        emit log_named_uint("Pool pay balance II (before)", pool.totalSupply());
+        emit log_named_uint("Pool receive balance I (before)", pool.balance(addresses[1]));
+        emit log_named_uint("Pool receive balance II (before)", tokens[1].balanceOf(address(pool)));
+        emit log_named_uint("Amount in", pay1Amounts[0]);
+        uint256 amountOut = pool.multiswap(pay1Pools, pay1Amounts, receive1Assets, allocations1)[0];
+        emit log_named_uint("Amount out", amountOut);
+        emit log_named_uint("Sender pay balance (after)", pool.balanceOf(sender));
+        emit log_named_uint("Sender receive balance (after)", tokens[1].balanceOf(sender));
+        emit log_named_uint("Pool pay balance I (after)", pool.balance());
+        emit log_named_uint("Pool pay balance II (after)", pool.totalSupply());
+        emit log_named_uint("Pool receive balance I (after)", pool.balance(addresses[1]));
+        emit log_named_uint("Pool receive balance II (after)", tokens[1].balanceOf(address(pool)));
+        console.log("********************************************************");
         setUp();
-        // console.log("********************************************************");
-        amountsOut = pool.multiswap(pay1Pools, pay1Amounts, receive1Assets, allocations1);
-        emit log_named_uint("Multiswap (unstake) Amount out", amountsOut[0]);
-        setUp();
-        // console.log("********************************************************");
+        emit log_named_uint("Sender pay balance (before)", pool.balanceOf(sender));
+        emit log_named_uint("Sender receive balance (before)", tokens[1].balanceOf(sender));
+        emit log_named_uint("Pool pay balance I (before)", pool.balance());
+        emit log_named_uint("Pool pay balance II (before)", pool.totalSupply());
+        emit log_named_uint("Pool receive balance I (before)", pool.balance(addresses[1]));
+        emit log_named_uint("Pool receive balance II (before)", tokens[1].balanceOf(address(pool)));
+        emit log_named_uint("Amount in", pay1Amounts[0]);
         amountOut = pool.unstake(receive1Asset, pay1Amount, sender);
-        emit log_named_uint("Unstake Amount out", amountOut);
+        emit log_named_uint("Amount out", amountOut);
+        emit log_named_uint("Sender pay balance (after)", pool.balanceOf(sender));
+        emit log_named_uint("Sender receive balance (after)", tokens[1].balanceOf(sender));
+        emit log_named_uint("Pool pay balance I (after)", pool.balance());
+        emit log_named_uint("Pool pay balance II (after)", pool.totalSupply());
+        emit log_named_uint("Pool receive balance I (after)", pool.balance(addresses[1]));
+        emit log_named_uint("Pool receive balance II (after)", tokens[1].balanceOf(address(pool)));
     }
 
 
