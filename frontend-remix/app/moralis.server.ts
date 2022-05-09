@@ -4,7 +4,8 @@ import { poolAbi, decimalNumber } from "~/utils";
 const serverUrl = "https://sf5h683tvf93.usemoralis.com:2053/server";
 const appId = "2Q2fAUPZO5WIzeDn2VPGRVKfKStzMaTZj7h998eA";
 const masterKey = "8v8AJX9Tanzb2sYiwTG8tlc55AeRwb9LSLSjg0Ej"
-const contractAddress = "0x83B141645dD821650b496b01729B98fc7D5e5c3F".toLowerCase();
+// const contractAddress = "0x83B141645dD821650b496b01729B98fc7D5e5c3F".toLowerCase();
+const contractAddress = "0x6df37236a56954a4e3e1eAB9c2A2b252829d766a".toLowerCase();
 const chain = "ropsten";
 
 const feeMax = .01;

@@ -1,10 +1,10 @@
 import { useState } from "react";
+import { useMoralis } from "react-moralis";
 import {
     Button,
     SimpleGrid,
     Text
 } from "@mantine/core";
-import type MoralisType from "moralis";
 import { BigNumber } from "ethers";
 import type { PoolToken, AssetToken, Token } from "~/moralis.server";
 import { poolAbi, decimalNumber } from "~/utils";
@@ -22,17 +22,21 @@ export type SwapState = {
 }
 
 type SwapProps = {
-    poolToken: PoolToken,
+    poolToken: PoolToken
     assetTokens: Dict<AssetToken>
     chain: string
     address: string | null
-    moralis: MoralisType
 };
 
 const Swap = (props: SwapProps) => {
-    const { chain, address, moralis } = props;
+    const { chain, address } = props;
     const [swapState, setSwapState] = useState<SwapState>(props);
     const { poolToken, assetTokens } = swapState;
+    const {
+        isAuthenticated,
+        authenticate,
+        Moralis
+    } = useMoralis();
 
     const getPreTradePrice = (asset: AssetToken) => {
         return asset.weight * poolToken.contractBalance / asset.contractBalance;
@@ -109,71 +113,100 @@ const Swap = (props: SwapProps) => {
 
     const swap = async (address: string, payTokens: Token[], receiveTokens: Token[]) => {
         const totalAllocation = receiveTokens.reduce((acc: number, t: Token) => acc + t.allocation, 0);
-        if (Math.abs(totalAllocation - 1) > 0.0001) return { error: "Allocation must add up to 1" };
+        if (Math.abs(totalAllocation - 1) > 0.0001) {
+            console.log(`Allocation must be 1: ${totalAllocation}`);
+            return { error: "Allocation must add up to 1" };
+        };
 
-        if (payTokens.length !== 1) return { error: "Must select one pay token" };
-        if (receiveTokens.length !== 1) return { error: "Must select one receive token" };
+        if (payTokens.length == 0) {
+            console.log("No pay tokens");
+            return { error: "Must select at least one pay token" };
+        };
 
-        const payAddresses = payTokens.map((t: Token) => t.address);
-        const receiveAddresses = receiveTokens.map((t: Token) => t.address);
-
-        const { allowance } = await moralis.Web3API.token.getTokenAllowance(
-            {
-                chain,
-                owner_address: address,
-                spender_address: poolToken.address,
-                address: payTokens[0].address
-            }
-        );
-        console.log(`allowance: ${decimalNumber(allowance)}`);
-        console.log(`amount: ${payTokens[0].amount}`);
-        if (decimalNumber(allowance) < payTokens[0].amount) {
-            // await Moralis.Web3API.native.runContractFunction({
-
-            // })
+        if (receiveTokens.length == 0) {
+            console.log("Must select at least one receive token");
+            return { error: "Must select at least one receive token" };
         }
-        // Moralis.authenticate({
-        //     chain,
-        //     address,
-        // })
 
-        if (receiveAddresses.includes(poolToken.address)) {
-            console.log("Trying to stake");
-            await moralis.executeFunction({
-                contractAddress: poolToken.address,
-                functionName: "stake",
-                abi: poolAbi,
-                params: {
-                    addressIn: payTokens[0].address,
-                    amountIn: BigNumber.from(10).pow(payTokens[0].decimals).mul(payTokens[0].amount),
-                    addressTo: address
-                }
-            });
-            return { result: "Staking" };
-        } else if (payAddresses.includes(poolToken.address)) {
-            console.log("Trying to unstake");
-            await moralis.executeFunction({
-                contractAddress: poolToken.address,
-                functionName: "unstake",
-                abi: poolAbi,
-                params: {
-                    addressOut: receiveTokens[0].address,
-                    amountIn: BigNumber.from(10).pow(payTokens[0].decimals).mul(payTokens[0].amount),
-                    addressTo: address
-                }
-            });
-            return { result: "Unstaking" };
+        const payAddresses: string[] = payTokens.map((t: Token) => t.address);
+        const amounts: BigNumber[] = payTokens.map((t: Token) => 
+            BigNumber.from((t.amount*10**t.decimals).toLocaleString('fullwide',{useGrouping:false}))
+        );
+
+        const receiveAddresses: string[] = receiveTokens.map((t: Token) => t.address);
+        const allocations: BigNumber[] = receiveTokens.map((t: Token) => 
+            BigNumber.from((t.allocation*10**18).toLocaleString('fullwide',{useGrouping:false}))
+        );
+ 
+        // const { allowance } = await Moralis.Web3API.token.getTokenAllowance(
+        //     {
+        //         chain,
+        //         owner_address: address,
+        //         spender_address: poolToken.address,
+        //         address: payTokens[0].address
+        //     }
+        // );
+        // console.log(`allowance: ${decimalNumber(allowance)}`);
+        // console.log(`amount: ${payTokens[0].amount}`);
+        // if (decimalNumber(allowance) < payTokens[0].amount) {
+        //     // await Moralis.Web3API.native.runContractFunction({
+
+        //     // })
+        // }
+        // // Moralis.authenticate({
+        // //     chain,
+        // //     address,
+        // // })
+
+        if (payTokens.length == 1 && receiveTokens.length == 1) {
+            if (receiveAddresses.includes(poolToken.address)) {
+                await Moralis.executeFunction({
+                    contractAddress: poolToken.address,
+                    functionName: "stake",
+                    abi: poolAbi,
+                    params: {
+                        payToken: payTokens[0].address,
+                        amountIn: BigNumber.from(10).pow(payTokens[0].decimals).mul(payTokens[0].amount),
+                        addressTo: address
+                    }
+                });
+                return { result: "Staking" };
+            } else if (payAddresses.includes(poolToken.address)) {
+                await Moralis.executeFunction({
+                    contractAddress: poolToken.address,
+                    functionName: "unstake",
+                    abi: poolAbi,
+                    params: {
+                        receiveToken: receiveTokens[0].address,
+                        amountIn: BigNumber.from(10).pow(payTokens[0].decimals).mul(payTokens[0].amount),
+                        addressTo: address
+                    }
+                });
+                return { result: "Unstaking" };
+            } else {
+                await Moralis.executeFunction({
+                    contractAddress: poolToken.address,
+                    functionName: "swap",
+                    abi: poolAbi,
+                    params: {
+                        payToken: payTokens[0].address,
+                        receiveToken: receiveTokens[0].address,
+                        amountIn: BigNumber.from(10).pow(payTokens[0].decimals).mul(payTokens[0].amount),
+                        addressTo: address
+                    }
+                });
+                return { result: "Swapping" };
+            };
         } else {
-            console.log("Trying to swap");
-            await moralis.executeFunction({
+            await Moralis.executeFunction({
                 contractAddress: poolToken.address,
-                functionName: "swap",
+                functionName: "multiswap",
                 abi: poolAbi,
                 params: {
-                    addressIn: payTokens[0].address,
-                    addressOut: receiveTokens[0].address,
-                    amountIn: BigNumber.from(10).pow(payTokens[0].decimals).mul(payTokens[0].amount),
-                    addressTo: address
+                    payTokens: payAddresses,
+                    amounts,
+                    receiveTokens: receiveAddresses,
+                    allocations
                 }
             });
             return { result: "Swapping" };
@@ -186,7 +219,7 @@ const Swap = (props: SwapProps) => {
     );
 
     const handleSwap = () => {
-        const quotes = getQuote(swapState);
+        getQuote(swapState);
         const payTokens: Token[] = [];
         const receiveTokens: Token[] = [];
 
@@ -206,9 +239,10 @@ const Swap = (props: SwapProps) => {
             }
         );
 
-        console.log(address);
         address && swap(address, payTokens, receiveTokens);
     };
+
+    const handleLogin = async () => await authenticate();
 
     return (
         <>
@@ -231,15 +265,25 @@ const Swap = (props: SwapProps) => {
                 />
             </SimpleGrid>
             <Text>{`Total allocation: ${(100 * totalAllocation).toFixed(2)}%`}</Text>
-            <Button
-                type="submit"
-                onClick={handleSwap}
-                mt="xl"
-                size="md"
-                disabled={Math.abs(totalAllocation - 1) > .0001}
-            >
-                Swap
-            </Button>
+            {isAuthenticated ? 
+                <Button
+                    type="submit"
+                    onClick={handleSwap}
+                    mt="xl"
+                    size="md"
+                    disabled={Math.abs(totalAllocation - 1) > .0001}
+                >
+                    Execute Swap
+                </Button> : 
+                <Button
+                    type="submit"
+                    onClick={handleLogin}
+                    mt="xl"
+                    size="md"
+                >
+                        Connect Wallet
+                </Button>
+            }
         </>
     );
 };

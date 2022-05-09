@@ -142,25 +142,23 @@ const Dashboard = (props: DashboardProps) => {
     return (
         <Container>
             <Title>Liquidity Pool</Title>
-            {isAuthenticated ?
-                (<>
-                    <Button onClick={() => setOpened(true)} mt="xl">Swap</Button>
-                    <Modal
-                        size="800px"
-                        opened={opened}
-                        onClose={() => setOpened(false)}
-                        radius="lg"
-                        title={<Title align="center" order={3}>Mulit-Asset Swap</Title>}
-                    >
-                        <Swap
-                            poolToken={poolToken}
-                            assetTokens={assetTokens}
-                            chain={chain}
-                            address={account}
-                            moralis={Moralis}
-                        />
-                    </Modal>
-                </>) : null}
+            <Button onClick={() => setOpened(true)} mt="xl">Swap</Button>
+            <Modal
+                size="800px"
+                opened={opened}
+                onClose={() => setOpened(false)}
+                radius="lg"
+                title={<Title align="center" order={3}>Mulit-Asset Swap</Title>}
+            >
+                <Swap
+                    poolToken={poolToken}
+                    assetTokens={assetTokens}
+                    chain={chain}
+                    address={account}
+                    moralis={Moralis}
+                    isAuthenticated={isAuthenticated}
+                />
+            </Modal>
             <Card withBorder p="xl" radius="md" mt="lg">
                 <Title order={3}>Pool Tokens</Title>
                 <SimpleGrid cols={isAuthenticated ? 4 : 3}>

@@ -18,10 +18,10 @@ dotenv.config();
 // Go to https://hardhat.org/config/ to learn more
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.11",
+  solidity: "0.8.13",
   networks: {
     localhost: {
-      from: "0xDC1062712Dd033874d1d915adA2cFecDe1575c71",
+      from: "0xAdb2f6a8aA0A7212CF5f3d41ef77641ca0853021",
       url: "http://localhost:8545",
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [
@@ -30,8 +30,9 @@ const config: HardhatUserConfig = {
         ] : [],
     },
     ropsten: {
-      from: "0xDC1062712Dd033874d1d915adA2cFecDe1575c71",
+      from: "0xAdb2f6a8aA0A7212CF5f3d41ef77641ca0853021",
       url: process.env.ROPSTEN_URL || "",
+      gas: 1000000,
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
