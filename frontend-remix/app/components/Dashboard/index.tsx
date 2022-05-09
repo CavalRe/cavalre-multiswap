@@ -51,39 +51,54 @@ const Dashboard = (props: DashboardProps) => {
     const [_, setTotalBalance] = useState<number>(0);
 
     const setBalances = async () => {
-        await Moralis.Web3API.account.getTokenBalances({
-            account,
-            chain
-        }).then(
-            (balanceData: any) => {
-                let totalBalance = 0;
-                balanceData.forEach((b: any) => {
-                    const balance = decimalNumber(b.balance, b.decimals);
-                    totalBalance += balance;
-                    if (b.token_address in assetTokens) {
-                        assetTokens[b.token_address].accountBalance = balance;
-                    } else if (b.token_address == poolToken.address) {
-                        poolToken.accountBalance = balance;
-                    } else {
-                        assetTokens[b.token_address] = {
+        if (account) {
+            await Moralis.Web3API.account.getTokenBalances({
+                account,
+                chain
+            }).then(
+                (balanceData: any) => {
+                    let totalBalance = 0;
+                    balanceData.forEach(async (b: any) => {
+                        const balance = decimalNumber(b.balance, b.decimals);
+                        totalBalance += balance;
+                        await Moralis.Web3API.token.getTokenAllowance({
+                            owner_address: account,
+                            spender_address: poolToken.address,
                             address: b.token_address,
-                            name: b.name,
-                            symbol: b.symbol,
-                            decimals: parseInt(b.decimals),
-                            k: 1,
-                            fee: .01,
-                            weight: 0,
-                            contractBalance: 0,
-                            accountBalance: balance,
-                            amount: 0,
-                            allocation: 0,
-                            selection: "Not in Pool"
-                        };
-                    };
-                });
-                setTotalBalance(totalBalance);
-            }
-        );
+                            chain
+                        }).then(
+                            ({ allowance }) => {
+                                if (b.token_address in assetTokens) {
+                                    assetTokens[b.token_address].accountBalance = balance;
+                                    assetTokens[b.token_address].allowance = decimalNumber(allowance, b.decimals);
+                                    console.log(assetTokens[b.token_address]);
+                                } else if (b.token_address == poolToken.address) {
+                                    poolToken.accountBalance = balance;
+                                    poolToken.allowance = decimalNumber(allowance, b.decimals);
+                                } else {
+                                    assetTokens[b.token_address] = {
+                                        address: b.token_address,
+                                        name: b.name,
+                                        symbol: b.symbol,
+                                        decimals: parseInt(b.decimals),
+                                        k: 1,
+                                        fee: .01,
+                                        weight: 0,
+                                        contractBalance: 0,
+                                        accountBalance: balance,
+                                        allowance: decimalNumber(allowance, b.decimals),
+                                        amount: 0,
+                                        allocation: 0,
+                                        selection: "Not in Pool"
+                                    };
+                                };
+                            }
+                        );
+                    });
+                    setTotalBalance(totalBalance);
+                }
+            );
+        };
     };
 
     useEffect(() => {
@@ -155,8 +170,6 @@ const Dashboard = (props: DashboardProps) => {
                     assetTokens={assetTokens}
                     chain={chain}
                     address={account}
-                    moralis={Moralis}
-                    isAuthenticated={isAuthenticated}
                 />
             </Modal>
             <Card withBorder p="xl" radius="md" mt="lg">

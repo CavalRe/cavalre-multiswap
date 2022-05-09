@@ -32,6 +32,7 @@ export type PoolToken = {
     fee: number
     contractBalance: number
     accountBalance: number
+    allowance: number
     amount: number
     allocation: number
     selection: Selection
@@ -95,6 +96,7 @@ export const getPool = async () => {
         fee: 0.0001,
         contractBalance: poolTokens,
         accountBalance: 0,
+        allowance: 0,
         amount: 0,
         allocation: 0,
         selection: "Neither"
@@ -113,6 +115,7 @@ export const getPool = async () => {
             weight: 1 / addresses.length,
             contractBalance: decimalNumber(a[1]),
             accountBalance: 0,
+            allowance: 0,
             amount: 0,
             allocation: 0,
             selection: "Neither"
