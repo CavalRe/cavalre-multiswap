@@ -15,11 +15,8 @@ import {
 import type { MantineSize } from "@mantine/core";
 import type { PoolToken, AssetToken } from "~/moralis.server";
 import { decimalNumber } from "~/utils";
+import type { Dict } from "~/utils";
 import { Swap } from "~/components/Dashboard";
-
-type Dict<T> = {
-    [key: string]: T
-};
 
 type Numeraire = {
     name: string,

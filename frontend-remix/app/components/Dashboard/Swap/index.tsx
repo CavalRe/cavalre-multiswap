@@ -7,14 +7,11 @@ import {
 } from "@mantine/core";
 import { BigNumber } from "ethers";
 import type { PoolToken, AssetToken, Token } from "~/moralis.server";
-import { poolAbi, decimalNumber } from "~/utils";
+import { poolAbi } from "~/utils";
+import type { Dict } from "~/utils";
 import PayComponent from "./PayComponent";
 import ReceiveComponent from "./ReceiveComponent";
 import TokenSelect from "./TokenSelect";
-
-type Dict<T> = {
-    [key: string]: T
-};
 
 export type SwapState = {
     poolToken: PoolToken

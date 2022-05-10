@@ -1,5 +1,6 @@
 import Moralis from "moralis/node";
 import { poolAbi, decimalNumber } from "~/utils";
+import type { Dict } from "~/utils";
 
 const serverUrl = "https://sf5h683tvf93.usemoralis.com:2053/server";
 const appId = "2Q2fAUPZO5WIzeDn2VPGRVKfKStzMaTZj7h998eA";
@@ -17,10 +18,6 @@ Moralis.start({
     appId,
     masterKey
 });
-
-type Dict<T> = {
-    [key: string]: T
-};
 
 type Selection = "Pay" | "Receive" | "Neither" | "Not in Pool";
 
