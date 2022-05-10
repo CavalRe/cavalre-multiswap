@@ -32,6 +32,7 @@ const Swap = (props: SwapProps) => {
     const { chain, address } = props;
     const [swapState, setSwapState] = useState<SwapState>(props);
     const { poolToken, assetTokens } = swapState;
+    const [isApproved, setIsApproved] = useState<boolean>(true);
     const {
         isAuthenticated,
         authenticate,
@@ -166,7 +167,7 @@ const Swap = (props: SwapProps) => {
                     abi: poolAbi,
                     params: {
                         payToken: payTokens[0].address,
-                        amountIn: BigNumber.from(10).pow(payTokens[0].decimals).mul(payTokens[0].amount),
+                        amountIn: BigNumber.from((payTokens[0].amount*10**payTokens[0].decimals).toLocaleString('fullwide',{useGrouping:false})),
                         addressTo: address
                     }
                 });
@@ -178,7 +179,7 @@ const Swap = (props: SwapProps) => {
                     abi: poolAbi,
                     params: {
                         receiveToken: receiveTokens[0].address,
-                        amountIn: BigNumber.from(10).pow(payTokens[0].decimals).mul(payTokens[0].amount),
+                        amountIn: BigNumber.from((payTokens[0].amount*10**payTokens[0].decimals).toLocaleString('fullwide',{useGrouping:false})),
                         addressTo: address
                     }
                 });
@@ -191,7 +192,7 @@ const Swap = (props: SwapProps) => {
                     params: {
                         payToken: payTokens[0].address,
                         receiveToken: receiveTokens[0].address,
-                        amountIn: BigNumber.from(10).pow(payTokens[0].decimals).mul(payTokens[0].amount),
+                        amountIn: BigNumber.from((payTokens[0].amount*10**payTokens[0].decimals).toLocaleString('fullwide',{useGrouping:false})),
                         addressTo: address
                     }
                 });
@@ -244,6 +245,61 @@ const Swap = (props: SwapProps) => {
 
     const handleLogin = async () => await authenticate();
 
+    const checkAllocations = () => {
+        let isApproved = poolToken.amount <= poolToken.allowance;
+        Object.values(assetTokens).forEach((asset: AssetToken) => {
+            isApproved = isApproved && asset.amount <= asset.allowance;
+        });
+        return isApproved;
+    };
+
+    const handleIncreaseAllowance = async () => {
+        const increaseAmount = poolToken.amount - poolToken.allowance;
+        if (increaseAmount > 0) {
+            await Moralis.executeFunction({
+                contractAddress: poolToken.address,
+                functionName: "approve",
+                abi: poolAbi,
+                params: {
+                    spender: poolToken.address,
+                    amount: 0,
+                }
+            });
+            await Moralis.executeFunction({
+                contractAddress: poolToken.address,
+                functionName: "approve",
+                abi: poolAbi,
+                params: {
+                    spender: poolToken.address,
+                    amount: BigNumber.from((10*increaseAmount*10**poolToken.decimals).toLocaleString('fullwide',{useGrouping:false}))
+                }
+            });
+        };
+        Object.values(assetTokens).forEach(async (asset: AssetToken) => {
+            const increaseAmount = asset.amount - asset.allowance;
+            if (increaseAmount > 0) {
+                await Moralis.executeFunction({
+                    contractAddress: asset.address,
+                    functionName: "approve",
+                    abi: poolAbi,
+                    params: {
+                        spender: poolToken.address,
+                        amount: 0,
+                    }
+                });
+                await Moralis.executeFunction({
+                    contractAddress: asset.address,
+                    functionName: "approve",
+                    abi: poolAbi,
+                    params: {
+                        spender: poolToken.address,
+                        amount: BigNumber.from((10*increaseAmount*10**asset.decimals).toLocaleString('fullwide',{useGrouping:false}))
+                    }
+                });
+            };
+        });
+    };
+
     return (
         <>
             <SimpleGrid cols={2}>
@@ -266,15 +322,24 @@ const Swap = (props: SwapProps) => {
             </SimpleGrid>
             <Text>{`Total allocation: ${(100 * totalAllocation).toFixed(2)}%`}</Text>
             {isAuthenticated ? 
-                <Button
-                    type="submit"
-                    onClick={handleSwap}
-                    mt="xl"
-                    size="md"
-                    disabled={Math.abs(totalAllocation - 1) > .0001}
-                >
-                    Execute Swap
-                </Button> : 
+                checkAllocations() ?
+                        <Button
+                            type="submit"
+                            onClick={handleSwap}
+                            mt="xl"
+                            size="md"
+                            disabled={(Math.abs(totalAllocation - 1) > .0001)}
+                        >
+                            Execute Swap
+                        </Button> :
+                        <Button
+                            type="submit"
+                            onClick={handleIncreaseAllowance}
+                            mt="xl"
+                            size="md"
+                        >
+                            Increase Allowances
+                        </Button> :
                 <Button
                     type="submit"
                     onClick={handleLogin}
