@@ -1,5 +1,6 @@
 
 import { FC } from "react";
+import { useMoralis } from "react-moralis";
 import {
     Card,
     Group,
@@ -12,6 +13,7 @@ import type { TokenComponentProps } from "../TokenSelect";
 const PayComponent: FC<TokenComponentProps> = (props: TokenComponentProps) => {
     const { token, swapState, getQuote } = props;
     const { poolToken, assetTokens } = swapState;
+    const { isAuthenticated } = useMoralis();
 
     const handleAmountChange = (amount: number) => {
         if (token.address == poolToken.address) {
@@ -34,7 +36,7 @@ const PayComponent: FC<TokenComponentProps> = (props: TokenComponentProps) => {
                 value={token.amount}
                 onChange={(a: number) => handleAmountChange(a)}
                 min={0}
-                error={token.amount > token.allowance ? "Insufficient allowance ("+token.symbol+" "+token.allowance+")" : false}
+                error={isAuthenticated && token.amount > token.allowance ? "Insufficient allowance ("+token.symbol+" "+token.allowance+")" : false}
             />
             <Group mt="xs" position="left">
                 <Text>Pool Balance:</Text>

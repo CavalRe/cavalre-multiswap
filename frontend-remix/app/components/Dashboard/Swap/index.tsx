@@ -259,16 +259,7 @@ const Swap = (props: SwapProps) => {
                 abi: poolAbi,
                 params: {
                     spender: poolToken.address,
-                    amount: 0,
-                }
-            });
-            await Moralis.executeFunction({
-                contractAddress: poolToken.address,
-                functionName: "approve",
-                abi: poolAbi,
-                params: {
-                    spender: poolToken.address,
-                    amount: BigNumber.from((10*increaseAmount*10**poolToken.decimals).toLocaleString('fullwide',{useGrouping:false}))
+                    amount: BigNumber.from((increaseAmount*10**poolToken.decimals).toLocaleString('fullwide',{useGrouping:false}))
                 }
             });
         };
@@ -281,16 +272,7 @@ const Swap = (props: SwapProps) => {
                     abi: poolAbi,
                     params: {
                         spender: poolToken.address,
-                        amount: 0,
-                    }
-                });
-                await Moralis.executeFunction({
-                    contractAddress: asset.address,
-                    functionName: "approve",
-                    abi: poolAbi,
-                    params: {
-                        spender: poolToken.address,
-                        amount: BigNumber.from((10*increaseAmount*10**asset.decimals).toLocaleString('fullwide',{useGrouping:false}))
+                        amount: BigNumber.from((increaseAmount*10**asset.decimals).toLocaleString('fullwide',{useGrouping:false}))
                     }
                 });
             };
