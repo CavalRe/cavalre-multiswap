@@ -1,37 +1,31 @@
-import { useNavigate } from 'remix';
-import {
-    AppShell,
-    Button,
-    Container,
-    Header
-} from '@mantine/core';
+import { useLoaderData } from "remix";
+import type { LoaderFunction } from "remix";
+import { AppShell } from '@mantine/core';
 
-const GoToDashboard = () => {
-    const navigate = useNavigate();
+import Dashboard, { Header } from "~/components/Dashboard";
 
-    const handleOnClick = () => {
-        navigate("/dashboard");
-    }
+import { getPool } from "~/moralis.server";
 
-    return (
-        <Header height={60} p="xs">
-            <Button onClick={handleOnClick}>Go to Dashboard</Button>
-        </Header>
-    )
+export const loader: LoaderFunction = async () => {
+    const pool = await getPool();
+    return pool;
 };
 
-const Welcome = () => {
+export default function Index() {
+    const pool = useLoaderData();
+    const { chain, poolToken, assetTokens } = pool;
 
     return (
         <AppShell
             padding="md"
-            header={<GoToDashboard />}
+            // navbar={<NavBar />}
+            header={<Header assetTokens={assetTokens}/>}
         >
-            <Container>
-                <h1>Welcome</h1>
-            </Container>
+            <Dashboard
+                chain={chain}
+                poolToken={poolToken}
+                assetTokens={assetTokens}
+            />
         </AppShell>
     )
 };
-
-export default Welcome;

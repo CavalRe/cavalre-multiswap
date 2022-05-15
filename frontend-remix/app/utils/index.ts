@@ -6,6 +6,6 @@ export type Dict<T> = {
     [key: string]: T
 };
 
-export { abi as poolAbi } from "../../../artifacts/contracts/Pool.sol/Pool.json";
+export { abi as poolAbi } from "../../artifacts/contracts/Pool.sol/Pool.json";
 
-export { abi as tokenAbi } from "../../../artifacts/contracts/Token.sol/Token.json";
+export { abi as tokenAbi } from "../../artifacts/contracts/Token.sol/Token.json";

@@ -15,7 +15,7 @@ type HeaderProps = {
 };
 
 const DashboardHeader = (props: HeaderProps) => {
-    const { poolToken, assetTokens } = props;
+    const { assetTokens } = props;
     const {
         isAuthenticated,
         authenticate,
