@@ -1,6 +1,6 @@
 import { task } from "hardhat/config";
 import { BigNumber } from "ethers";
-import { abi as tokenAbi } from "../../artifacts/contracts/Token.sol/Token.json";
+import { abi as tokenAbi } from "../../frontend-remix/artifacts/contracts/Token.sol/Token.json";
 
 // export const tokens: string[] = [
 //     '0x90cdC6AE916Be7616397550FAA982A50c45e5a2A',
@@ -13,20 +13,44 @@ import { abi as tokenAbi } from "../../artifacts/contracts/Token.sol/Token.json"
 //     '0xCD681C51cAc3E8aa2e1c1a78E4D95B67e13c4AB8',
 //     '0x6C96C8876668D02f136aEc4BB5f3aA0DF5226832',
 //     '0x5869c4cFEB622231a0b32Fd896fFFfF081E65b95'
-// ]
+// ];
+
+// export const tokens: string[] = [
+//     '0xdA0CAAb82F3c1B6008420E0272bf15b3a36339E2',
+//     '0x66cD24506897Ab1af348f1518941125A3621Ae80',
+//     '0xa3299197A9b141817C073C0a00e18FA93bc17F1d',
+//     '0xdBE713b6cE2A36b4E85F86009C97A6f0E390E410',
+//     '0xe60D94b6aF6ABf963f3e337d605FE85910fE93F6',
+//     '0x1a9c3549be7bd880a99E455AdcdC32c1074E491b',
+//     '0xB634D323D8c97191a83C166a80060E7310251E8D',
+//     '0x287FB1E6B2Cd671Edd84F4895aB4b00650Bd1F3B',
+//     '0xA0d31DDCe2890dcd8c6Dd56f8ded183e05aADD45',
+//     '0x1467ad30C6e1862AA10Ff22C7058730D7607Fd8f'
+// ];
 
 export const tokens: string[] = [
-    '0xdA0CAAb82F3c1B6008420E0272bf15b3a36339E2',
-    '0x66cD24506897Ab1af348f1518941125A3621Ae80',
-    '0xa3299197A9b141817C073C0a00e18FA93bc17F1d',
-    '0xdBE713b6cE2A36b4E85F86009C97A6f0E390E410',
-    '0xe60D94b6aF6ABf963f3e337d605FE85910fE93F6',
-    '0x1a9c3549be7bd880a99E455AdcdC32c1074E491b',
-    '0xB634D323D8c97191a83C166a80060E7310251E8D',
-    '0x287FB1E6B2Cd671Edd84F4895aB4b00650Bd1F3B',
-    '0xA0d31DDCe2890dcd8c6Dd56f8ded183e05aADD45',
-    '0x1467ad30C6e1862AA10Ff22C7058730D7607Fd8f'
-]
+    '0x4bc8bE0A8A9b70DbabbB40Bd534989C49CFf95ba',
+    '0xa66Fe7786a95889971910a20f4F20C28FE2421bF',
+    '0x6aFd3985E34373fd420613f93B07f9263738BFEf',
+    '0xD3D3Df6A09C05de845980C04d18666C036c98E3E',
+    '0xFf2EBFeB702ebE812c85616d3fBf40615e24B8AA'
+];
+
+export const names: string[] = [
+    "Wrapped Ether",
+    "Wrapped Bitcoin",
+    "USD Coin",
+    "Tether USD",
+    "DAI Stablecoin"
+];
+
+export const symbols: string[] = [
+    "WETH",
+    "WBTC",
+    "USDC",
+    "USDT",
+    "DAI"
+];
 
 const one: BigNumber = BigNumber.from(10).pow(18);
 
@@ -41,7 +65,7 @@ task(
     for (let i = 0; i < tokens.length; i++) {
         const token = new hre.ethers.Contract(tokens[i], tokenAbi, owner);
         console.log("--------------------------------------------------------")
-        console.log(`Token ${i + 1}: ${token.address}`);
+        console.log(`${names[i]}: ${token.address}`);
         const supply = await token.totalSupply();
         console.log(`Total Supply: ${supply}`);
     }
@@ -62,7 +86,7 @@ task(
     for (let i = 0; i < tokens.length; i++) {
         const token = new hre.ethers.Contract(tokens[i], tokenAbi, owner);
         console.log("--------------------------------------------------------")
-        console.log(`Token ${i + 1}: ${token.address}`);
+        console.log(`${names[i]}: ${token.address}`);
         const balance = await token.balanceOf(sender);
         console.log(`Balance: ${balance}`);
     }
@@ -88,22 +112,19 @@ task(
     for (let i = 0; i < tokens.length; i++) {
         const token = new hre.ethers.Contract(tokens[i], tokenAbi, owner);
         console.log("--------------------------------------------------------")
-        console.log(`Token ${i + 1}: ${token.address}`);
+        console.log(`${names[i]}: ${token.address}`);
         const value = await token.allowance(ownerAddress, spender);
         console.log(`Allowance: ${value}`);
     }
 });
 
 task(
-    "increaseAllowances",
+    "approve",
     "Retrieve the sender's allowances for each asset token."
 ).addPositionalParam(
     "spender",
     "The address of the spender."
-).addPositionalParam(
-    "addedValue",
-    "The amount to increase the allowance."
-).setAction(async ({ spender, addedValue }, hre) => {
+).setAction(async ({ spender }, hre) => {
     const [owner] = await hre.ethers.getSigners();
     const ownerAddress = await owner.getAddress();
     console.log(`Owner: ${ownerAddress}`);
@@ -111,15 +132,18 @@ task(
     const token = new hre.ethers.Contract(spender, tokenAbi, owner);
     console.log("--------------------------------------------------------")
     console.log(`Pool: ${token.address}`);
-    await token.increaseAllowance(spender, addedValue);
-    console.log(`Added Value: ${addedValue}`);
+    // await token.increaseAllowance(spender, addedValue);
+    // console.log(`Added Value: ${addedValue}`);
 
-    for (let i = 0; i < tokens.length; i++) {
+    for (let i = 3; i < tokens.length; i++) {
         const token = new hre.ethers.Contract(tokens[i], tokenAbi, owner);
         console.log("--------------------------------------------------------")
-        console.log(`Token ${i + 1}: ${token.address}`);
-        await token.increaseAllowance(spender, addedValue);
-        console.log(`Added Value: ${addedValue}`);
+        console.log(`${names[i]}: ${token.address}`);
+        
+        const balance = await token.balanceOf(ownerAddress);
+        const reserve = balance.div(100);
+        await token.approve(spender, reserve);
+        console.log(`Approved Value: ${reserve}`);
     }
 });
 

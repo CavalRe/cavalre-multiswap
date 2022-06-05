@@ -238,6 +238,7 @@ const Dashboard = (props: DashboardProps) => {
                     </Table>
                 </Group>
             </Card>
+            <Text align="center">Note: The tokens appearing above are mock versions of actual tokens for test purposes only.</Text>
         </Container>
     );
 };

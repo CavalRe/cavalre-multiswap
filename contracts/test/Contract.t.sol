@@ -26,6 +26,9 @@ contract ContractTest is Context, DSTest {
 
     address private sender;
 
+    string[] private names;
+    string[] private symbols;
+
     address[] private addresses;
     uint256[] private reserves;
     uint256[] private fees;
@@ -53,7 +56,15 @@ contract ContractTest is Context, DSTest {
     uint256[] private allocations2 = new uint256[](2);
 
     function setUp() public {
-        tokens = new Token[](NTOKENS);
+        names = new string[](NTOKENS);
+        symbols = new string[](NTOKENS);
+        for (uint256 i = 0; i < NTOKENS; i++) {
+            names[i] = string(abi.encodePacked("Token ", Strings.toString(i + 1)));
+            symbols[i] = string(abi.encodePacked("T", Strings.toString(i + 1)));
+        }
+
+        TokenFactory factory = new TokenFactory();
+        tokens = factory.create(names, symbols);
 
         pool = new Pool("Pool", "P");
 
@@ -65,16 +76,10 @@ contract ContractTest is Context, DSTest {
         ks = new uint256[](NTOKENS);
 
         for (uint256 i = 0; i < NTOKENS; i++) {
-            // Generate token
-            string memory name = string(
-                abi.encodePacked("Token ", Strings.toString(i + 1))
-            );
-            string memory symbol = string(
-                abi.encodePacked("T", Strings.toString(i + 1))
-            );
             uint256 supply = (i+1)*1e22;
             uint256 balance = supply / 10;
-            Token token = new Token(name, symbol, supply);
+            Token token = tokens[i];
+            token.mint(supply);
             token.approve(address(pool), balance);
             tokens[i] = token;
 

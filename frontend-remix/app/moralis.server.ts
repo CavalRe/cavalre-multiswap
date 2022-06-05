@@ -6,7 +6,8 @@ const serverUrl = "https://sf5h683tvf93.usemoralis.com:2053/server";
 const appId = "2Q2fAUPZO5WIzeDn2VPGRVKfKStzMaTZj7h998eA";
 const masterKey = "8v8AJX9Tanzb2sYiwTG8tlc55AeRwb9LSLSjg0Ej"
 // const contractAddress = "0x83B141645dD821650b496b01729B98fc7D5e5c3F".toLowerCase();
-const contractAddress = "0x6df37236a56954a4e3e1eAB9c2A2b252829d766a".toLowerCase();
+// const contractAddress = "0x6df37236a56954a4e3e1eAB9c2A2b252829d766a".toLowerCase();
+const contractAddress = "0x513abc44e268a1ae437b3631542555b04845e5a5".toLowerCase();
 const chain = "ropsten";
 
 const feeMax = .01;
@@ -51,9 +52,11 @@ export const getPool = async () => {
     const poolTokens: number = decimalNumber(await Moralis.Web3API.native.runContractFunction({
         chain,
         address: contractAddress,
-        function_name: "totalSupply",
+        function_name: "balance",
         abi: poolAbi
     }));
+
+    console.log("Pool Tokens:", poolTokens);
 
     // ==================================
     // Need a scale function for Pool.sol

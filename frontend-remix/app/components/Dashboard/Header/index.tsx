@@ -10,16 +10,18 @@ import { tokenAbi } from "~/utils";
 import type { Dict } from "~/utils";
 
 type HeaderProps = {
+    chain: string,
     poolToken: PoolToken
     assetTokens: Dict<AssetToken>
 };
 
 const DashboardHeader = (props: HeaderProps) => {
-    const { assetTokens } = props;
+    const { chain, poolToken, assetTokens } = props;
     const {
         isAuthenticated,
         authenticate,
         logout,
+        account,
         Moralis
     } = useMoralis();
 
@@ -27,18 +29,42 @@ const DashboardHeader = (props: HeaderProps) => {
 
     const handleLogout = async () => { await logout(); };
 
-    const handleSendTokens = async () => {
+    const handleMintTokens = async () => {
         Object.values(assetTokens).forEach(async (asset: AssetToken) => {
-            const n = parseInt(asset.symbol.slice(1));
+            const value = poolToken.contractBalance/10;
+            const price = asset.weight*poolToken.contractBalance/asset.contractBalance;
+            const amount = value/price;
             await Moralis.executeFunction({
                 contractAddress: asset.address,
                 functionName: "mint",
                 abi: tokenAbi,
                 params: {
-                    amount: BigNumber.from((n*10**(5+asset.decimals)).toLocaleString('fullwide',{useGrouping:false})),
+                    amount: BigNumber.from((amount*10**asset.decimals).toLocaleString('fullwide',{useGrouping:false})),
                 }
             });
         });
+    };
+
+    const handleBurnTokens = async () => {
+        if (account) {
+            await Moralis.Web3API.account.getTokenBalances({
+                account,
+                chain
+            }).then((balanceData: any) => {
+                balanceData.forEach(async (b: any) => {
+                    if (assetTokens[b.token_address]?.contractBalance > 0) {
+                        await Moralis.executeFunction({
+                            contractAddress: b.token_address,
+                            functionName: "burn",
+                            abi: tokenAbi,
+                            params: {
+                                amount: b.balance,
+                            }
+                        });
+                    };
+                });
+            });
+        };
     };
 
     return (
@@ -53,11 +79,18 @@ const DashboardHeader = (props: HeaderProps) => {
                         Logout
                     </Button>
                     <Button
-                        onClick={handleSendTokens}
+                        onClick={handleMintTokens}
                         ml="md"
                         size="md"
                     >
-                        Send Tokens
+                        Mint Test Tokens
+                    </Button>
+                    <Button
+                        onClick={handleBurnTokens}
+                        ml="md"
+                        size="md"
+                    >
+                        Burn Test Tokens
                     </Button>
                 </> :
                 <Button

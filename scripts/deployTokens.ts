@@ -14,25 +14,49 @@ async function main() {
   // manually to make sure everything is compiled
   // await hre.run('compile');
 
-  const ntokens = 10;
+  const ntokens = 5;
   const addresses: string[] = [];
   
-  const Token = await ethers.getContractFactory("Token");
+  const names: string[] = [
+    "Wrapped Ether",
+    "Wrapped Bitcoin",
+    "USD Coin",
+    "Tether USD",
+    "DAI Stablecoin"
+  ];
 
-  console.log("Begin generating tokens");
-  for (let i = 0; i < ntokens; i++) {
-    let name: string = `Token ${i + 1}`;
-    let symbol: string = `T${i + 1}`;
-    let supply: BigNumber = BigNumber.from(10).pow(23).mul(BigNumber.from(i + 1));
+  const symbols: string[] = [
+    "WETH",
+    "WBTC",
+    "USDC",
+    "USDT",
+    "DAI"
+  ];
 
-    const token = await Token.deploy(name, symbol, supply);
-    await token.deployed();
+  // const Token = await ethers.getContractFactory("Token");
+  const Factory = await ethers.getContractFactory("TokenFactory");
+  const factory = await Factory.deploy();
 
-    addresses.push(token.address);
+  console.log(`factory deployed to: ${factory.address}`);
 
-    console.log(`${name} deployed to:`, token.address);
-  };
-  console.log(addresses);
+  const tokens = await factory.create(names,symbols);
+
+  console.log(tokens);
+
+  // console.log("Begin generating tokens");
+  // for (let i = 0; i < ntokens; i++) {
+  //   let name: string = names[i];
+  //   let symbol: string = symbols[i];
+  //   let supply: BigNumber = BigNumber.from(10).pow(23).mul(BigNumber.from(i + 1));
+
+  //   const token = await Token.deploy(name, symbol, supply);
+  //   await token.deployed();
+
+  //   addresses.push(token.address);
+
+  //   console.log(`${name} deployed to:`, token.address);
+  // };
+  // console.log(addresses);
 };
 
 // We recommend this pattern to be able to use async/await everywhere

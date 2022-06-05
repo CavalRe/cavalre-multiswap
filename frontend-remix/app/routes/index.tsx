@@ -19,7 +19,7 @@ export default function Index() {
         <AppShell
             padding="md"
             // navbar={<NavBar />}
-            header={<Header assetTokens={assetTokens}/>}
+            header={<Header chain={chain} poolToken={poolToken} assetTokens={assetTokens}/>}
         >
             <Dashboard
                 chain={chain}

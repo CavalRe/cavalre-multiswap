@@ -1,8 +1,8 @@
 import { task } from "hardhat/config";
 import { BigNumber } from "ethers";
 
-import { abi as poolAbi } from "../../artifacts/contracts/Pool.sol/Pool.json";
-import { abi as tokenAbi } from "../../artifacts/contracts/Token.sol/Token.json";
+import { abi as poolAbi } from "../../frontend-remix/artifacts/contracts/Pool.sol/Pool.json";
+import { abi as tokenAbi } from "../../frontend-remix/artifacts/contracts/Token.sol/Token.json";
 
 import { tokens } from "../tokens";
 
