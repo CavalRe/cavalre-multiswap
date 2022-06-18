@@ -8,10 +8,10 @@ typechain
 cache
 artifacts
 
-frontend-remix/node_modules
+frontend/node_modules
 
-frontend-remix/.cache
-frontend-remix/build
-frontend-remix/public/build
-frontend-remix/.env
-frontend-remix/app/tailwind.css
+frontend/.cache
+frontend/build
+frontend/public/build
+frontend/.env
+frontend/app/tailwind.css
