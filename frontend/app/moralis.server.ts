@@ -43,10 +43,6 @@ export type AssetToken = PoolToken & {
 
 export type Token = PoolToken | AssetToken;
 
-// const decimalNumber = (value: string, decimals: string = "18") => {
-//     return parseInt(value) / (10 ** parseInt(decimals));
-// };
-
 export const getPool = async () => {
 
     const poolTokens: number = decimalNumber(await Moralis.Web3API.native.runContractFunction({
@@ -55,24 +51,6 @@ export const getPool = async () => {
         function_name: "balance",
         abi: poolAbi
     }));
-
-    console.log("Pool Tokens:", poolTokens);
-
-    // ==================================
-    // Need a scale function for Pool.sol
-    // ==================================
-    // const poolScale: number = decimalNumber(await Moralis.Web3API.native.runContractFunction({
-    //     chain,
-    //     address: contractAddress,
-    //     function_name: "scale",
-    //     abi: poolAbi
-    // }));
-
-    // if (address === undefined) {
-    //     const assets: AssetToken[] = [];
-    //     const balances: Balance[] = [];
-    //     return { contractAddress, address, poolTokens, assets, balances}
-    // }
 
     const assetData: any = await Moralis.Web3API.native.runContractFunction({
         chain,
@@ -83,9 +61,13 @@ export const getPool = async () => {
 
     const addresses = assetData.map((asset: any) => asset[0].toLowerCase());
 
-    const metadata = await Moralis.Web3API.token.getTokenMetadata({
+    const metadata: Dict<any> = {};
+    const metadataArray = await Moralis.Web3API.token.getTokenMetadata({
         chain,
         addresses
+    });
+    metadataArray.forEach((m: any) => {
+        metadata[m.address] = m;
     });
 
     const poolToken: PoolToken = {
@@ -107,9 +89,9 @@ export const getPool = async () => {
     assetData.forEach((a: any, i: number) => {
         assetTokens[a[0].toLowerCase()] = {
             address: addresses[i],
-            name: metadata[i].name,
-            symbol: metadata[i].symbol,
-            decimals: parseInt(metadata[i].decimals),
+            name: metadata[addresses[i]].name,
+            symbol: metadata[addresses[i]].symbol,
+            decimals: parseInt(metadata[addresses[i]].decimals),
             k: decimalNumber(a[4]),
             fee: decimalNumber(a[2]),
             weight: 1 / addresses.length,
