@@ -1,6 +1,6 @@
 import { task } from "hardhat/config";
 import { BigNumber } from "ethers";
-import { abi as tokenAbi } from "../../frontend-remix/artifacts/contracts/Token.sol/Token.json";
+import { abi as tokenAbi } from "../../artifacts/contracts/Token.sol/Token.json";
 
 // export const tokens: string[] = [
 //     '0x90cdC6AE916Be7616397550FAA982A50c45e5a2A',

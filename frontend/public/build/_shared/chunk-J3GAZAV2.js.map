@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["node-modules-polyfills:fs", "node-modules-polyfills-commonjs:fs"],
-  "sourcesContent": ["export default {};\n", "\nconst polyfill = require('fs')\n\nif (polyfill && polyfill.default) {\n    module.exports = polyfill.default\n    for (let k in polyfill) {\n        module.exports[k] = polyfill[k]\n    }\n} else if (polyfill)  {\n    module.exports = polyfill\n}\n\n\n"],
-  "mappings": ";;;;;;;;;AAAA;AAAA;AAAA;AAAA;AAAA,IAAO;AAAP;AAAA;AAAA;AAAA,IAAO,aAAQ;AAAA;AAAA;;;ACAf;AAAA;AAAA;AACA,QAAM,WAAW;AAEjB,QAAI,YAAY,SAAS,SAAS;AAC9B,aAAO,UAAU,SAAS;AAC1B,eAAS,KAAK,UAAU;AACpB,eAAO,QAAQ,KAAK,SAAS;AAAA;AAAA,eAE1B,UAAW;AAClB,aAAO,UAAU;AAAA;AAAA;AAAA;",
-  "names": []
-}

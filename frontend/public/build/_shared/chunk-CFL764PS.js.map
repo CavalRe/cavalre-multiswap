@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../node_modules/is-stream/index.js"],
-  "sourcesContent": ["export function isStream(stream) {\n\treturn stream !== null\n\t\t&& typeof stream === 'object'\n\t\t&& typeof stream.pipe === 'function';\n}\n\nexport function isWritableStream(stream) {\n\treturn isStream(stream)\n\t\t&& stream.writable !== false\n\t\t&& typeof stream._write === 'function'\n\t\t&& typeof stream._writableState === 'object';\n}\n\nexport function isReadableStream(stream) {\n\treturn isStream(stream)\n\t\t&& stream.readable !== false\n\t\t&& typeof stream._read === 'function'\n\t\t&& typeof stream._readableState === 'object';\n}\n\nexport function isDuplexStream(stream) {\n\treturn isWritableStream(stream)\n\t\t&& isReadableStream(stream);\n}\n\nexport function isTransformStream(stream) {\n\treturn isDuplexStream(stream)\n\t\t&& typeof stream._transform === 'function';\n}\n"],
-  "mappings": ";;;;;;AAAO,kBAAkB,QAAQ;AAChC,SAAO,WAAW,QACd,OAAO,WAAW,YAClB,OAAO,OAAO,SAAS;AAAA;AAGrB,0BAA0B,QAAQ;AACxC,SAAO,SAAS,WACZ,OAAO,aAAa,SACpB,OAAO,OAAO,WAAW,cACzB,OAAO,OAAO,mBAAmB;AAAA;AAG/B,0BAA0B,QAAQ;AACxC,SAAO,SAAS,WACZ,OAAO,aAAa,SACpB,OAAO,OAAO,UAAU,cACxB,OAAO,OAAO,mBAAmB;AAAA;AAG/B,wBAAwB,QAAQ;AACtC,SAAO,iBAAiB,WACpB,iBAAiB;AAAA;AAtBtB;AAAA;AAAA;AAAA;AAAA;",
-  "names": []
-}

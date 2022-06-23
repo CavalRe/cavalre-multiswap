@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../node_modules/is-hex-prefixed/src/index.js", "../../../node_modules/strip-hex-prefix/src/index.js"],
-  "sourcesContent": ["/**\n * Returns a `Boolean` on whether or not the a `String` starts with '0x'\n * @param {String} str the string input value\n * @return {Boolean} a boolean if it is or is not hex prefixed\n * @throws if the str input is not a string\n */\nmodule.exports = function isHexPrefixed(str) {\n  if (typeof str !== 'string') {\n    throw new Error(\"[is-hex-prefixed] value must be type 'string', is currently type \" + (typeof str) + \", while checking isHexPrefixed.\");\n  }\n\n  return str.slice(0, 2) === '0x';\n}\n", "var isHexPrefixed = require('is-hex-prefixed');\n\n/**\n * Removes '0x' from a given `String` is present\n * @param {String} str the string value\n * @return {String|Optional} a string by pass if necessary\n */\nmodule.exports = function stripHexPrefix(str) {\n  if (typeof str !== 'string') {\n    return str;\n  }\n\n  return isHexPrefixed(str) ? str.slice(2) : str;\n}\n"],
-  "mappings": ";;;;;;AAAA;AAAA;AAAA;AAMA,WAAO,UAAU,uBAAuB,KAAK;AAC3C,UAAI,OAAO,QAAQ,UAAU;AAC3B,cAAM,IAAI,MAAM,sEAAuE,OAAO,MAAO;AAAA;AAGvG,aAAO,IAAI,MAAM,GAAG,OAAO;AAAA;AAAA;AAAA;;;ACX7B;AAAA;AAAA;AAAA,QAAI,gBAAgB;AAOpB,WAAO,UAAU,wBAAwB,KAAK;AAC5C,UAAI,OAAO,QAAQ,UAAU;AAC3B,eAAO;AAAA;AAGT,aAAO,cAAc,OAAO,IAAI,MAAM,KAAK;AAAA;AAAA;AAAA;",
-  "names": []
-}

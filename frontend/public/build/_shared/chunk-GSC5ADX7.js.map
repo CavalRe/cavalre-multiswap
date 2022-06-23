@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../app/components/Swap/index.tsx"],
-  "sourcesContent": ["import {\n    Container,\n    Table\n} from '@mantine/core';\n\nconst Swap = () => {\n\n    return (\n        <Container>\n            <h2>Multi-Asset Swap</h2>\n        </Container>\n    );\n};\n\nexport default Swap;\n"],
-  "mappings": ";;;;;;;;;AAAA;AAKA,IAAM,OAAO,MAAM;AAEf,SACI,oCAAC,WAAD,MACI,oCAAC,MAAD,MAAI;AAAA;AAKhB,IAAO,eAAQ;",
-  "names": []
-}

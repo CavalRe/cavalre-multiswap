@@ -7,11 +7,3 @@ typechain
 #Hardhat files
 cache
 artifacts
-
-frontend/node_modules
-
-frontend/.cache
-frontend/build
-frontend/public/build
-frontend/.env
-frontend/app/tailwind.css

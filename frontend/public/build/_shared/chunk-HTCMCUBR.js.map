@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../app/components/Dashboard/Swap/index.tsx"],
-  "sourcesContent": ["import {\n    Card,\n    Container,\n    Title\n} from \"@mantine/core\";\n\nconst Swap = () => {\n\n    return (\n        <Container>\n            <Card withBorder p=\"xl\" radius=\"md\" mt=\"lg\">\n                <Title order={1}>Hello swap!</Title>\n            </Card>\n        </Container>\n    )\n}\n\nexport default Swap;\n"],
-  "mappings": ";;;;;;;;;;;AAAA;AAMA,IAAM,OAAO,MAAM;AAEf,SACI,oCAAC,WAAD,MACI,oCAAC,MAAD;AAAA,IAAM,YAAU;AAAA,IAAC,GAAE;AAAA,IAAK,QAAO;AAAA,IAAK,IAAG;AAAA,KACnC,oCAAC,OAAD;AAAA,IAAO,OAAO;AAAA,KAAG;AAAA;AAMjC,IAAO,eAAQ;",
-  "names": []
-}
