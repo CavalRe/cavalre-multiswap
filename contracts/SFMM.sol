@@ -7,30 +7,35 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./libraries/DMath.sol";
 
-struct Asset {
-    IERC20 token;
-    uint256 balance;
-    uint256 fee; // Transaction fee, e.g. 0.003
-    uint256 scale; // Used to compute weight of this asset token
-    uint256 k; // AMM parameter for this asset token
-}
-
-contract Pool is ReentrancyGuard, ERC20 {
+contract SFMM is ReentrancyGuard, ERC20 {
     using SafeERC20 for IERC20;
     using DMath for uint256;
 
+    struct Asset {
+        IERC20 token;
+        string name;
+        string symbol;
+        uint8 decimals;
+        uint256 balance;
+        uint256 fee; // Transaction fee, e.g. 0.003
+        uint256 scale; // Used to compute weight of this asset token
+        uint256 k; // AMM parameter for this asset token
+    }
+
+    struct Pool {
+        IERC20 token;
+        string name;
+        string symbol;
+        uint8 decimals;
+        uint256 balance;
+        uint256 scale;
+        Asset[] assets;
+    }
+
     uint256 private _isInitialized;
 
-    uint256 private _balance;
-
-    // The `address` here is the address of the respective external asset token contract.
     mapping(address => uint256) private _index;
-    Asset[] private _assets;
-
-    // Parameter for exponentially weighted moving averages
-    uint256 private _alpha;
-
-    uint256 private _scale;
+    Pool private _pool;
 
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {
         _isInitialized = 0;
@@ -76,43 +81,63 @@ contract Pool is ReentrancyGuard, ERC20 {
             }
         }
         _isInitialized = 1;
-        _balance = poolSupply;
-        _scale = poolSupply;
-        _mint(_msgSender(), poolSupply);
-        uint256 checkWeight;
-        for (uint256 i; i < weights.length; i++) {
-            _index[payTokens[i]] = i;
-            _assets.push(
-                Asset(
-                    IERC20(payTokens[i]),
-                    amounts[i],
-                    fees[i],
-                    weights[i].dmul(poolSupply),
-                    ks[i]
-                )
-            );
-            checkWeight += weights[i];
 
-            SafeERC20.safeTransferFrom(
-                IERC20(payTokens[i]),
-                _msgSender(),
-                address(this),
-                amounts[i]
-            );
-        }
-        require(checkWeight == 1e18, "Weights must sum to 1.");
+        Asset[] storage _assets;
+
+        _pool = Pool(
+            IERC20(address(this)),
+            IERC20Metadata(address(this)).name(),
+            IERC20Metadata(address(this)).symbol(),
+            IERC20Metadata(address(this)).decimals(),
+            poolSupply,
+            poolSupply,
+            _assets
+        );
+
+        _mint(_msgSender(), poolSupply);
+        // uint256 checkWeight;
+        // for (uint256 i; i < weights.length; i++) {
+        //     _index[payTokens[i]] = i;
+
+        //     Asset storage _asset = Asset(
+        //         IERC20(payTokens[i]),
+        //         IERC20Metadata(payTokens[i]).name(),
+        //         IERC20Metadata(payTokens[i]).symbol(),
+        //         IERC20Metadata(payTokens[i]).decimals(),
+        //         amounts[i],
+        //         fees[i],
+        //         weights[i].dmul(poolSupply),
+        //         ks[i]
+        //     );
+            
+        //     // _pool.assets[i] 
+        //     checkWeight += weights[i];
+
+        //     SafeERC20.safeTransferFrom(
+        //         IERC20(payTokens[i]),
+        //         _msgSender(),
+        //         address(this),
+        //         amounts[i]
+        //     );
+        // }
+        // require(checkWeight == 1e18, "Weights must sum to 1.");
+
+    }
+
+    function pool() public view returns (Pool memory) {
+        return _pool;
     }
 
     function assets() public view returns (Asset[] memory) {
-        return _assets;
+        return _pool.assets;
     }
 
     function asset(address token) public view returns (Asset memory) {
-        return _assets[_index[token]];
+        return _pool.assets[_index[token]];
     }
 
     function balance() public view returns (uint256) {
-        return _balance;
+        return _pool.balance;
     }
 
     function balance(address token) public view returns (uint256) {
@@ -120,11 +145,11 @@ contract Pool is ReentrancyGuard, ERC20 {
     }
 
     function weight(address token) public view returns (uint256) {
-        return asset(token).scale.ddiv(_scale);
+        return asset(token).scale.ddiv(_pool.scale);
     }
 
     function scale() public view returns (uint256) {
-        return _scale;
+        return _pool.scale;
     }
 
     function scale(address token) public view returns (uint256) {
@@ -206,12 +231,12 @@ contract Pool is ReentrancyGuard, ERC20 {
                 address payToken = payTokens[i];
                 uint256 amountIn = amounts[i];
                 if (payToken == address(this)) {
-                    _balance -= amountIn;
-                    fracValueIn += amountIn.ddiv(_balance);
+                    _pool.balance -= amountIn;
+                    fracValueIn += amountIn.ddiv(_pool.balance);
                 } else {
-                    Asset storage assetIn = _assets[_index[payToken]];
+                    Asset storage assetIn = _pool.assets[_index[payToken]];
                     uint256 gamma = DMath.ONE - assetIn.fee;
-                    uint256 weightIn = assetIn.scale.ddiv(_scale);
+                    uint256 weightIn = assetIn.scale.ddiv(_pool.scale);
                     fracValueIn += gamma.dmul(weightIn).dmul(amountIn).ddiv(assetIn.balance+amountIn);
                     assetIn.balance += amountIn;
                 }
@@ -228,13 +253,13 @@ contract Pool is ReentrancyGuard, ERC20 {
                 allocation = allocations[i];
                 if (receiveToken == address(this)) {
                     factor = fracValueIn.dmul(allocation);
-                    amountOut = _balance.dmul(factor).ddiv(DMath.ONE - factor);
+                    amountOut = _pool.balance.dmul(factor).ddiv(DMath.ONE - factor);
                     receiveAmounts[i] = amountOut;
-                    _balance += amountOut;
+                    _pool.balance += amountOut;
                 } else {
-                    Asset storage assetOut = _assets[_index[receiveToken]];
+                    Asset storage assetOut = _pool.assets[_index[receiveToken]];
                     uint256 gamma = DMath.ONE - assetOut.fee;
-                    uint256 weightOut = assetOut.scale.ddiv(_scale);
+                    uint256 weightOut = assetOut.scale.ddiv(_pool.scale);
                     factor = gamma.ddiv(weightOut).dmul(allocation).dmul(fracValueIn);
                     amountOut = assetOut.balance.dmul(factor).ddiv(factor + DMath.ONE);
                     receiveAmounts[i] = amountOut;
@@ -257,9 +282,9 @@ contract Pool is ReentrancyGuard, ERC20 {
                         address(this),
                         amount
                     );
-                    delta = _assets[_index[payToken]].fee.dmul(amount);
-                    _assets[_index[payToken]].scale += delta;
-                    _scale += delta;
+                    delta = _pool.assets[_index[payToken]].fee.dmul(amount);
+                    _pool.assets[_index[payToken]].scale += delta;
+                    _pool.scale += delta;
                 }
             }
 
@@ -268,7 +293,7 @@ contract Pool is ReentrancyGuard, ERC20 {
                 address receiveToken = receiveTokens[i];
                 uint256 amountOut = receiveAmounts[i];
                 uint256 delta;
-                // Update _balance and asset balances.
+                // Update _pool.balance and asset balances.
                 if (receiveToken == address(this)) {
                     _mint(_msgSender(), amountOut);
                 } else {
@@ -277,9 +302,9 @@ contract Pool is ReentrancyGuard, ERC20 {
                         _msgSender(),
                         amountOut
                     );
-                    delta = _assets[_index[receiveToken]].fee.dmul(amountOut);
-                    _assets[_index[receiveToken]].scale += delta;
-                    _scale += delta;
+                    delta = _pool.assets[_index[receiveToken]].fee.dmul(amountOut);
+                    _pool.assets[_index[receiveToken]].scale += delta;
+                    _pool.scale += delta;
                 }
             }
         }
@@ -291,8 +316,8 @@ contract Pool is ReentrancyGuard, ERC20 {
         uint256 amountIn,
         address addressTo
     ) public nonReentrant returns (uint256) {
-        Asset storage assetIn = _assets[_index[payToken]];
-        Asset storage assetOut = _assets[_index[receiveToken]];
+        Asset storage assetIn = _pool.assets[_index[payToken]];
+        Asset storage assetOut = _pool.assets[_index[receiveToken]];
         // Check if swap
         if (address(assetIn.token) != payToken || address(assetOut.token) != receiveToken)
             revert InvalidSwap(payToken, receiveToken);
@@ -334,7 +359,7 @@ contract Pool is ReentrancyGuard, ERC20 {
         uint256 deltaOut = assetOut.fee.dmul(amountOut);
         assetIn.scale += deltaIn;
         assetOut.scale += deltaOut;
-        _scale += deltaIn + deltaOut;
+        _pool.scale += deltaIn + deltaOut;
 
         return amountOut;
     }
@@ -344,7 +369,7 @@ contract Pool is ReentrancyGuard, ERC20 {
         uint256 amountIn,
         address addressTo
     ) public nonReentrant returns (uint256) {
-        Asset storage assetIn = _assets[_index[payToken]];
+        Asset storage assetIn = _pool.assets[_index[payToken]];
         // Check if stake
         if (address(assetIn.token) != payToken)
             revert InvalidStake(payToken);
@@ -359,23 +384,23 @@ contract Pool is ReentrancyGuard, ERC20 {
         }
 
         uint256 reserveIn = assetIn.balance + amountIn;
-        uint256 weightIn = assetIn.scale.ddiv(_scale);
+        uint256 weightIn = assetIn.scale.ddiv(_pool.scale);
         uint256 reserveOut;
         uint256 amountOut;
 
         {
             uint256 gamma = DMath.ONE-assetIn.fee;
             uint256 invGrowthOut = DMath.ONE - gamma.dmul(weightIn).dmul(amountIn.ddiv(reserveIn));
-            reserveOut = _balance.ddiv(invGrowthOut);
-            amountOut = reserveOut - _balance;
+            reserveOut = _pool.balance.ddiv(invGrowthOut);
+            amountOut = reserveOut - _pool.balance;
         }
 
         assetIn.balance = reserveIn;
-        _balance = reserveOut;
+        _pool.balance = reserveOut;
 
         uint256 delta = assetIn.fee.dmul(amountIn);
         assetIn.scale += delta;
-        _scale += delta;
+        _pool.scale += delta;
 
         SafeERC20.safeTransferFrom(
             IERC20(payToken),
@@ -393,7 +418,7 @@ contract Pool is ReentrancyGuard, ERC20 {
         uint256 amountIn,
         address addressTo
     ) public nonReentrant returns (uint256) {
-        Asset storage assetOut = _assets[_index[receiveToken]];
+        Asset storage assetOut = _pool.assets[_index[receiveToken]];
         // Check if unstake
         if (address(assetOut.token) != receiveToken)
             revert InvalidUnstake(receiveToken);
@@ -404,8 +429,8 @@ contract Pool is ReentrancyGuard, ERC20 {
                 revert InsufficientAllowance(available, amountIn);
         }
 
-        uint256 reserveIn = _balance - amountIn;
-        uint256 weightOut = assetOut.scale.ddiv(_scale);
+        uint256 reserveIn = _pool.balance - amountIn;
+        uint256 weightOut = assetOut.scale.ddiv(_pool.scale);
         uint256 reserveOut;
         uint256 amountOut;
 
@@ -417,12 +442,12 @@ contract Pool is ReentrancyGuard, ERC20 {
             amountOut = assetOut.balance - reserveOut;
         }
 
-        _balance = reserveIn;
+        _pool.balance = reserveIn;
         assetOut.balance = reserveOut;
 
         uint256 delta = assetOut.fee.dmul(amountOut);
         assetOut.scale += delta;
-        _scale += delta;
+        _pool.scale += delta;
 
         SafeERC20.safeTransfer(IERC20(receiveToken), addressTo, amountOut);
         _burn(_msgSender(), amountIn);
@@ -430,94 +455,4 @@ contract Pool is ReentrancyGuard, ERC20 {
         return amountOut;
     }
 
-    /*
-    function _stakeBatch(
-        address[] memory addressIn,
-        uint256[] memory amountIn,
-        address addressTo
-    ) internal returns (uint256) {
-        uint256 n = addressIn.length;
-        require(
-            n == amountIn.length,
-            "AddressIn and AmountIn should have the same length."
-        );
-
-        uint256 amountOut;
-
-        for (uint256 i; i < n; i++) {
-            Asset memory assetIn = _assets[_index[addressIn[i]]];
-
-            uint256 reserveIn = assetIn.balance + amountIn[i];
-            uint256 reserveOut = totalSupply();
-            uint256 weightIn = assetIn.scale.ddiv(_scale);
-
-            {
-                uint256 invGrowthOut = DMath.ONE -
-                    amountIn[i].dmul(weightIn).ddiv(reserveIn);
-                amountOut += reserveOut.ddiv(invGrowthOut) - reserveOut;
-            }
-
-            _assets[_index[addressIn[i]]].balance = reserveIn;
-
-            SafeERC20.safeTransferFrom(
-                IERC20(addressIn[i]),
-                _msgSender(),
-                address(this),
-                amountIn[i]
-            );
-        }
-
-        _mint(addressTo, amountOut);
-
-        return amountOut;
-    }
-
-    function stakeBatch(
-        address[] memory addressIn,
-        uint256[] memory amountIn,
-        address addressTo
-    ) public nonReentrant returns (uint256) {
-        return _stakeBatch(addressIn, amountIn, addressTo);
-    }
-    */
-
-    /*
-    function addAsset(
-        address addressIn,
-        address addressNew,
-        uint256 amountIn,
-        uint256 amountNew,
-        uint256 feeNew,
-        uint256 kNew,
-        address addressTo
-    ) public nonReentrant returns (uint256) {
-        Asset memory assetIn = _assets[_index[addressIn]];
-
-        uint256 scaleIn;
-
-        {
-            uint256 reserve0 = totalSupply();
-            uint256 reserveIn = assetIn.balance;
-            uint256 valueIn = reserve0.dmul(assetIn.scale).ddiv(_scale);
-            scaleIn = valueIn.dmul(amountIn).ddiv(reserveIn);
-        }
-
-        _index[addressNew] = _assets.length;
-        _assets.push(
-            Asset(IERC20(addressNew), amountNew, feeNew, scaleIn, kNew)
-        );
-
-        _assets[_index[addressIn]].balance = assetIn.balance + amountIn;
-        _assets[_index[addressIn]].scale = assetIn.scale + scaleIn;
-
-        address[] memory addresses = new address[](2);
-        uint256[] memory amounts = new uint256[](2);
-        addresses[0] = addressIn;
-        addresses[1] = addressNew;
-        amounts[0] = amountIn;
-        amounts[1] = amountNew;
-
-        return _stakeBatch(addresses, amounts, addressTo);
-    }
-    */
 }

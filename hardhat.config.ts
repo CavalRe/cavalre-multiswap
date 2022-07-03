@@ -57,10 +57,11 @@ const config: HardhatUserConfig = {
       ]
     },
     fuji: {
+      from: "0xAb3eF09216a8A20da40580eA0240d41160D2f673",
       url: 'https://api.avax-test.network/ext/bc/C/rpc',
       gasPrice: 225000000000,
       chainId: 43113,
-      accounts: []
+      accounts: ["8ac844044e2d395763257c941c0e83c31f773e817af6cdcf682994b94b3f281c"]
     },
     avalanche_mainnet: {
       url: 'https://api.avax.network/ext/bc/C/rpc',

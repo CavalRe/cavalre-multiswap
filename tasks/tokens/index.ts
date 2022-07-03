@@ -28,13 +28,22 @@ import { abi as tokenAbi } from "../../artifacts/contracts/Token.sol/Token.json"
 //     '0x1467ad30C6e1862AA10Ff22C7058730D7607Fd8f'
 // ];
 
+// export const tokens: string[] = [
+//     '0x4bc8bE0A8A9b70DbabbB40Bd534989C49CFf95ba',
+//     '0xa66Fe7786a95889971910a20f4F20C28FE2421bF',
+//     '0x6aFd3985E34373fd420613f93B07f9263738BFEf',
+//     '0xD3D3Df6A09C05de845980C04d18666C036c98E3E',
+//     '0xFf2EBFeB702ebE812c85616d3fBf40615e24B8AA'
+// ];
+
+// Fuji Test Network
 export const tokens: string[] = [
     '0x4bc8bE0A8A9b70DbabbB40Bd534989C49CFf95ba',
     '0xa66Fe7786a95889971910a20f4F20C28FE2421bF',
     '0x6aFd3985E34373fd420613f93B07f9263738BFEf',
     '0xD3D3Df6A09C05de845980C04d18666C036c98E3E',
     '0xFf2EBFeB702ebE812c85616d3fBf40615e24B8AA'
-];
+  ]
 
 export const names: string[] = [
     "Wrapped Ether",
@@ -53,6 +62,36 @@ export const symbols: string[] = [
 ];
 
 const one: BigNumber = BigNumber.from(10).pow(18);
+
+task(
+    "mint",
+    "Mint specified number of specified token to the sender."
+).addPositionalParam(
+    "tokenAddress",
+    "The address of the token to mint."
+).addPositionalParam(
+    "amount",
+    "The amount of specified tokens to mint."
+).setAction(async ({ tokenAddress, amount }, hre) => {
+    const [owner] = await hre.ethers.getSigners();
+    const token = new hre.ethers.Contract(tokenAddress, tokenAbi, owner);
+    await token.mint(one.mul(amount));
+});
+
+task(
+    "burn",
+    "Burn specified number of specified token from the sender."
+).addPositionalParam(
+    "tokenAddress",
+    "The address of the token to burn."
+).addPositionalParam(
+    "amount",
+    "The amount of specified tokens to burn."
+).setAction(async ({ tokenAddress, amount }, hre) => {
+    const [owner] = await hre.ethers.getSigners();
+    const token = new hre.ethers.Contract(tokenAddress, tokenAbi, owner);
+    await token.burn(one.mul(amount));
+});
 
 task(
     "totalSupplies",

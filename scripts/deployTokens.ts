@@ -33,30 +33,21 @@ async function main() {
     "DAI"
   ];
 
-  // const Token = await ethers.getContractFactory("Token");
-  const Factory = await ethers.getContractFactory("TokenFactory");
-  const factory = await Factory.deploy();
+  const Token = await ethers.getContractFactory("Token");
 
-  console.log(`factory deployed to: ${factory.address}`);
+  console.log("Begin generating tokens");
+  for (let i = 0; i < ntokens; i++) {
+    let name: string = names[i];
+    let symbol: string = symbols[i];
 
-  const tokens = await factory.create(names,symbols);
+    const token = await Token.deploy(name, symbol);
+    await token.deployed();
 
-  console.log(tokens);
+    addresses.push(token.address);
 
-  // console.log("Begin generating tokens");
-  // for (let i = 0; i < ntokens; i++) {
-  //   let name: string = names[i];
-  //   let symbol: string = symbols[i];
-  //   let supply: BigNumber = BigNumber.from(10).pow(23).mul(BigNumber.from(i + 1));
-
-  //   const token = await Token.deploy(name, symbol, supply);
-  //   await token.deployed();
-
-  //   addresses.push(token.address);
-
-  //   console.log(`${name} deployed to:`, token.address);
-  // };
-  // console.log(addresses);
+    console.log(`${name} deployed to:`, token.address);
+  };
+  console.log(addresses);
 };
 
 // We recommend this pattern to be able to use async/await everywhere
