@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -9,13 +8,16 @@ import "./libraries/DMath.sol";
 
 struct Asset {
     IERC20 token;
+    string name;
+    string symbol;
+    uint8 decimals;
     uint256 balance;
     uint256 fee; // Transaction fee, e.g. 0.003
     uint256 scale; // Used to compute weight of this asset token
     uint256 k; // AMM parameter for this asset token
 }
 
-contract Pool is ReentrancyGuard, ERC20 {
+contract SFMM is ReentrancyGuard, ERC20 {
     using SafeERC20 for IERC20;
     using DMath for uint256;
 
@@ -23,14 +25,11 @@ contract Pool is ReentrancyGuard, ERC20 {
 
     uint256 private _balance;
 
+    uint256 private _scale;
+
     // The `address` here is the address of the respective external asset token contract.
     mapping(address => uint256) private _index;
     Asset[] private _assets;
-
-    // Parameter for exponentially weighted moving averages
-    uint256 private _alpha;
-
-    uint256 private _scale;
 
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {
         _isInitialized = 0;
@@ -65,6 +64,12 @@ contract Pool is ReentrancyGuard, ERC20 {
         {
             if (payTokens.length != amounts.length)
                 revert LengthMismatch(payTokens.length, amounts.length);
+            if (payTokens.length != fees.length)
+                revert LengthMismatch(payTokens.length, fees.length);
+            if (payTokens.length != weights.length)
+                revert LengthMismatch(payTokens.length, weights.length);
+            if (payTokens.length != ks.length)
+                revert LengthMismatch(payTokens.length, ks.length);
 
             for (uint256 i; i < payTokens.length; i++) {
                 uint256 available = IERC20(payTokens[i]).allowance(
@@ -74,17 +79,20 @@ contract Pool is ReentrancyGuard, ERC20 {
                 if (amounts[i] > available)
                     revert InsufficientAllowance(available, amounts[i]);
             }
+            _isInitialized = 1;
+            _balance = poolSupply;
+            _scale = poolSupply;
+            _mint(_msgSender(), poolSupply);
         }
-        _isInitialized = 1;
-        _balance = poolSupply;
-        _scale = poolSupply;
-        _mint(_msgSender(), poolSupply);
         uint256 checkWeight;
         for (uint256 i; i < weights.length; i++) {
             _index[payTokens[i]] = i;
             _assets.push(
                 Asset(
                     IERC20(payTokens[i]),
+                    IERC20Metadata(payTokens[i]).name(),
+                    IERC20Metadata(payTokens[i]).symbol(),
+                    IERC20Metadata(payTokens[i]).decimals(),
                     amounts[i],
                     fees[i],
                     weights[i].dmul(poolSupply),
@@ -92,7 +100,9 @@ contract Pool is ReentrancyGuard, ERC20 {
                 )
             );
             checkWeight += weights[i];
-
+        }
+        require(checkWeight == 1e18, "Weights must sum to 1.");
+        for (uint256 i; i < payTokens.length; i++) {
             SafeERC20.safeTransferFrom(
                 IERC20(payTokens[i]),
                 _msgSender(),
@@ -100,8 +110,34 @@ contract Pool is ReentrancyGuard, ERC20 {
                 amounts[i]
             );
         }
-        require(checkWeight == 1e18, "Weights must sum to 1.");
     }
+
+    function pool() public view returns (address, string memory, string memory, uint8, uint256, uint256) {
+        address poolAddress = address(this);
+        IERC20Metadata poolMetadata = IERC20Metadata(poolAddress);
+        return (
+            poolAddress,
+            poolMetadata.name(),
+            poolMetadata.symbol(),
+            poolMetadata.decimals(),
+            _balance,
+            _scale
+        );
+    }
+
+    // function pool() public view returns (address, string memory, string memory, uint8, uint256, uint256, Asset[] memory) {
+    //     address poolAddress = address(this);
+    //     IERC20Metadata poolMetadata = IERC20Metadata(poolAddress);
+    //     return (
+    //         poolAddress,
+    //         poolMetadata.name(),
+    //         poolMetadata.symbol(),
+    //         poolMetadata.decimals(),
+    //         _balance,
+    //         _scale,
+    //         _assets
+    //     );
+    // }
 
     function assets() public view returns (Asset[] memory) {
         return _assets;
