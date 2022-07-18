@@ -5,7 +5,7 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "../Token.sol";
-import "../SFMM.sol";
+import "../Pool.sol";
 import "../libraries/ds-test/src/test.sol";
 
 interface VM {
@@ -17,22 +17,18 @@ interface VM {
 
 contract ContractTest is Context, DSTest {
 
-    uint256 private constant NTOKENS = 10;
+    uint256 private constant NTOKENS = 100000;
     VM private vm = VM(HEVM_ADDRESS);
 
     Token[] private tokens;
 
-    SFMM private sfmm;
+    Pool private pool;
 
-    address private sender;
-
-    string[] private names;
-    string[] private symbols;
+    address private sender = address(this);
 
     address[] private addresses;
-    uint256[] private reserves;
     uint256[] private fees;
-    uint256[] private weights;
+    uint256[] private scales;
     uint256[] private ks;
     uint256[] private amounts;
 
@@ -41,7 +37,6 @@ contract ContractTest is Context, DSTest {
     address private poolAddress;
 
     uint256 private pay1Amount;
-
     address[] private pay1Assets = new address[](1);
     address[] private pay1Pools = new address[](1);
     uint256[] private pay1Amounts = new uint256[](1);
@@ -56,63 +51,57 @@ contract ContractTest is Context, DSTest {
     uint256[] private allocations2 = new uint256[](2);
 
     function setUp() public {
-        names = new string[](NTOKENS);
-        symbols = new string[](NTOKENS);
-        for (uint256 i = 0; i < NTOKENS; i++) {
-            names[i] = string(abi.encodePacked("Token ", Strings.toString(i + 1)));
-            symbols[i] = string(abi.encodePacked("T", Strings.toString(i + 1)));
-        }
-
-        TokenFactory factory = new TokenFactory();
-        tokens = factory.create(names, symbols);
-
-        sfmm = new SFMM("Pool", "P");
+        pool = new Pool("Pool", "P");
+        tokens = new Token[](NTOKENS);
 
         addresses = new address[](NTOKENS);
         amounts = new uint256[](NTOKENS);
-        reserves = new uint256[](NTOKENS);
         fees = new uint256[](NTOKENS);
-        weights = new uint256[](NTOKENS);
+        scales = new uint256[](NTOKENS);
         ks = new uint256[](NTOKENS);
 
+        uint256 scale = 1e27;
+        uint256 fee = 1e15;
+        uint256 k = 1e18;
+
         for (uint256 i = 0; i < NTOKENS; i++) {
-            uint256 supply = (i+1)*1e22;
-            uint256 balance = supply / 10;
-            Token token = tokens[i];
-            token.mint(supply);
-            token.approve(address(sfmm), balance);
+            uint256 amount = (i+1)*1e27;
+            uint256 balance = 100*amount;
+            string memory name = string(abi.encodePacked("Token ", Strings.toString(i + 1)));
+            string memory symbol = string(abi.encodePacked("T", Strings.toString(i + 1)));
+            Token token = new Token(name,symbol);
+            token.mint(balance);
+            token.approve(address(pool), balance);
             tokens[i] = token;
+ 
+            pool.addAsset(
+                address(token),
+                balance,
+                fee,
+                scale,
+                k
+            );
 
-            //Generate asset info
             addresses[i] = address(token);
-            reserves[i] = balance;
-            fees[i] = 3e15;
-            weights[i] = 1e18 / NTOKENS;
-            ks[i] = 1e18;
+            amounts[i] = amount;
+            fees[i] = fee;
+            scales[i] = scale;
+            ks[i] = k;
         }
 
-        sfmm.initialize(1e23, addresses, reserves, fees, weights, ks);
-
-        sender = address(this);
-
-        for (uint256 i = 0; i < NTOKENS; i++) {
-            amounts[i] = sfmm.balance(addresses[i]) / 10;
-            tokens[i].increaseAllowance(address(sfmm), amounts[i]);
-        }
-
-        sfmm.increaseAllowance(address(sfmm), amounts[0]);
-        
+        pool.initialize();
+       
         pay1Asset = addresses[0];
         receive1Asset = addresses[1];
-        poolAddress = address(sfmm);
+        poolAddress = address(pool);
         pay1Amount = amounts[0];
         
         pay1Assets[0] = addresses[0];
-        pay1Pools[0] = address(sfmm);
+        pay1Pools[0] = address(pool);
         pay1Amounts[0] = amounts[0];
 
         receive1Assets[0] = addresses[1];
-        receive1Pools[0] = address(sfmm);
+        receive1Pools[0] = address(pool);
         allocations1[0] = 1e18;
 
         pay2Assets[0] = addresses[0];
@@ -124,333 +113,201 @@ contract ContractTest is Context, DSTest {
         receive2Assets[1] = addresses[3];
 
         receive1Asset1Pool[0] = addresses[0];
-        receive1Asset1Pool[1] = address(sfmm);
+        receive1Asset1Pool[1] = address(pool);
     }
 
-    function test1_0_SFMM() public {
-        assertEq(sfmm.totalSupply(), 1e23);
-        for (uint256 i = 0; i < NTOKENS; i++) {
-            Token token = tokens[i];
-            uint256 supply = (i+1)*1e22;
-            uint256 balance = supply / 10;
-            assertEq(token.totalSupply(), supply);
-            assertEq(sfmm.balance(address(token)), balance);
-            assertEq(token.balanceOf(address(this)), supply - balance);
-        }
-        vm.expectRevert(abi.encodeWithSelector(SFMM.AlreadyInitialized.selector));
-        sfmm.initialize(1e23, addresses, reserves, fees, weights, ks);
-        sfmm.pool();
-    }
+    // function test1_0_SFMM() public {
+    //     assertEq(pool.totalSupply(), 1e23);
+    //     for (uint256 i = 0; i < NTOKENS; i++) {
+    //         Token token = tokens[i];
+    //         uint256 supply = (i+1)*1e22;
+    //         uint256 amount = supply / 10;
+    //         assertEq(token.totalSupply(), supply);
+    //         assertEq(pool.amount(address(token)), amount);
+    //         assertEq(token.balanceOf(address(this)), supply - amount);
+    //     }
+    //     vm.expectRevert(abi.encodeWithSelector(Pool.AlreadyInitialized.selector));
+    //     pool.initialize();
+    //     pool.pool();
+    // }
 
     function test1_1_Multiswap() public {
-        sfmm.multiswap(pay1Assets, pay1Amounts, receive1Assets, allocations1);
+        tokens[0].mint(pay1Amounts[0]);
+        tokens[0].approve(address(pool),pay1Amounts[0]);
+        pool.multiswap(pay1Assets, pay1Amounts, receive1Assets, allocations1);
     }
 
     function test1_2_Swap() public {
-        sfmm.swap(pay1Asset, receive1Asset, pay1Amount, sender);
+        tokens[0].mint(pay1Amount);
+        tokens[0].approve(address(pool),pay1Amount);
+        pool.swap(pay1Asset, receive1Asset, pay1Amount, sender);
     }
 
     function test1_3_Multistake() public {
-        sfmm.multiswap(pay1Assets, pay1Amounts, receive1Pools, allocations1);
+        tokens[0].mint(pay1Amounts[0]);
+        tokens[0].approve(address(pool),pay1Amounts[0]);
+        pool.multiswap(pay1Assets, pay1Amounts, receive1Pools, allocations1);
     }
 
     function test1_4_Stake() public {
-        sfmm.stake(pay1Asset, amounts[0], sender);
+        tokens[0].mint(amounts[0]);
+        tokens[0].approve(address(pool), amounts[0]);
+        pool.stake(pay1Asset, amounts[0], sender);
     }
 
     function test1_5_Multiunstake() public {
-        sfmm.multiswap(pay1Pools, pay1Amounts, pay1Assets, allocations1);
+        pool.approve(address(pool),pay1Amounts[0]);
+        pool.multiswap(pay1Pools, pay1Amounts, pay1Assets, allocations1);
     }
 
     function test1_6_Unstake() public {
-        sfmm.unstake(pay1Asset, pay1Amount, sender);
+        pool.approve(address(pool),pay1Amount);
+        pool.unstake(pay1Asset, pay1Amount, sender);
     }
 
     function test2_1_Swapping() public {
         // 2-Asset Swaps
+        tokens[0].mint(pay1Amounts[0]);
+        tokens[0].approve(address(pool),pay1Amounts[0]);
         emit log_named_uint("Sender pay balance (before)", tokens[0].balanceOf(sender));
         emit log_named_uint("Sender receive balance (before)", tokens[1].balanceOf(sender));
-        emit log_named_uint("Pool pay balance I (before)", sfmm.balance(addresses[0]));
-        emit log_named_uint("Pool pay balance II (before)", tokens[0].balanceOf(address(sfmm)));
-        emit log_named_uint("Pool receive balance I (before)", sfmm.balance(addresses[1]));
-        emit log_named_uint("Pool receive balance II (before)", tokens[1].balanceOf(address(sfmm)));
-        emit log_named_uint("Pay token scale (before)", sfmm.scale(addresses[0]));
-        emit log_named_uint("Pay token weight (before)", sfmm.weight(addresses[0]));
-        emit log_named_uint("Receive token scale (before)", sfmm.scale(addresses[1]));
-        emit log_named_uint("Receive token weight (before)", sfmm.weight(addresses[1]));
+        emit log_named_uint("Pool pay balance I (before)", pool.asset(addresses[0]).balance);
+        emit log_named_uint("Pool pay balance II (before)", tokens[0].balanceOf(address(pool)));
+        emit log_named_uint("Pool receive balance I (before)", pool.asset(addresses[1]).balance);
+        emit log_named_uint("Pool receive balance II (before)", tokens[1].balanceOf(address(pool)));
+        emit log_named_uint("Pay token scale (before)", pool.asset(addresses[0]).scale);
+        emit log_named_uint("Receive token scale (before)", pool.asset(addresses[1]).scale);
         emit log_named_uint("Amount in", pay1Amounts[0]);
-        uint256 amountOut = sfmm.multiswap(pay1Assets, pay1Amounts, receive1Assets, allocations1)[0];
+        uint256 amountOut = pool.multiswap(pay1Assets, pay1Amounts, receive1Assets, allocations1)[0];
         emit log_named_uint("Amount out", amountOut);
         emit log_named_uint("Sender pay balance (after)", tokens[0].balanceOf(sender));
         emit log_named_uint("Sender receive balance (after)", tokens[1].balanceOf(sender));
-        emit log_named_uint("Pool pay balance I (after)", sfmm.balance(addresses[0]));
-        emit log_named_uint("Pool pay balance II (after)", tokens[0].balanceOf(address(sfmm)));
-        emit log_named_uint("Pool receive balance I (after)", sfmm.balance(addresses[1]));
-        emit log_named_uint("Pool receive balance II (after)", tokens[1].balanceOf(address(sfmm)));
-        emit log_named_uint("Pay token scale (after)", sfmm.scale(addresses[0]));
-        emit log_named_uint("Pay token weight (after)", sfmm.weight(addresses[0]));
-        emit log_named_uint("Receive token scale (after)", sfmm.scale(addresses[1]));
-        emit log_named_uint("Receive token weight (after)", sfmm.weight(addresses[1]));
-        vm.expectRevert(abi.encodeWithSelector(SFMM.InsufficientAllowance.selector,0,pay1Amount));
-        sfmm.multiswap(pay1Assets, pay1Amounts, receive1Assets, allocations1);
+        emit log_named_uint("Pool pay balance I (after)", pool.asset(addresses[0]).balance);
+        emit log_named_uint("Pool pay balance II (after)", tokens[0].balanceOf(address(pool)));
+        emit log_named_uint("Pool receive balance I (after)", pool.asset(addresses[1]).balance);
+        emit log_named_uint("Pool receive balance II (after)", tokens[1].balanceOf(address(pool)));
+        emit log_named_uint("Pay token scale (after)", pool.asset(addresses[0]).scale);
+        emit log_named_uint("Receive token scale (after)", pool.asset(addresses[1]).scale);
+        console.log("Revert 1");
+        vm.expectRevert(abi.encodeWithSelector(Pool.InsufficientAllowance.selector,0,pay1Amount));
+        pool.multiswap(pay1Assets, pay1Amounts, receive1Assets, allocations1);
         console.log("********************************************************");
         setUp();
+        tokens[0].mint(pay1Amount);
+        tokens[0].approve(address(pool),pay1Amount);
+        emit log_named_uint("Allowance",tokens[0].allowance(sender,address(pool)));
         emit log_named_uint("Sender pay balance (before)", tokens[0].balanceOf(sender));
         emit log_named_uint("Sender receive balance (before)", tokens[1].balanceOf(sender));
-        emit log_named_uint("Pool pay balance I (before)", sfmm.balance(addresses[0]));
-        emit log_named_uint("Pool pay balance II (before)", tokens[0].balanceOf(address(sfmm)));
-        emit log_named_uint("Pool receive balance I (before)", sfmm.balance(addresses[1]));
-        emit log_named_uint("Pool receive balance II (before)", tokens[1].balanceOf(address(sfmm)));
-        emit log_named_uint("Pay token scale (before)", sfmm.scale(addresses[0]));
-        emit log_named_uint("Pay token weight (before)", sfmm.weight(addresses[0]));
-        emit log_named_uint("Receive token scale (before)", sfmm.scale(addresses[1]));
-        emit log_named_uint("Receive token weight (before)", sfmm.weight(addresses[1]));
+        emit log_named_uint("Pool pay balance I (before)", pool.asset(addresses[0]).balance);
+        emit log_named_uint("Pool pay balance II (before)", tokens[0].balanceOf(address(pool)));
+        emit log_named_uint("Pool receive balance I (before)", pool.asset(addresses[1]).balance);
+        emit log_named_uint("Pool receive balance II (before)", tokens[1].balanceOf(address(pool)));
+        emit log_named_uint("Pay token scale (before)", pool.asset(addresses[0]).scale);
+        emit log_named_uint("Receive token scale (before)", pool.asset(addresses[1]).scale);
         emit log_named_uint("Amount in", pay1Amounts[0]);
-        amountOut = sfmm.swap(pay1Asset, receive1Asset, pay1Amount, sender);
+        amountOut = pool.swap(pay1Asset, receive1Asset, pay1Amount, sender);
         emit log_named_uint("Amount out", amountOut);
         emit log_named_uint("Sender pay balance (after)", tokens[0].balanceOf(sender));
         emit log_named_uint("Sender receive balance (after)", tokens[1].balanceOf(sender));
-        emit log_named_uint("Pool pay balance I (after)", sfmm.balance(addresses[0]));
-        emit log_named_uint("Pool pay balance II (after)", tokens[0].balanceOf(address(sfmm)));
-        emit log_named_uint("Pool receive balance I (after)", sfmm.balance(addresses[1]));
-        emit log_named_uint("Pool receive balance II (after)", tokens[1].balanceOf(address(sfmm)));
-        emit log_named_uint("Pay token scale (after)", sfmm.scale(addresses[0]));
-        emit log_named_uint("Pay token weight (after)", sfmm.weight(addresses[0]));
-        emit log_named_uint("Receive token scale (after)", sfmm.scale(addresses[1]));
-        emit log_named_uint("Receive token weight (after)", sfmm.weight(addresses[1]));
-        vm.expectRevert(abi.encodeWithSelector(SFMM.InsufficientAllowance.selector,0,pay1Amount));
-        sfmm.swap(pay1Asset, receive1Asset, pay1Amount, sender);
-        vm.expectRevert(abi.encodeWithSelector(SFMM.InvalidSwap.selector,poolAddress,receive1Asset));
-        sfmm.swap(poolAddress, receive1Asset, pay1Amount, sender);
-        vm.expectRevert(abi.encodeWithSelector(SFMM.InvalidSwap.selector,pay1Asset, poolAddress));
-        sfmm.swap(pay1Asset, poolAddress, pay1Amount, sender);
+        emit log_named_uint("Pool pay balance I (after)", pool.asset(addresses[0]).balance);
+        emit log_named_uint("Pool pay balance II (after)", tokens[0].balanceOf(address(pool)));
+        emit log_named_uint("Pool receive balance I (after)", pool.asset(addresses[1]).balance);
+        emit log_named_uint("Pool receive balance II (after)", tokens[1].balanceOf(address(pool)));
+        emit log_named_uint("Pay token scale (after)", pool.asset(addresses[0]).scale);
+        emit log_named_uint("Receive token scale (after)", pool.asset(addresses[1]).scale);
+        console.log("Revert 2");
+        vm.expectRevert(abi.encodeWithSelector(Pool.InsufficientAllowance.selector,0,pay1Amount));
+        pool.swap(pay1Asset, receive1Asset, pay1Amount, sender);
+        console.log("Revert 3");
+        vm.expectRevert(abi.encodeWithSelector(Pool.InvalidSwap.selector,poolAddress,receive1Asset));
+        pool.swap(poolAddress, receive1Asset, pay1Amount, sender);
+        console.log("Revert 4");
+        vm.expectRevert(abi.encodeWithSelector(Pool.InvalidSwap.selector,pay1Asset, poolAddress));
+        pool.swap(pay1Asset, poolAddress, pay1Amount, sender);
     }
 
     function test2_2_Staking() public {
         // Staking
+        tokens[0].mint(pay1Amounts[0]);
+        tokens[0].approve(address(pool),pay1Amounts[0]);
         emit log_named_uint("Sender pay balance (before)", tokens[0].balanceOf(sender));
-        emit log_named_uint("Sender receive balance (before)", sfmm.balanceOf(sender));
-        emit log_named_uint("Pool pay balance I (before)", sfmm.balance(addresses[0]));
-        emit log_named_uint("Pool pay balance II (before)", tokens[0].balanceOf(address(sfmm)));
-        emit log_named_uint("Pool receive balance I (before)", sfmm.balance());
-        emit log_named_uint("Pool receive balance II (before)", sfmm.totalSupply());
-        emit log_named_uint("Pay token scale (before)", sfmm.scale(addresses[0]));
-        emit log_named_uint("Pay token weight (before)", sfmm.weight(addresses[0]));
+        emit log_named_uint("Sender receive balance (before)", pool.balanceOf(sender));
+        emit log_named_uint("Pool pay balance I (before)", pool.asset(addresses[0]).balance);
+        emit log_named_uint("Pool pay balance II (before)", tokens[0].balanceOf(address(pool)));
+        emit log_named_uint("Pool receive balance I (before)", pool.balance());
+        emit log_named_uint("Pool receive balance II (before)", pool.totalSupply());
+        emit log_named_uint("Pay token scale (before)", pool.asset(addresses[0]).scale);
         emit log_named_uint("Amount in", pay1Amounts[0]);
-        uint256 amountOut = sfmm.multiswap(pay1Assets, pay1Amounts, receive1Pools, allocations1)[0];
+        uint256 amountOut = pool.multiswap(pay1Assets, pay1Amounts, receive1Pools, allocations1)[0];
         emit log_named_uint("Amount out", amountOut);
         emit log_named_uint("Sender pay balance (after)", tokens[0].balanceOf(sender));
-        emit log_named_uint("Sender receive balance (after)", sfmm.balanceOf(sender));
-        emit log_named_uint("Pool pay balance I (after)", sfmm.balance(addresses[0]));
-        emit log_named_uint("Pool pay balance II (after)", tokens[0].balanceOf(address(sfmm)));
-        emit log_named_uint("Pool receive balance I (after)", sfmm.balance());
-        emit log_named_uint("Pool receive balance II (after)", sfmm.totalSupply());
-        emit log_named_uint("Pay token scale (after)", sfmm.scale(addresses[0]));
-        emit log_named_uint("Pay token weight (after)", sfmm.weight(addresses[0]));
+        emit log_named_uint("Sender receive balance (after)", pool.balanceOf(sender));
+        emit log_named_uint("Pool pay balance I (after)", pool.asset(addresses[0]).balance);
+        emit log_named_uint("Pool pay balance II (after)", tokens[0].balanceOf(address(pool)));
+        emit log_named_uint("Pool receive balance I (after)", pool.balance());
+        emit log_named_uint("Pool receive balance II (after)", pool.totalSupply());
+        emit log_named_uint("Pay token scale (after)", pool.asset(addresses[0]).scale);
         console.log("********************************************************");
         setUp();
+        tokens[0].mint(amounts[0]);
+        tokens[0].approve(address(pool),amounts[0]);
         emit log_named_uint("Sender pay balance (before)", tokens[0].balanceOf(sender));
-        emit log_named_uint("Sender receive balance (before)", sfmm.balanceOf(sender));
-        emit log_named_uint("Pool pay balance I (before)", sfmm.balance(addresses[0]));
-        emit log_named_uint("Pool pay balance II (before)", tokens[0].balanceOf(address(sfmm)));
-        emit log_named_uint("Pool receive balance I (before)", sfmm.balance());
-        emit log_named_uint("Pool receive balance II (before)", sfmm.totalSupply());
-        emit log_named_uint("Pay token scale (before)", sfmm.scale(addresses[0]));
-        emit log_named_uint("Pay token weight (before)", sfmm.weight(addresses[0]));
+        emit log_named_uint("Sender receive balance (before)", pool.balanceOf(sender));
+        emit log_named_uint("Pool pay balance I (before)", pool.asset(addresses[0]).balance);
+        emit log_named_uint("Pool pay balance II (before)", tokens[0].balanceOf(address(pool)));
+        emit log_named_uint("Pool receive balance I (before)", pool.balance());
+        emit log_named_uint("Pool receive balance II (before)", pool.totalSupply());
+        emit log_named_uint("Pay token scale (before)", pool.asset(addresses[0]).scale);
         emit log_named_uint("Amount in", pay1Amounts[0]);
-        amountOut = sfmm.stake(pay1Asset, amounts[0], sender);
+        amountOut = pool.stake(pay1Asset, amounts[0], sender);
         emit log_named_uint("Amount out", amountOut);
         emit log_named_uint("Sender pay balance (after)", tokens[0].balanceOf(sender));
-        emit log_named_uint("Sender receive balance (after)", sfmm.balanceOf(sender));
-        emit log_named_uint("Pool pay balance I (after)", sfmm.balance(addresses[0]));
-        emit log_named_uint("Pool pay balance II (after)", tokens[0].balanceOf(address(sfmm)));
-        emit log_named_uint("Pool receive balance I (after)", sfmm.balance());
-        emit log_named_uint("Pool receive balance II (after)", sfmm.totalSupply());
-        emit log_named_uint("Pay token scale (after)", sfmm.scale(addresses[0]));
-        emit log_named_uint("Pay token weight (after)", sfmm.weight(addresses[0]));
+        emit log_named_uint("Sender receive balance (after)", pool.balanceOf(sender));
+        emit log_named_uint("Pool pay balance I (after)", pool.asset(addresses[0]).balance);
+        emit log_named_uint("Pool pay balance II (after)", tokens[0].balanceOf(address(pool)));
+        emit log_named_uint("Pool receive balance I (after)", pool.balance());
+        emit log_named_uint("Pool receive balance II (after)", pool.totalSupply());
+        emit log_named_uint("Pay token scale (after)", pool.asset(addresses[0]).scale);
     }
 
     function test2_3_Unstaking() public {
-        emit log_named_uint("Sender pay balance (before)", sfmm.balanceOf(sender));
+        pool.approve(address(pool),pay1Amounts[0]);
+        emit log_named_uint("Sender pay balance (before)", pool.balanceOf(sender));
         emit log_named_uint("Sender receive balance (before)", tokens[1].balanceOf(sender));
-        emit log_named_uint("Pool pay balance I (before)", sfmm.balance());
-        emit log_named_uint("Pool pay balance II (before)", sfmm.totalSupply());
-        emit log_named_uint("Pool receive balance I (before)", sfmm.balance(addresses[1]));
-        emit log_named_uint("Pool receive balance II (before)", tokens[1].balanceOf(address(sfmm)));
-        emit log_named_uint("Receive token scale (before)", sfmm.scale(addresses[1]));
-        emit log_named_uint("Receive token weight (before)", sfmm.weight(addresses[1]));
+        emit log_named_uint("Pool pay balance I (before)", pool.balance());
+        emit log_named_uint("Pool pay balance II (before)", pool.totalSupply());
+        emit log_named_uint("Pool receive balance I (before)", pool.asset(addresses[1]).balance);
+        emit log_named_uint("Pool receive balance II (before)", tokens[1].balanceOf(address(pool)));
+        emit log_named_uint("Receive token scale (before)", pool.asset(addresses[1]).scale);
         emit log_named_uint("Amount in", pay1Amounts[0]);
-        uint256 amountOut = sfmm.multiswap(pay1Pools, pay1Amounts, receive1Assets, allocations1)[0];
+        uint256 amountOut = pool.multiswap(pay1Pools, pay1Amounts, receive1Assets, allocations1)[0];
         emit log_named_uint("Amount out", amountOut);
-        emit log_named_uint("Sender pay balance (after)", sfmm.balanceOf(sender));
+        emit log_named_uint("Sender pay balance (after)", pool.balanceOf(sender));
         emit log_named_uint("Sender receive balance (after)", tokens[1].balanceOf(sender));
-        emit log_named_uint("Pool pay balance I (after)", sfmm.balance());
-        emit log_named_uint("Pool pay balance II (after)", sfmm.totalSupply());
-        emit log_named_uint("Pool receive balance I (after)", sfmm.balance(addresses[1]));
-        emit log_named_uint("Pool receive balance II (after)", tokens[1].balanceOf(address(sfmm)));
-        emit log_named_uint("Receive token scale (after)", sfmm.scale(addresses[1]));
-        emit log_named_uint("Receive token weight (after)", sfmm.weight(addresses[1]));
+        emit log_named_uint("Pool pay balance I (after)", pool.balance());
+        emit log_named_uint("Pool pay balance II (after)", pool.totalSupply());
+        emit log_named_uint("Pool receive balance I (after)", pool.asset(addresses[1]).balance);
+        emit log_named_uint("Pool receive balance II (after)", tokens[1].balanceOf(address(pool)));
+        emit log_named_uint("Receive token scale (after)", pool.asset(addresses[1]).scale);
         console.log("********************************************************");
         setUp();
-        emit log_named_uint("Sender pay balance (before)", sfmm.balanceOf(sender));
+        pool.approve(address(pool),pay1Amount);
+        emit log_named_uint("Sender pay balance (before)", pool.balanceOf(sender));
         emit log_named_uint("Sender receive balance (before)", tokens[1].balanceOf(sender));
-        emit log_named_uint("Pool pay balance I (before)", sfmm.balance());
-        emit log_named_uint("Pool pay balance II (before)", sfmm.totalSupply());
-        emit log_named_uint("Pool receive balance I (before)", sfmm.balance(addresses[1]));
-        emit log_named_uint("Pool receive balance II (before)", tokens[1].balanceOf(address(sfmm)));
-        emit log_named_uint("Receive token scale (before)", sfmm.scale(addresses[1]));
-        emit log_named_uint("Receive token weight (before)", sfmm.weight(addresses[1]));
+        emit log_named_uint("Pool pay balance I (before)", pool.balance());
+        emit log_named_uint("Pool pay balance II (before)", pool.totalSupply());
+        emit log_named_uint("Pool receive balance I (before)", pool.asset(addresses[1]).balance);
+        emit log_named_uint("Pool receive balance II (before)", tokens[1].balanceOf(address(pool)));
+        emit log_named_uint("Receive token scale (before)", pool.asset(addresses[1]).scale);
         emit log_named_uint("Amount in", pay1Amounts[0]);
-        amountOut = sfmm.unstake(receive1Asset, pay1Amount, sender);
+        amountOut = pool.unstake(receive1Asset, pay1Amount, sender);
         emit log_named_uint("Amount out", amountOut);
-        emit log_named_uint("Sender pay balance (after)", sfmm.balanceOf(sender));
+        emit log_named_uint("Sender pay balance (after)", pool.balanceOf(sender));
         emit log_named_uint("Sender receive balance (after)", tokens[1].balanceOf(sender));
-        emit log_named_uint("Pool pay balance I (after)", sfmm.balance());
-        emit log_named_uint("Pool pay balance II (after)", sfmm.totalSupply());
-        emit log_named_uint("Pool receive balance I (after)", sfmm.balance(addresses[1]));
-        emit log_named_uint("Pool receive balance II (after)", tokens[1].balanceOf(address(sfmm)));
-        emit log_named_uint("Receive token scale (after)", sfmm.scale(addresses[1]));
-        emit log_named_uint("Receive token weight (after)", sfmm.weight(addresses[1]));
+        emit log_named_uint("Pool pay balance I (after)", pool.balance());
+        emit log_named_uint("Pool pay balance II (after)", pool.totalSupply());
+        emit log_named_uint("Pool receive balance I (after)", pool.asset(addresses[1]).balance);
+        emit log_named_uint("Pool receive balance II (after)", tokens[1].balanceOf(address(pool)));
+        emit log_named_uint("Receive token scale (after)", pool.asset(addresses[1]).scale);
     }
-
-
-    // function testSwapVerbose() public {
-    //     emit log("============");
-    //     emit log("Before swap:");
-    //     emit log("============");
-    //     emit log_named_uint("Weight 1", sfmm.weight(addresses[0]));
-    //     emit log_named_uint("Weight 2", sfmm.weight(addresses[1]));
-    //     emit log_named_uint("Reserve 0", sfmm.totalSupply());
-    //     emit log_named_uint("Balance 1", tokens[0].balanceOf(address(sfmm)));
-    //     emit log_named_uint("Reserve 1", sfmm.balance(addresses[0]));
-    //     emit log_named_uint("Balance 2", tokens[1].balanceOf(address(sfmm)));
-    //     emit log_named_uint("Reserve 2", sfmm.balance(addresses[1]));
-    //     emit log_named_uint("Swap In Amount", amountIn);
-
-    //     amountOut = sfmm.swap(addresses[0], addresses[1], amountIn, sender);
-
-    //     emit log("===========");
-    //     emit log("After swap:");
-    //     emit log("===========");
-    //     emit log_named_uint("Swap Out Amount", amountOut);
-    //     emit log_named_uint("Weight 1", sfmm.weight(addresses[0]));
-    //     emit log_named_uint("Weight 2", sfmm.weight(addresses[1]));
-    //     emit log_named_uint("Reserve 0", sfmm.totalSupply());
-    //     emit log_named_uint("Balance 1", tokens[0].balanceOf(address(sfmm)));
-    //     emit log_named_uint("Reserve 1", sfmm.balance(addresses[0]));
-    //     emit log_named_uint("Balance 2", tokens[1].balanceOf(address(sfmm)));
-    //     emit log_named_uint("Reserve 2", sfmm.balance(addresses[1]));
-    // }
-
-    // function testStakeVerbose() public {
-    //     emit log("=============");
-    //     emit log("Before stake:");
-    //     emit log("=============");
-    //     emit log_named_uint("Weight 1", sfmm.weight(addresses[0]));
-    //     emit log_named_uint("Weight 2", sfmm.weight(addresses[1]));
-    //     emit log_named_uint("Reserve 0", sfmm.totalSupply());
-    //     emit log_named_uint("Balance 1", tokens[0].balanceOf(address(sfmm)));
-    //     emit log_named_uint("Reserve 1", sfmm.balance(addresses[0]));
-    //     emit log_named_uint("Balance 2", tokens[1].balanceOf(address(sfmm)));
-    //     emit log_named_uint("Reserve 2", sfmm.balance(addresses[1]));
-    //     emit log_named_uint("Swap In Amount", amountIn);
-
-    //     amountOut = sfmm.stake(addresses[0], amountIn, sender);
-
-    //     emit log("============");
-    //     emit log("After stake:");
-    //     emit log("============");
-    //     emit log_named_uint("Swap Out Amount", amountOut);
-    //     emit log_named_uint("Weight 1", sfmm.weight(addresses[0]));
-    //     emit log_named_uint("Weight 2", sfmm.weight(addresses[1]));
-    //     emit log_named_uint("Reserve 0", sfmm.totalSupply());
-    //     emit log_named_uint("Balance 1", tokens[0].balanceOf(address(sfmm)));
-    //     emit log_named_uint("Reserve 1", sfmm.balance(addresses[0]));
-    //     emit log_named_uint("Balance 2", tokens[1].balanceOf(address(sfmm)));
-    //     emit log_named_uint("Reserve 2", sfmm.balance(addresses[1]));
-    // }
-
-    // function testStakeBatch() public {
-    //     for (uint256 i = 0; i < NTOKENS; i++) {
-    //         tokens[i].increaseAllowance(address(sfmm), amountIn);
-    //     }
-
-    //     amountOut = sfmm.stakeBatch(addresses, amounts, sender);
-    // }
-
-    // function testCompareStakes() public {
-    //     tokens[0].increaseAllowance(address(sfmm), 2 * amountIn);
-
-    //     uint256 amountSingle = sfmm.stake(addresses[0], amountIn, sender);
-
-    //     setUp();
-
-    //     address[] memory addressInArray = new address[](1);
-    //     uint256[] memory amountInArray = new uint256[](1);
-    //     addressInArray[0] = addresses[0];
-    //     amountInArray[0] = amountIn;
-
-    //     uint256 amountBatch = sfmm.stakeBatch(
-    //         addressInArray,
-    //         amountInArray,
-    //         sender
-    //     );
-
-    //     assertEq(
-    //         amountSingle,
-    //         amountBatch,
-    //         "Single stake and batch stake do not agrees."
-    //     );
-    // }
-
-
-
-    // function testFailUnstakeNoAllowance() public {
-    //     amountOut = sfmm.unstake(addresses[0], amountIn, sender);
-    // }
-
-    // function testUnstakeVerbose() public {
-    //     sfmm.increaseAllowance(address(sfmm), amountIn);
-
-    //     emit log("===============");
-    //     emit log("Before unstake:");
-    //     emit log("===============");
-    //     emit log_named_uint("Weight 1", sfmm.weight(addresses[0]));
-    //     emit log_named_uint("Weight 2", sfmm.weight(addresses[1]));
-    //     emit log_named_uint("Reserve 0", sfmm.totalSupply());
-    //     emit log_named_uint("Balance 1", tokens[0].balanceOf(address(sfmm)));
-    //     emit log_named_uint("Reserve 1", sfmm.balance(addresses[0]));
-    //     emit log_named_uint("Balance 2", tokens[1].balanceOf(address(sfmm)));
-    //     emit log_named_uint("Reserve 2", sfmm.balance(addresses[1]));
-    //     emit log_named_uint("Swap In Amount", amountIn);
-
-    //     amountOut = sfmm.unstake(addresses[0], amountIn, sender);
-
-    //     emit log("==============");
-    //     emit log("After unstake:");
-    //     emit log("==============");
-    //     emit log_named_uint("Swap Out Amount", amountOut);
-    //     emit log_named_uint("Weight 1", sfmm.weight(addresses[0]));
-    //     emit log_named_uint("Weight 2", sfmm.weight(addresses[1]));
-    //     emit log_named_uint("Reserve 0", sfmm.totalSupply());
-    //     emit log_named_uint("Balance 1", tokens[0].balanceOf(address(sfmm)));
-    //     emit log_named_uint("Reserve 1", sfmm.balance(addresses[0]));
-    //     emit log_named_uint("Balance 2", tokens[1].balanceOf(address(sfmm)));
-    //     emit log_named_uint("Reserve 2", sfmm.balance(addresses[1]));
-    // }
-
-    // function testAddAsset() public {
-    //     tokens[0].increaseAllowance(address(sfmm), amountIn);
-    //     tokenNew.increaseAllowance(address(sfmm), amountNew);
-
-    //     sfmm.addAsset(
-    //         addresses[0],
-    //         addressNew,
-    //         amountIn,
-    //         amountNew,
-    //         3e15,
-    //         1e18,
-    //         sender
-    //     );
-    // }
 }
