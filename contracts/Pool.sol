@@ -103,7 +103,7 @@ contract Pool is ReentrancyGuard, ERC20 {
 
         if (_isInitialized == 1) revert AlreadyInitialized();
 
-        _isInitialized == 1;
+        _isInitialized = 1;
 
         _mint(_msgSender(), _scale);
     }
