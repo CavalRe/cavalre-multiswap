@@ -1,46 +1,40 @@
 {
-  "name": "amm",
-  "version": "0.1.0",
-  "description": "Automated market maker",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "name": "@prb/foundry-template",
+  "description": "Foundry-based template for developing Solidity smart contracts",
+  "version": "1.0.0",
+  "author": {
+    "name": "Paul Razvan Berg",
+    "url": "https://github.com/paulrberg"
   },
-  "author": "",
-  "license": "",
   "devDependencies": {
-    "@nomiclabs/hardhat-ethers": "^2.0.5",
-    "@nomiclabs/hardhat-etherscan": "^3.0.1",
-    "@nomiclabs/hardhat-waffle": "^2.0.2",
-    "@typechain/ethers-v5": "^7.2.0",
-    "@typechain/hardhat": "^2.3.1",
-    "@types/chai": "^4.3.0",
-    "@types/mocha": "^9.1.0",
-    "@types/node": "^12.20.45",
-    "@typescript-eslint/eslint-plugin": "^4.33.0",
-    "@typescript-eslint/parser": "^4.33.0",
-    "chai": "^4.3.6",
-    "dotenv": "^10.0.0",
-    "eslint": "^7.32.0",
-    "eslint-config-prettier": "^8.3.0",
-    "eslint-config-standard": "^16.0.3",
-    "eslint-plugin-import": "^2.25.4",
-    "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-prettier": "^3.4.1",
-    "eslint-plugin-promise": "^5.2.0",
-    "ethereum-waffle": "^3.4.0",
-    "ethers": "^5.5.4",
-    "hardhat": "^2.8.4",
-    "hardhat-gas-reporter": "^1.0.7",
-    "prettier": "^2.5.1",
-    "prettier-plugin-solidity": "^1.0.0-beta.13",
+    "@commitlint/cli": "^17.0.3",
+    "@commitlint/config-conventional": "^17.0.3",
+    "commitizen": "^4.2.4",
+    "cz-conventional-changelog": "^3.3.0",
+    "husky": "^8.0.1",
+    "lint-staged": "^13.0.3",
+    "prettier": "^2.7.1",
+    "prettier-plugin-solidity": "^1.0.0-dev.22",
     "solhint": "^3.3.7",
-    "solidity-coverage": "^0.7.19",
-    "ts-node": "^10.5.0",
-    "typechain": "^5.2.0",
-    "typescript": "^4.5.5"
+    "solhint-plugin-prettier": "^0.0.5"
   },
-  "dependencies": {
-    "@openzeppelin/contracts": "^4.5.0"
+  "keywords": [
+    "blockchain",
+    "ethereum",
+    "forge",
+    "foundry",
+    "smart-contracts",
+    "solidity",
+    "template"
+  ],
+  "packageManager": "yarn@3.2.1",
+  "private": true,
+  "scripts": {
+    "lint": "yarn solhint && yarn prettier:check",
+    "lint:check": "yarn prettier:check && yarn solhint:check",
+    "postinstall": "husky install",
+    "prettier": "prettier --config \"./.prettierrc.yml\" --write \"**/*.{json,md,sol,yml}\"",
+    "prettier:check": "prettier --config \"./.prettierrc.yml\" --check \"**/*.{json,md,sol,yml}\"",
+    "solhint": "solhint --config \"./.solhint.json\" \"{src,test}/**/*.sol\""
   }
 }

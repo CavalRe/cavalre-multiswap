@@ -1,3 +1,2 @@
-@openzeppelin/=node_modules/@openzeppelin/
-@cavalre/=contracts/
-hardhat/=node_modules/hardhat/
+@prb/test/=lib/prb-test/src/
+forge-std/=lib/forge-std/src/
