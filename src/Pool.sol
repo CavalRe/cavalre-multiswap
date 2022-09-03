@@ -317,6 +317,8 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         MSStateAfter memory withdrawT1 = pureWithdrawStep(t0, allocations, poolAllocation, valueDelta);
 
         // external
+        receiveAmounts = new uint256[](allocations.length + 1);
+
         _scale += depositT1.poolScaleDelta + withdrawT1.poolScaleDelta;
         assert(depositT1.poolBalanceDelta == 0 || withdrawT1.poolBalanceDelta == 0);
         if (depositT1.poolBalanceDelta == 0) {
@@ -325,6 +327,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         }
         if (withdrawT1.poolBalanceDelta == 0) {
             _balance += depositT1.poolBalanceDelta;
+            receiveAmounts[allocations.length] = depositT1.poolBalanceDelta;
             _mint(_msgSender(), depositT1.poolBalanceDelta);
         }
 
@@ -340,6 +343,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
             Asset storage assetX = _assets[_index[x.token]];
             assetX.balance = x.balance;
             assetX.scale = x.scale;
+            receiveAmounts[i] = x.balanceDelta;
             SafeERC20.safeTransfer(IERC20(x.token), _msgSender(), x.balanceDelta);
         }
 
