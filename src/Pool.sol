@@ -220,7 +220,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         if (payTokens.length != amounts.length) revert LengthMismatch(payTokens.length, amounts.length);
         if (receiveTokens.length != allocations.length) revert LengthMismatch(receiveTokens.length, allocations.length);
         // check for duplicate tokens
-	/*
+        /*
         for (uint256 i; i < payTokens.length; i++) {
             address payToken = payTokens[i];
             for (uint256 j; j < receiveTokens.length; j++) {
@@ -255,12 +255,12 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
             uint256 gamma = ONE - t0Asset.fee;
             uint256 weight = t0Asset.scale.div(t0.poolScale);
             uint256 t1AssetBalance = t0Asset.balance + assetBalanceDelta;
-            uint256 valueDelta_i = gamma.mul(weight).mul(assetBalanceDelta.div(t1AssetBalance));
+            uint256 valueDeltaI = gamma.mul(weight).mul(assetBalanceDelta.div(t1AssetBalance));
             uint256 scaleDelta = t0Asset.fee.mul(assetBalanceDelta);
             // update state
             t1.assets[i] = AssetAfter(t1AssetBalance, t0Asset.scale + scaleDelta, assetBalanceDelta, t0Asset.token);
             t1.poolScaleDelta += scaleDelta;
-            valueDelta += valueDelta_i;
+            valueDelta += valueDeltaI;
         }
     }
 
@@ -276,7 +276,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
             t1.poolBalanceDelta = t0.poolBalance.mul(factor).div(ONE - factor);
         }
         for (uint256 i; i < t0.assets.length; i++) {
-	    // TODO try pushing
+            // TODO try pushing
             Asset memory t0Asset = t0.assets[i];
             // calculate deltas
             uint256 weight = t0Asset.scale.div(t0.poolScale);

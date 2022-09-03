@@ -309,22 +309,22 @@ contract MultiswapTest is TestRoot {
         assertEq(scaleSum, scale);
     }
 
-    function checkDeltaTrading(State memory one, State memory two) internal {
-        //    uint negSum = 0;
-        //    uint posSum = 0;
-        //        for (uint i; i < one.assets.length; i++) {
-        //     if (two.assets[i].balance >= one.assets[i].balance) {
-        //    uint deltaAlpha = two.assets[i].balance - one.assets[i].balance;
-        //         uint deltaV = (deltaAlpha * one.assets[i].scale * two.poolBalance) / (one.poolScale * two.assets[i].balance);
-        //    posSum += deltaV;
-        //     } else {
-        //    uint deltaAlpha = one.assets[i].balance - two.assets[i].balance;
-        //         uint deltaV = (deltaAlpha * one.assets[i].scale * two.poolBalance) / (one.poolScale * two.assets[i].balance);
-        //    negSum += deltaV;
-        //     }
-        //    }
-        //assertApproxEqRel(posSum, negSum, 999999999e9);
-    }
+// function checkDeltaTrading(State memory one, State memory two) internal {
+// uint negSum = 0;
+// uint posSum = 0;
+// for (uint i; i < one.assets.length; i++) {
+// if (two.assets[i].balance >= one.assets[i].balance) {
+// uint deltaAlpha = two.assets[i].balance - one.assets[i].balance;
+//      uint deltaV = (deltaAlpha * one.assets[i].scale * two.poolBalance) / (one.poolScale * two.assets[i].balance);
+// posSum += deltaV;
+//  } else {
+// uint deltaAlpha = one.assets[i].balance - two.assets[i].balance;
+//      uint deltaV = (deltaAlpha * one.assets[i].scale * two.poolBalance) / (one.poolScale * two.assets[i].balance);
+// negSum += deltaV;
+//  }
+// }
+//     //assertApproxEqRel(posSum, negSum, 999999999e9);
+// }
 
     function testMultiPoolFuzz(
         uint256 amountA,
