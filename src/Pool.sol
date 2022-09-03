@@ -7,13 +7,25 @@ import "openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
 import "openzeppelin-contracts/contracts/access/Ownable.sol";
 import "prb-math/PRBMathUD60x18.sol";
 
+/// @custom:title store state of an asset managed by the pool
+/// @custom:member balance ammount of <asset> tokens managed by the pool
+/// @custom:member scale used to maintain the relative weights of assets
+/// @custom:member fee fixed transaction fee for depositing/withdrawing the asset, in 60x18 format
+/// @custom:member token fixed address of the coresponding ERC20 contract
 struct Asset {
     uint256 balance;
-    uint256 scale; // Used to compute weight of this asset token
-    uint256 fee; // Transaction fee, e.g. 0.003
+    uint256 scale;
+    uint256 fee;
     address token;
 }
 
+/// @custom:title represents the state changed by a `swap` operation
+/// @custom:dev this is a pure data structure and should not be mutated after initialization
+/// @custom:member poolScale pool `_scale`
+/// @custom:member assetInBalance balance of the asset being deposited during a swap
+/// @custom:member assetInScale scale of the asset being deposited during a swap
+/// @custom:member assetOutBalance balance of the asset being withdrawn during a swap
+/// @custom:member assetOutScale scale the asset being withdrawn during a swap
 struct SwapState {
     uint256 poolScale;
     uint256 assetInBalance;
@@ -22,7 +34,11 @@ struct SwapState {
     uint256 assetOutScale;
 }
 
-// for `stake` and `unstake`
+/// @custom:dev used for both `stake` and `unstake` operations
+/// @custom:member poolBalance pool `_balance`
+/// @custom:member poolScale pool `_scale`
+/// @custom:member assetBalance balance of asset being withdrawn/deposited
+/// @custom:member assetScale scale of asset being withdrawn/deposited
 struct StakeState {
     uint256 poolBalance;
     uint256 poolScale;
