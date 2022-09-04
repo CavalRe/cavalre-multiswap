@@ -10,12 +10,10 @@ import "prb-math/PRBMathUD60x18.sol";
 /// @custom:title store state of an asset managed by the pool
 /// @custom:member balance ammount of <asset> tokens managed by the pool
 /// @custom:member scale used to maintain the relative weights of assets
-/// @custom:member fee fixed transaction fee for depositing/withdrawing the asset, in 60x18 format
 /// @custom:member token fixed address of the coresponding ERC20 contract
 struct Asset {
     uint256 balance;
     uint256 scale;
-    uint256 fee;
     address token;
 }
 
@@ -73,6 +71,8 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
     uint256 private _balance;
     uint256 private _scale;
     uint256 private constant ONE = 10**18; // Number of decimals
+    uint256 private constant FEE = 1e15;
+    uint256 private constant GAMMA = ONE - FEE;
 
     // The `address` here is the address of the respective external asset token contract.
     mapping(address => uint256) private _index;
@@ -100,7 +100,6 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
     function addAsset(
         address payToken_,
         uint256 balance_,
-        uint256 fee_,
         uint256 assetScale_
     ) public nonReentrant onlyOwner {
         if (_isInitialized == 1) revert AlreadyInitialized();
@@ -114,7 +113,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         SafeERC20.safeTransferFrom(IERC20(payToken_), _msgSender(), address(this), balance_);
 
         _index[payToken_] = _assets.length;
-        _assets.push(Asset(balance_, assetScale_, fee_, payToken_));
+        _assets.push(Asset(balance_, assetScale_, payToken_));
     }
 
     function initialize() public nonReentrant onlyOwner {
@@ -155,55 +154,52 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         return _balance;
     }
 
-    function stakeStep(
-        StakeState memory t0,
-        uint256 assetBalanceDelta,
-        uint256 fee
-    ) internal pure returns (StakeState memory t1, uint256 poolBalanceDelta) {
+    function stakeStep(StakeState memory t0, uint256 assetBalanceDelta)
+        internal
+        pure
+        returns (StakeState memory t1, uint256 poolBalanceDelta)
+    {
         t1.assetBalance = t0.assetBalance + assetBalanceDelta;
         uint256 weight = t0.assetScale.div(t0.poolScale);
-        uint256 gamma = ONE - fee;
-        uint256 invGrowth = ONE - gamma.mul(weight).mul(assetBalanceDelta.div(t1.assetBalance));
+        uint256 invGrowth = ONE - GAMMA.mul(weight).mul(assetBalanceDelta.div(t1.assetBalance));
         t1.poolBalance = t0.poolBalance.div(invGrowth);
         poolBalanceDelta = t1.poolBalance - t0.poolBalance;
 
-        uint256 scaleDelta = fee.mul(assetBalanceDelta);
+        uint256 scaleDelta = FEE.mul(assetBalanceDelta);
         t1.poolScale = t0.poolScale + scaleDelta;
         t1.assetScale = t0.assetScale + scaleDelta;
     }
 
-    function unstakeStep(
-        StakeState memory t0,
-        uint256 poolBalanceDelta,
-        uint256 fee
-    ) internal pure returns (StakeState memory t1, uint256 assetDelta) {
+    function unstakeStep(StakeState memory t0, uint256 poolBalanceDelta)
+        internal
+        pure
+        returns (StakeState memory t1, uint256 assetDelta)
+    {
         t1.poolBalance = t0.poolBalance - poolBalanceDelta;
         uint256 weight = t0.assetScale.div(t0.poolScale);
-        uint256 gamma = ONE - fee;
-        uint256 invGrowth = ONE + gamma.div(weight).mul(poolBalanceDelta.div(t1.poolBalance));
+        uint256 invGrowth = ONE + GAMMA.div(weight).mul(poolBalanceDelta.div(t1.poolBalance));
         t1.assetBalance = t0.assetBalance.div(invGrowth);
         assetDelta = t0.assetBalance - t1.assetBalance;
 
-        uint256 scaleDelta = fee.mul(assetDelta);
+        uint256 scaleDelta = FEE.mul(assetDelta);
         t1.poolScale = t0.poolScale + scaleDelta;
         t1.assetScale = t0.assetScale + scaleDelta;
     }
 
-    function swapStep(
-        SwapState memory t0,
-        uint256 assetInBalanceDelta,
-        uint256 assetInFee,
-        uint256 assetOutFee
-    ) internal pure returns (SwapState memory t1, uint256 assetOutBalanceDelta) {
+    function swapStep(SwapState memory t0, uint256 assetInBalanceDelta)
+        internal
+        pure
+        returns (SwapState memory t1, uint256 assetOutBalanceDelta)
+    {
         t1.assetInBalance = t0.assetInBalance + assetInBalanceDelta;
-        uint256 gamma = (ONE - assetInFee).mul(ONE - assetOutFee);
         uint256 weight = t0.assetInScale.div(t0.assetOutScale);
+        uint256 gamma = GAMMA.mul(GAMMA);
         uint256 invGrowth = ONE + gamma.mul(weight).mul(assetInBalanceDelta.div(t1.assetInBalance));
         t1.assetOutBalance = t0.assetOutBalance.div(invGrowth);
         assetOutBalanceDelta = t0.assetOutBalance - t1.assetOutBalance;
 
-        uint256 assetInScaleDelta = assetInFee.mul(assetInBalanceDelta);
-        uint256 assetOutScaleDelta = assetOutFee.mul(assetOutBalanceDelta);
+        uint256 assetInScaleDelta = FEE.mul(assetInBalanceDelta);
+        uint256 assetOutScaleDelta = FEE.mul(assetOutBalanceDelta);
         t1.assetInScale = t0.assetInScale + assetInScaleDelta;
         t1.assetOutScale = t0.assetOutScale + assetOutScaleDelta;
         t1.poolScale = t0.poolScale + assetInScaleDelta + assetOutScaleDelta;
@@ -252,11 +248,10 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
             Asset memory t0Asset = t0.assets[i];
             uint256 assetBalanceDelta = amounts[i];
             // calculate deltas
-            uint256 gamma = ONE - t0Asset.fee;
             uint256 weight = t0Asset.scale.div(t0.poolScale);
             uint256 t1AssetBalance = t0Asset.balance + assetBalanceDelta;
-            uint256 valueDeltaI = gamma.mul(weight).mul(assetBalanceDelta.div(t1AssetBalance));
-            uint256 scaleDelta = t0Asset.fee.mul(assetBalanceDelta);
+            uint256 valueDeltaI = GAMMA.mul(weight).mul(assetBalanceDelta.div(t1AssetBalance));
+            uint256 scaleDelta = FEE.mul(assetBalanceDelta);
             // update state
             t1.assets[i] = AssetAfter(t1AssetBalance, t0Asset.scale + scaleDelta, assetBalanceDelta, t0Asset.token);
             t1.poolScaleDelta += scaleDelta;
@@ -280,9 +275,9 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
             Asset memory t0Asset = t0.assets[i];
             // calculate deltas
             uint256 weight = t0Asset.scale.div(t0.poolScale);
-            uint256 factor = (ONE - t0Asset.fee).div(weight).mul(allocations[i]).mul(valueIn);
+            uint256 factor = GAMMA.div(weight).mul(allocations[i]).mul(valueIn);
             uint256 assetBalanceDelta = t0Asset.balance.mul(factor).div(factor + ONE);
-            uint256 scaleDelta = t0Asset.fee.mul(assetBalanceDelta); // update state
+            uint256 scaleDelta = FEE.mul(assetBalanceDelta); // update state
             t1.assets[i] = AssetAfter(
                 t0Asset.balance - assetBalanceDelta,
                 t0Asset.scale + scaleDelta,
@@ -364,7 +359,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         if (assetIn.token != payToken || assetOut.token != receiveToken) revert InvalidSwap(payToken, receiveToken);
 
         SwapState memory t0 = SwapState(_scale, assetIn.balance, assetIn.scale, assetOut.balance, assetOut.scale);
-        (SwapState memory t1, uint256 assetOutBalanceDelta) = swapStep(t0, amountIn, assetIn.fee, assetOut.fee);
+        (SwapState memory t1, uint256 assetOutBalanceDelta) = swapStep(t0, amountIn);
 
         assetIn.balance = t1.assetInBalance;
         assetOut.balance = t1.assetOutBalance;
@@ -392,7 +387,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         if (assetIn.token != payToken) revert InvalidStake(payToken);
 
         StakeState memory t0 = StakeState(_balance, _scale, assetIn.balance, assetIn.scale);
-        (StakeState memory t1, uint256 poolBalanceDelta) = stakeStep(t0, assetBalanceDelta, assetIn.fee);
+        (StakeState memory t1, uint256 poolBalanceDelta) = stakeStep(t0, assetBalanceDelta);
 
         _balance = t1.poolBalance;
         _scale = t1.poolScale;
@@ -419,7 +414,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         if (assetOut.token != receiveToken) revert InvalidUnstake(receiveToken);
 
         StakeState memory t0 = StakeState(_balance, _scale, assetOut.balance, assetOut.scale);
-        (StakeState memory t1, uint256 assetBalanceDelta) = unstakeStep(t0, poolBalanceDelta, assetOut.fee);
+        (StakeState memory t1, uint256 assetBalanceDelta) = unstakeStep(t0, poolBalanceDelta);
 
         _balance = t1.poolBalance;
         _scale = t1.poolScale;

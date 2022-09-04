@@ -25,21 +25,21 @@ contract InitTest is PRBTest {
 
         tokenA.mint(amount);
         tokenA.approve(address(pool), amount);
-        pool.addAsset(address(tokenA), amount, 1e18, 1e18);
+        pool.addAsset(address(tokenA), amount, 1e18);
         tokenB.mint(amount);
         tokenB.approve(address(pool), amount);
-        pool.addAsset(address(tokenB), amount, 1e18, 1e18);
+        pool.addAsset(address(tokenB), amount, 1e18);
 
         Token tokenC = new Token("Foo", "FOOC");
         tokenC.mint(amount);
         vm.expectRevert(abi.encodeWithSelector(Pool.InsufficientAllowance.selector, 0, amount));
-        pool.addAsset(address(tokenC), amount, 1e18, 1e18);
+        pool.addAsset(address(tokenC), amount, 1e18);
         // TODO check for double adds
 
         pool.initialize();
 
         vm.expectRevert(abi.encodeWithSelector(Pool.AlreadyInitialized.selector));
-        pool.addAsset(address(tokenB), amount, 1e18, 1e18);
+        pool.addAsset(address(tokenB), amount, 1e18);
         vm.expectRevert(abi.encodeWithSelector(Pool.AlreadyInitialized.selector));
         pool.initialize();
 
@@ -73,7 +73,7 @@ contract InitTest is PRBTest {
         Token tokenA = new Token("Foo", "FOOA");
         tokenA.mint(amount);
         tokenA.approve(address(pool), amount);
-        pool.addAsset(address(tokenA), amount, 1e18, 1e18);
+        pool.addAsset(address(tokenA), amount, 1e18);
         vm.stopPrank();
     }
 }

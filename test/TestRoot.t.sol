@@ -19,7 +19,6 @@ contract TestRoot is PRBTest {
         tokens = new Token[](NTOKENS);
 
         uint256 scale = 1e27;
-        uint256 fee = 1e15;
 
         for (uint256 i = 0; i < NTOKENS; i++) {
             uint256 amount = (i + 1) * 1e27;
@@ -31,7 +30,7 @@ contract TestRoot is PRBTest {
             token.approve(address(pool), balance);
             tokens[i] = token;
 
-            pool.addAsset(address(token), balance, fee, scale);
+            pool.addAsset(address(token), balance, scale);
         }
 
         pool.initialize();
