@@ -128,6 +128,13 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         _assets.push(Asset(balance_, assetScale_, fee_, payToken_));
     }
 
+    function liquidate(uint256 assetIndex) public nonReentrant onlyOwner {
+        if (_isInitialized == 1) revert AlreadyInitialized();
+
+        Asset memory x = _assets[assetIndex];
+        SafeERC20.safeTransfer(IERC20(x.token), owner(), x.balance);
+    }
+
     function initialize() public nonReentrant onlyOwner {
         if (_isInitialized == 1) revert AlreadyInitialized();
 
