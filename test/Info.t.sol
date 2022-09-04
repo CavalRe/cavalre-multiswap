@@ -8,8 +8,10 @@ import "../src/Pool.sol";
 contract InfoTest is TestRoot {
     /// @dev check number of tokens return is equal to the initial number of tokens
     function testAssets() public {
-        Asset[] memory assets = pool.assets();
+        AssetWithMetadata[] memory assets = pool.assets();
         assertEq(assets.length, NTOKENS);
+        assertEq(assets[0].name, "Token");
+        assertEq(assets[0].symbol, "T");
     }
 
     /// @dev check that `pool` returns expected values
@@ -35,8 +37,14 @@ contract InfoTest is TestRoot {
 
     /// @dev smoke test for `asset`
     function testAsset() public {
-        Asset memory asset = pool.asset(address(tokens[0]));
+        AssetWithMetadata memory asset = pool.asset(address(tokens[1]));
         assertGt(asset.balance, 0);
+        assertGt(asset.decimals, 0);
+        assertGt(asset.scale, 0);
+        assertGt(asset.fee, 0);
+        assertEq(asset.token, address(tokens[1]));
+        assertEq(asset.name, "Token");
+        assertEq(asset.symbol, "T");
     }
 
     /// @dev `asset` should revert with `AssetNotFound` if the address is not a managed asset
