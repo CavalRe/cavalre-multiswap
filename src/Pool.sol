@@ -91,6 +91,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
     error InvalidUnstake(address receiveToken);
     error AssetNotFound(address asset);
 
+    event Initialized();
     event SwapStep(SwapState newState, address assetIn, address assetOut);
     event StakeStep(StakeState newState, address asset);
     event UnstakeStep(StakeState newState, address asset);
@@ -119,6 +120,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
 
     function initialize() public nonReentrant onlyOwner {
         if (_isInitialized == 1) revert AlreadyInitialized();
+        emit Initialized();
 
         _isInitialized = 1;
         _mint(_msgSender(), _scale);

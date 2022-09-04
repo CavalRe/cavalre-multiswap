@@ -7,6 +7,8 @@ import "../src/Pool.sol";
 import "./Token.t.sol";
 
 contract InitTest is PRBTest {
+    event Initialized();
+
     function testInit() public {
         address alice = address(1);
         vm.startPrank(alice);
@@ -36,6 +38,9 @@ contract InitTest is PRBTest {
         pool.addAsset(address(tokenC), amount, 1e18, 1e18);
         // TODO check for double adds
 
+        // initialize and check `Initialized` is emmited
+        vm.expectEmit(true, true, true, true);
+        emit Initialized();
         pool.initialize();
 
         vm.expectRevert(abi.encodeWithSelector(Pool.AlreadyInitialized.selector));
