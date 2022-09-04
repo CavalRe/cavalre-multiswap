@@ -19,6 +19,17 @@ struct Asset {
     address token;
 }
 
+/// @custom:title convience struct for querying asset info
+struct AssetWithMetadata {
+    uint256 balance;
+    uint256 scale;
+    uint256 fee;
+    address token;
+    string name;
+    string symbol;
+    uint8 decimals;
+}
+
 /// @custom:title represents the state changed by a `swap` operation
 /// @custom:dev this is a pure data structure and should not be mutated after initialization
 /// @custom:member poolScale pool `_scale`
@@ -141,14 +152,33 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         return (poolAddress, poolMetadata.name(), poolMetadata.symbol(), poolMetadata.decimals(), _balance, _scale);
     }
 
-    function assets() public view returns (Asset[] memory) {
-        return _assets;
+    function withMetadata(Asset memory x) internal view returns (AssetWithMetadata memory) {
+        IERC20Metadata metadata = IERC20Metadata(x.token);
+        return
+            AssetWithMetadata({
+                balance: x.balance,
+                scale: x.scale,
+                fee: x.fee,
+                token: x.token,
+                name: metadata.name(),
+                symbol: metadata.symbol(),
+                decimals: metadata.decimals()
+            });
     }
 
-    function asset(address token) public view returns (Asset memory) {
-        Asset memory result = _assets[_index[token]];
-        if (result.token != token) revert AssetNotFound(token);
-        return result;
+    function assets() public view returns (AssetWithMetadata[] memory) {
+        AssetWithMetadata[] memory all = new AssetWithMetadata[](_assets.length);
+        for (uint256 i; i < _assets.length; i++) {
+            Asset memory x = _assets[i];
+            all[i] = withMetadata(x);
+        }
+        return all;
+    }
+
+    function asset(address token) public view returns (AssetWithMetadata memory) {
+        Asset memory x = _assets[_index[token]];
+        if (x.token != token) revert AssetNotFound(token);
+        return withMetadata(x);
     }
 
     function balance() public view returns (uint256) {
