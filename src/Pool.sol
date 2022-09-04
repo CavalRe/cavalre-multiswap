@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.16;
 
-import "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
-import "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
-import "openzeppelin-contracts/contracts/security/ReentrancyGuard.sol";
-import "openzeppelin-contracts/contracts/access/Ownable.sol";
-import "prb-math/PRBMathUD60x18.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@prb/math/PRBMathUD60x18.sol";
 
 /// @custom:title store state of an asset managed by the pool
 /// @custom:member balance ammount of <asset> tokens managed by the pool

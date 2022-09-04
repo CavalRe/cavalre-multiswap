@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.16;
 
-import "prb-math/PRBMathUD60x18.sol";
+import "@prb/math/PRBMathUD60x18.sol";
 import { console } from "forge-std/console.sol";
 import "./TestRoot.t.sol";
 import "../src/Pool.sol";
