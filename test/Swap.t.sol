@@ -3,6 +3,7 @@ pragma solidity 0.8.16;
 
 import "./TestRoot.t.sol";
 import "../src/Pool.sol";
+import { console } from "forge-std/console.sol";
 
 contract SwapTest is TestRoot {
     /*
@@ -45,7 +46,7 @@ contract SwapTest is TestRoot {
 
     /// @dev `swap` should revert with `InvalidSwap` if the address is not a managed asset
     function testBadDepositAddress() public {
-        Token token = new Token("Foo", "FOO");
+        Token token = new Token("Foo", "FOO", 18);
         address depositAddress = address(token);
         address withdrawAddress = address(tokens[0]);
         vm.expectRevert(abi.encodeWithSelector(Pool.InvalidSwap.selector, depositAddress, withdrawAddress));
@@ -53,7 +54,7 @@ contract SwapTest is TestRoot {
     }
 
     function testBadWithdrawalAddress() public {
-        Token token = new Token("Foo", "FOO");
+        Token token = new Token("Foo", "FOO", 18);
         address depositAddress = address(tokens[0]);
         address withdrawAddress = address(token);
         vm.expectRevert(abi.encodeWithSelector(Pool.InvalidSwap.selector, depositAddress, withdrawAddress));
@@ -105,7 +106,7 @@ contract SwapTest is TestRoot {
     }
 
     function testFailSwapWithdrawNotInPool() public {
-        Token outside = new Token("Foo", "BAR");
+        Token outside = new Token("Foo", "BAR", 18);
         Token depositToken = tokens[0];
         uint256 amount = 1e27;
         depositToken.mint(amount);
@@ -123,7 +124,7 @@ contract SwapTest is TestRoot {
     }
 
     function testFailSwapDepositNotInPool() public {
-        Token depositToken = new Token("Foo", "BAR");
+        Token depositToken = new Token("Foo", "BAR", 18);
         Token withdrawToken = tokens[0];
         uint256 amount = 1e27;
         depositToken.mint(amount);
@@ -158,6 +159,27 @@ contract SwapTest is TestRoot {
         assertEq(depositTokenA.balanceOf(alice) > 0, true);
         assertEq(pool.balanceOf(alice), 0);
 
+        vm.stopPrank();
+    }
+
+    function testDecimals() public {
+        uint256 amountA = 256e16;
+
+        address alice = address(1);
+        vm.startPrank(alice);
+
+        Token depositToken = tokens[0];
+        Token withdrawToken = tokens[99];
+        depositToken.mint(amountA);
+        depositToken.approve(address(pool), amountA);
+
+        uint256 withdrawAmount = pool.swap(address(depositToken), address(withdrawToken), amountA, alice);
+        // NOTE we just make sure that the difference is small when fee==0
+        // TODO how can we make this check more robust?
+        assertLt(amountA - (withdrawAmount * 1e12), 1e13);
+
+        IERC20Metadata metadata = IERC20Metadata(address(withdrawToken));
+        assertEq(withdrawToken.decimals(), 6);
         vm.stopPrank();
     }
 }

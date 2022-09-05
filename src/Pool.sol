@@ -16,6 +16,7 @@ struct Asset {
     uint256 balance;
     uint256 scale;
     uint256 fee;
+    uint8 decimals;
     address token;
 }
 
@@ -97,6 +98,32 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
 
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
 
+    function toCanonical(uint256 amount, uint8 decimals) internal pure returns (uint256) {
+        if (decimals == 18) return amount;
+        if (decimals < 18) return amount / (10**(18 - decimals));
+        if (decimals > 18) return amount * (10**(decimals - 18));
+        assert(false);
+    }
+
+    function transferIn(
+        address assetAddress,
+        uint256 amount,
+        uint8 decimals
+    ) internal returns (uint256 absolute) {
+        absolute = toCanonical(amount, decimals);
+        SafeERC20.safeTransferFrom(IERC20(assetAddress), _msgSender(), address(this), absolute);
+    }
+
+    function transferOut(
+        address assetAddress,
+        address beneficiary,
+        uint256 amount,
+        uint8 decimals
+    ) internal returns (uint256 absolute) {
+        absolute = toCanonical(amount, decimals);
+        SafeERC20.safeTransfer(IERC20(assetAddress), beneficiary, absolute);
+    }
+
     function addAsset(
         address payToken_,
         uint256 balance_,
@@ -111,10 +138,11 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         _balance += assetScale_;
         _scale += assetScale_;
 
-        SafeERC20.safeTransferFrom(IERC20(payToken_), _msgSender(), address(this), balance_);
-
         _index[payToken_] = _assets.length;
-        _assets.push(Asset(balance_, assetScale_, fee_, payToken_));
+        IERC20Metadata metadata = IERC20Metadata(payToken_);
+        _assets.push(Asset(balance_, assetScale_, fee_, metadata.decimals(), payToken_));
+
+        transferIn(payToken_, balance_, metadata.decimals());
     }
 
     function uninitialize(uint256 assetIndex) public nonReentrant onlyOwner {
@@ -343,15 +371,15 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
             Asset storage assetX = _assets[_index[x.token]];
             assetX.balance = x.balance;
             assetX.scale = x.scale;
-            SafeERC20.safeTransferFrom(IERC20(x.token), _msgSender(), address(this), x.balanceDelta);
+            transferIn(x.token, x.balanceDelta, assetX.decimals);
         }
         for (uint256 i; i < withdrawT1.assets.length; i++) {
             AssetAfter memory x = withdrawT1.assets[i];
             Asset storage assetX = _assets[_index[x.token]];
             assetX.balance = x.balance;
             assetX.scale = x.scale;
-            receiveAmounts[i] = x.balanceDelta;
-            SafeERC20.safeTransfer(IERC20(x.token), _msgSender(), x.balanceDelta);
+            uint256 absoluteOut = transferOut(x.token, _msgSender(), x.balanceDelta, assetX.decimals);
+            receiveAmounts[i] = absoluteOut;
         }
 
         //emit MultiswapStep(_balance, _scale, depositT1.assets, withdrawT1.assets);
@@ -381,10 +409,10 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
 
         emit SwapStep(t1, assetIn.token, assetOut.token);
 
-        SafeERC20.safeTransferFrom(IERC20(payToken), _msgSender(), address(this), amountIn);
-        SafeERC20.safeTransfer(IERC20(receiveToken), addressTo, assetOutBalanceDelta);
+        transferIn(payToken, amountIn, assetIn.decimals);
+        uint256 absoluteOut = transferOut(receiveToken, addressTo, assetOutBalanceDelta, assetOut.decimals);
 
-        return assetOutBalanceDelta;
+        return absoluteOut;
     }
 
     function stake(
@@ -408,7 +436,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
 
         emit StakeStep(t1, assetIn.token);
 
-        SafeERC20.safeTransferFrom(IERC20(payToken), _msgSender(), address(this), assetBalanceDelta);
+        transferIn(payToken, assetBalanceDelta, assetIn.decimals);
         _mint(addressTo, poolBalanceDelta);
 
         return poolBalanceDelta;
@@ -435,9 +463,9 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
 
         emit UnstakeStep(t1, assetOut.token);
 
-        SafeERC20.safeTransfer(IERC20(receiveToken), addressTo, assetBalanceDelta);
         _burn(_msgSender(), poolBalanceDelta);
+        uint256 absoluteOut = transferOut(receiveToken, addressTo, assetBalanceDelta, assetOut.decimals);
 
-        return assetBalanceDelta;
+        return absoluteOut;
     }
 }
