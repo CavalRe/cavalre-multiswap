@@ -12,8 +12,8 @@ contract InitTest is PRBTest {
         vm.startPrank(alice);
         Pool pool = new Pool("Pool", "P");
 
-        Token tokenA = new Token("Foo", "FOOA");
-        Token tokenB = new Token("Foo", "FOOB");
+        Token tokenA = new Token("Foo", "FOOA", 18);
+        Token tokenB = new Token("Foo", "FOOB", 18);
         uint256 amount = 1e27;
 
         vm.expectRevert(abi.encodeWithSelector(Pool.NotInitialized.selector));
@@ -30,7 +30,7 @@ contract InitTest is PRBTest {
         tokenB.approve(address(pool), amount);
         pool.addAsset(address(tokenB), amount, 1e18, 1e18);
 
-        Token tokenC = new Token("Foo", "FOOC");
+        Token tokenC = new Token("Foo", "FOOC", 18);
         tokenC.mint(amount);
         vm.expectRevert(abi.encodeWithSelector(Pool.InsufficientAllowance.selector, 0, amount));
         pool.addAsset(address(tokenC), amount, 1e18, 1e18);
@@ -70,7 +70,7 @@ contract InitTest is PRBTest {
 
         vm.startPrank(bob);
         uint256 amount = 1e18;
-        Token tokenA = new Token("Foo", "FOOA");
+        Token tokenA = new Token("Foo", "FOOA", 18);
         tokenA.mint(amount);
         tokenA.approve(address(pool), amount);
         pool.addAsset(address(tokenA), amount, 1e18, 1e18);

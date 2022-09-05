@@ -2,6 +2,7 @@
 pragma solidity 0.8.16;
 
 import { PRBTest } from "@prb/test/PRBTest.sol";
+import { console } from "forge-std/console.sol";
 import "../src/Pool.sol";
 import "./Token.t.sol";
 
@@ -17,22 +18,29 @@ contract TestRoot is PRBTest {
 
         pool = new Pool("Pool", "P");
         tokens = new Token[](NTOKENS);
+        uint256 balance = 1e27;
 
-        uint256 scale = 1e27;
-        uint256 fee = 1e15;
+        uint256 scale = 1e18;
+        uint256 fee = 0;
 
-        for (uint256 i = 0; i < NTOKENS; i++) {
-            uint256 amount = (i + 1) * 1e27;
-            uint256 balance = 100 * amount;
+        // add general tokens
+        for (uint256 i = 0; i < NTOKENS - 1; i++) {
             string memory name = "Token";
             string memory symbol = "T";
-            Token token = new Token(name, symbol);
+            Token token = new Token(name, symbol, 18);
             token.mint(balance);
             token.approve(address(pool), balance);
             tokens[i] = token;
 
             pool.addAsset(address(token), balance, fee, scale);
         }
+
+        // add a token with different decimal system
+        Token USD = new Token("USD", "USD", 6);
+        USD.mint(balance);
+        USD.approve(address(pool), balance);
+        tokens[NTOKENS - 1] = USD;
+        pool.addAsset(address(USD), balance, fee, scale);
 
         pool.initialize();
         vm.stopPrank();

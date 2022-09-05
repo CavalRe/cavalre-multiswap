@@ -45,7 +45,7 @@ contract StakeTest is TestRoot {
         address bob = address(3);
         depositIndex = depositIndex % tokens.length;
         Token depositToken = tokens[depositIndex];
-        amount = (amount % 1e59) + 1e17;
+        amount = (amount % 1e40) + 1e17;
 
         assertEq(pool.balanceOf(alice), 0);
         assertEq(pool.balanceOf(bob), 0);
@@ -68,7 +68,7 @@ contract StakeTest is TestRoot {
 
     /// @dev `stake` should revert with `InvalidStake` if the address is not a managed asset
     function testBadDepositAddress() public {
-        Token token = new Token("Foo", "FOO");
+        Token token = new Token("Foo", "FOO", 18);
         address depositAddress = address(token);
         vm.expectRevert(abi.encodeWithSelector(Pool.InvalidStake.selector, depositAddress));
         pool.stake(depositAddress, 0, address(1));

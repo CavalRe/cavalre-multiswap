@@ -279,7 +279,7 @@ contract MultiswapTest is TestRoot {
     }
 
     function testFailMultiWithdrawNotInPool() public {
-        Token outside = new Token("Foo", "BAR");
+        Token outside = new Token("Foo", "BAR", 18);
         Token depositToken = tokens[0];
         uint256 amount = 1e27;
         depositToken.mint(amount);
