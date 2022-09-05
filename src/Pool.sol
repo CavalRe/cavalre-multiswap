@@ -175,12 +175,6 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         return all;
     }
 
-    function asset(address token) public view returns (AssetWithMetadata memory) {
-        Asset memory x = _assets[_index[token]];
-        if (x.token != token) revert AssetNotFound(token);
-        return withMetadata(x);
-    }
-
     function balance() public view returns (uint256) {
         return _balance;
     }

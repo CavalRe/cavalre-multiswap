@@ -12,6 +12,11 @@ contract InfoTest is TestRoot {
         assertEq(assets.length, NTOKENS);
         assertEq(assets[0].name, "Token");
         assertEq(assets[0].symbol, "T");
+        assertGt(assets[0].balance, 0);
+        assertGt(assets[0].decimals, 0);
+        assertGt(assets[0].scale, 0);
+        assertGt(assets[0].fee, 0);
+        assertEq(assets[0].token, address(tokens[0]));
     }
 
     /// @dev check that `pool` returns expected values
@@ -33,24 +38,5 @@ contract InfoTest is TestRoot {
     function testBalance() public {
         uint256 balance = pool.balance();
         assertGt(balance, 0);
-    }
-
-    /// @dev smoke test for `asset`
-    function testAsset() public {
-        AssetWithMetadata memory asset = pool.asset(address(tokens[1]));
-        assertGt(asset.balance, 0);
-        assertGt(asset.decimals, 0);
-        assertGt(asset.scale, 0);
-        assertGt(asset.fee, 0);
-        assertEq(asset.token, address(tokens[1]));
-        assertEq(asset.name, "Token");
-        assertEq(asset.symbol, "T");
-    }
-
-    /// @dev `asset` should revert with `AssetNotFound` if the address is not a managed asset
-    function testCannotInvalidAsset() public {
-        Token token = new Token("Foo", "FOO");
-        vm.expectRevert(abi.encodeWithSelector(Pool.AssetNotFound.selector, address(token)));
-        pool.asset(address(token));
     }
 }
