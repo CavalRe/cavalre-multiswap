@@ -494,12 +494,23 @@ contract MultiswapTest is TestRoot {
     }
     */
 
+    function testSparseSwap() public {
+        MSData[] memory params = new MSData[](NTOKENS + 1);
+
+        Token token = tokens[0];
+        uint256 amount = 1e27;
+        token.mint(amount);
+        token.approve(address(pool), amount);
+        params[0].deposit = amount;
+
+        params[1].allocation = 1e18;
+
+        pool.multiswap(params);
+    }
+
     function testBigSwap() public {
+        MSData[] memory params = new MSData[](NTOKENS + 1);
         uint256 numberOfTokens = NTOKENS / 2;
-        address[] memory deposits = new address[](numberOfTokens);
-        uint256[] memory amounts = new uint256[](numberOfTokens);
-        address[] memory withdrawals = new address[](numberOfTokens);
-        uint256[] memory allocations = new uint256[](numberOfTokens);
 
         for (uint256 i; i < numberOfTokens; i++) {
             Token token = tokens[i];
@@ -507,18 +518,15 @@ contract MultiswapTest is TestRoot {
             token.mint(amount);
             token.approve(address(pool), amount);
 
-            deposits[i] = address(token);
-            amounts[i] = amount;
+            params[i].deposit = amount;
         }
 
         uint256 totalAllocation = 1e18;
         for (uint256 i = numberOfTokens; i < NTOKENS; i++) {
-            withdrawals[i - numberOfTokens] = address(tokens[i]);
-            allocations[i - numberOfTokens] = totalAllocation.div(numberOfTokens.fromUint());
+            params[i].allocation = totalAllocation.div(numberOfTokens.fromUint());
         }
         console.log("ALLOC", totalAllocation);
-        console.log("SLICE", totalAllocation.div(numberOfTokens.fromUint()));
 
-        pool.multiswap(0, 0, deposits, amounts, withdrawals, allocations);
+        pool.multiswap(params);
     } // !! TODO check that valid deposit/withdrawal addresses are being used
 }

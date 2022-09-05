@@ -15,9 +15,11 @@ import "prb-math/PRBMathUD60x18.sol";
 struct Asset {
     uint256 balance;
     uint256 scale;
-    uint256 fee;
-    uint8 decimals;
-    address token;
+}
+
+struct MSData {
+    uint256 deposit;
+    uint256 allocation;
 }
 
 /// @custom:title represents the state changed by a `swap` operation
@@ -56,8 +58,6 @@ struct MSState {
 struct AssetAfter {
     uint256 balance;
     uint256 scale;
-    uint256 balanceDelta;
-    address token;
 }
 
 struct MSStateAfter {
@@ -78,6 +78,9 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
     // The `address` here is the address of the respective external asset token contract.
     mapping(address => uint256) private _index;
     Asset[] private _assets;
+    uint8[] private DECIMALS;
+    uint256[] private FEE;
+    address[] private ADDRESS;
 
     error AlreadyInitialized();
     error NotInitialized();
@@ -140,7 +143,10 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
 
         _index[payToken_] = _assets.length;
         IERC20Metadata metadata = IERC20Metadata(payToken_);
-        _assets.push(Asset(balance_, assetScale_, fee_, metadata.decimals(), payToken_));
+        _assets.push(Asset(balance_, assetScale_));
+        ADDRESS.push(payToken_);
+        FEE.push(fee_);
+        DECIMALS.push(metadata.decimals());
 
         transferIn(payToken_, balance_, metadata.decimals());
     }
@@ -149,7 +155,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         if (_isInitialized == 1) revert AlreadyInitialized();
 
         Asset memory x = _assets[assetIndex];
-        SafeERC20.safeTransfer(IERC20(x.token), owner(), x.balance);
+        SafeERC20.safeTransfer(IERC20(ADDRESS[assetIndex]), owner(), x.balance);
     }
 
     function initialize() public nonReentrant onlyOwner {
@@ -176,6 +182,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         return (poolAddress, poolMetadata.name(), poolMetadata.symbol(), poolMetadata.decimals(), _balance, _scale);
     }
 
+    /*
     function assets() public view returns (Asset[] memory) {
         return _assets;
     }
@@ -185,11 +192,13 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         if (result.token != token) revert AssetNotFound(token);
         return result;
     }
+    */
 
     function balance() public view returns (uint256) {
         return _balance;
     }
 
+    /*
     function stakeStep(
         StakeState memory t0,
         uint256 assetBalanceDelta,
@@ -243,148 +252,117 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         t1.assetOutScale = t0.assetOutScale + assetOutScaleDelta;
         t1.poolScale = t0.poolScale + assetInScaleDelta + assetOutScaleDelta;
     }
+    */
 
-    function multiswapInputChecks(
-        uint256 poolAllocation,
-        address[] memory payTokens,
-        uint256[] calldata amounts,
-        address[] memory receiveTokens,
-        uint256[] calldata allocations
-    ) internal pure {
-        // Check length mismatch
-        if (payTokens.length != amounts.length) revert LengthMismatch(payTokens.length, amounts.length);
-        if (receiveTokens.length != allocations.length) revert LengthMismatch(receiveTokens.length, allocations.length);
-        // check for duplicate tokens
-        /*
-        for (uint256 i; i < payTokens.length; i++) {
-            address payToken = payTokens[i];
-            for (uint256 j; j < receiveTokens.length; j++) {
-                if (payToken == receiveTokens[j]) revert DuplicateToken(payToken);
-            }
+    function processDeposits(
+        uint256 t0PoolBalance,
+        uint256 t0PoolScale,
+        MSData[] calldata params
+    )
+        internal
+        returns (
+            uint256 poolBalanceDelta,
+            uint256 poolScaleDelta,
+            uint256 valueDelta
+        )
+    {
+        // pool deposit
+        MSData calldata poolData = params[params.length - 1];
+        if (poolData.deposit != 0) {
+            require(poolData.allocation == 0);
+            valueDelta += poolData.deposit.div(t0PoolBalance);
+            poolBalanceDelta = poolData.deposit;
+            _burn(_msgSender(), poolBalanceDelta);
         }
-	*/
-        // check alloacation sums to ONE
-        {
-            uint256 totalAllocation = poolAllocation;
-            for (uint256 i; i < receiveTokens.length; i++) {
-                totalAllocation += allocations[i];
-            }
-            if (totalAllocation != 1e18) revert IncorrectAllocation(1e18, totalAllocation);
-        }
-    }
-
-    function pureDepositStep(
-        MSState memory t0,
-        uint256[] calldata amounts,
-        uint256 poolDeposit
-    ) internal pure returns (MSStateAfter memory t1, uint256 valueDelta) {
-        t1.assets = new AssetAfter[](t0.assets.length);
-        if (poolDeposit != 0) {
-            t1.poolBalanceDelta = poolDeposit;
-            valueDelta += poolDeposit.div(t0.poolBalance);
-        }
-        for (uint256 i; i < t0.assets.length; i++) {
-            Asset memory t0Asset = t0.assets[i];
-            uint256 assetBalanceDelta = amounts[i];
+        // asset deposit
+        for (uint256 i; i < params.length - 1; i++) {
+            // setup
+            MSData calldata x = params[i];
+            if (x.deposit == 0) continue;
+            require(x.allocation == 0);
+            uint256 assetBalanceDelta = x.deposit;
+            Asset storage t0Asset = _assets[i];
             // calculate deltas
-            uint256 gamma = ONE - t0Asset.fee;
-            uint256 weight = t0Asset.scale.div(t0.poolScale);
+            uint256 fee = FEE[i];
+            uint256 gamma = ONE - fee;
+            uint256 weight = t0Asset.scale.div(t0PoolScale);
             uint256 t1AssetBalance = t0Asset.balance + assetBalanceDelta;
             uint256 valueDeltaI = gamma.mul(weight).mul(assetBalanceDelta.div(t1AssetBalance));
-            uint256 scaleDelta = t0Asset.fee.mul(assetBalanceDelta);
-            // update state
-            t1.assets[i] = AssetAfter(t1AssetBalance, t0Asset.scale + scaleDelta, assetBalanceDelta, t0Asset.token);
-            t1.poolScaleDelta += scaleDelta;
+            uint256 scaleDelta = fee.mul(assetBalanceDelta);
+            // move this asset forward in time
+            t0Asset.balance = t1AssetBalance;
+            t0Asset.scale += scaleDelta;
+            poolScaleDelta += poolScaleDelta;
             valueDelta += valueDeltaI;
+            transferIn(ADDRESS[i], assetBalanceDelta, DECIMALS[i]);
         }
     }
 
-    function pureWithdrawStep(
-        MSState memory t0,
-        uint256[] calldata allocations,
-        uint256 poolAllocation,
-        uint256 valueIn
-    ) internal pure returns (MSStateAfter memory t1) {
-        t1.assets = new AssetAfter[](t0.assets.length);
-        if (poolAllocation != 0) {
-            uint256 factor = valueIn.mul(poolAllocation);
-            t1.poolBalanceDelta = t0.poolBalance.mul(factor).div(ONE - factor);
+    function processWithdrawals(
+        uint256 t0PoolBalance,
+        uint256 t0PoolScale,
+        uint256 valueIn,
+        MSData[] calldata params
+    ) internal returns (uint256 poolBalanceDelta, uint256 poolScaleDelta) {
+        // pool withdrawal
+        MSData calldata poolData = params[params.length - 1];
+        if (poolData.allocation != 0) {
+            require(poolData.deposit == 0);
+            uint256 factor = valueIn.mul(poolData.allocation);
+            poolBalanceDelta = poolData.deposit.mul(factor).div(ONE - factor);
+            _mint(_msgSender(), poolBalanceDelta);
         }
-        for (uint256 i; i < t0.assets.length; i++) {
-            // TODO try pushing
-            Asset memory t0Asset = t0.assets[i];
+        // asset withdrawal
+        for (uint256 i; i < params.length; i++) {
+            // setup
+            MSData calldata x = params[i];
+            if (x.allocation == 0) continue;
+            require(x.deposit == 0);
+            Asset memory t0Asset = _assets[i];
             // calculate deltas
-            uint256 weight = t0Asset.scale.div(t0.poolScale);
-            uint256 factor = (ONE - t0Asset.fee).div(weight).mul(allocations[i]).mul(valueIn);
+            uint256 fee = FEE[i];
+            uint256 weight = t0Asset.scale.div(t0PoolScale);
+            uint256 factor = (ONE - fee).div(weight).mul(x.allocation).mul(valueIn);
             uint256 assetBalanceDelta = t0Asset.balance.mul(factor).div(factor + ONE);
-            uint256 scaleDelta = t0Asset.fee.mul(assetBalanceDelta); // update state
-            t1.assets[i] = AssetAfter(
-                t0Asset.balance - assetBalanceDelta,
-                t0Asset.scale + scaleDelta,
-                assetBalanceDelta,
-                t0Asset.token
-            );
-            t1.poolScaleDelta += scaleDelta;
+            uint256 scaleDelta = fee.mul(assetBalanceDelta);
+            // move asset forward in time
+            t0Asset.balance -= assetBalanceDelta;
+            t0Asset.scale += scaleDelta;
+            poolScaleDelta += scaleDelta;
+            transferOut(ADDRESS[i], _msgSender(), assetBalanceDelta, DECIMALS[i]);
         }
     }
 
-    function multiswap(
-        uint256 poolDeposit,
-        uint256 poolAllocation,
-        address[] memory payTokens,
-        uint256[] calldata amounts,
-        address[] memory receiveTokens,
-        uint256[] calldata allocations
-    ) external nonReentrant returns (uint256[] memory receiveAmounts) {
-        multiswapInputChecks(poolAllocation, payTokens, amounts, receiveTokens, allocations);
+    function multiswap(MSData[] calldata params) external nonReentrant {
+        if (params.length != _assets.length + 1) revert LengthMismatch(_assets.length, params.length);
 
-        // pure step t0 -> t1
-        MSState memory t0 = MSState(_balance, _scale, new Asset[](payTokens.length));
-        for (uint256 i; i < payTokens.length; i++) {
-            t0.assets[i] = _assets[_index[payTokens[i]]];
-        }
-        (MSStateAfter memory depositT1, uint256 valueDelta) = pureDepositStep(t0, amounts, poolDeposit);
+        uint256 localScale = _scale;
+        uint256 localBalance = _balance;
+        (uint256 poolBalanceDeltaA, uint256 poolScaleDeltaA, uint256 valueDelta) = processDeposits(
+            localBalance,
+            localScale,
+            params
+        );
+        (uint256 poolBalanceDeltaB, uint256 poolScaleDeltaB) = processWithdrawals(
+            localBalance,
+            localScale,
+            valueDelta,
+            params
+        );
 
-        t0.assets = new Asset[](receiveTokens.length);
-        for (uint256 i; i < receiveTokens.length; i++) {
-            t0.assets[i] = _assets[_index[receiveTokens[i]]];
+        // move pool values forward in time
+        _scale = localScale + poolScaleDeltaA + poolScaleDeltaB;
+        if (poolBalanceDeltaA != 0) {
+            assert(poolBalanceDeltaB == 0);
+            _balance = localBalance - poolBalanceDeltaA;
         }
-        MSStateAfter memory withdrawT1 = pureWithdrawStep(t0, allocations, poolAllocation, valueDelta);
-
-        // external
-        receiveAmounts = new uint256[](allocations.length + 1);
-
-        _scale += depositT1.poolScaleDelta + withdrawT1.poolScaleDelta;
-        assert(depositT1.poolBalanceDelta == 0 || withdrawT1.poolBalanceDelta == 0);
-        if (depositT1.poolBalanceDelta == 0) {
-            _balance -= depositT1.poolBalanceDelta;
-            _burn(_msgSender(), depositT1.poolBalanceDelta);
+        if (poolBalanceDeltaB != 0) {
+            assert(poolBalanceDeltaA == 0);
+            _balance = localBalance + poolBalanceDeltaB;
         }
-        if (withdrawT1.poolBalanceDelta == 0) {
-            _balance += depositT1.poolBalanceDelta;
-            receiveAmounts[allocations.length] = depositT1.poolBalanceDelta;
-            _mint(_msgSender(), depositT1.poolBalanceDelta);
-        }
-
-        for (uint256 i; i < payTokens.length; i++) {
-            AssetAfter memory x = depositT1.assets[i];
-            Asset storage assetX = _assets[_index[x.token]];
-            assetX.balance = x.balance;
-            assetX.scale = x.scale;
-            transferIn(x.token, x.balanceDelta, assetX.decimals);
-        }
-        for (uint256 i; i < withdrawT1.assets.length; i++) {
-            AssetAfter memory x = withdrawT1.assets[i];
-            Asset storage assetX = _assets[_index[x.token]];
-            assetX.balance = x.balance;
-            assetX.scale = x.scale;
-            uint256 absoluteOut = transferOut(x.token, _msgSender(), x.balanceDelta, assetX.decimals);
-            receiveAmounts[i] = absoluteOut;
-        }
-
-        //emit MultiswapStep(_balance, _scale, depositT1.assets, withdrawT1.assets);
     }
 
+    /*
     function swap(
         address payToken,
         address receiveToken,
@@ -468,4 +446,5 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
 
         return absoluteOut;
     }
+    */
 }
