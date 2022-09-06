@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.0;
+pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./libraries/DMath.sol";
 
 struct Asset {
@@ -14,14 +15,11 @@ struct Asset {
     uint256 balance;
     uint256 fee; // Transaction fee, e.g. 0.003
     uint256 scale; // Used to compute weight of this asset token
-    uint256 k; // AMM parameter for this asset token
 }
 
-contract Pool is ReentrancyGuard, ERC20 {
+contract Pool is ReentrancyGuard, ERC20, Ownable {
     using SafeERC20 for IERC20;
     using DMath for uint256;
-
-    address private _initializer;
 
     uint256 private _isInitialized;
 
@@ -33,11 +31,11 @@ contract Pool is ReentrancyGuard, ERC20 {
     mapping(address => uint256) private _index;
     Asset[] private _assets;
 
-    error Unauthorized(address initializer, address adder);
+    error AlreadyInitialized();
+
+    error NotInitialized();
 
     error LengthMismatch(uint256 expected, uint256 actual);
-
-    error InsufficientAllowance(uint256 availabe, uint256 required);
 
     error IncorrectAllocation(uint256 expected, uint256 actual);
 
@@ -49,29 +47,15 @@ contract Pool is ReentrancyGuard, ERC20 {
 
     error InvalidUnstake(address receiveToken);
 
-    error AlreadyInitialized();
-
-    constructor(string memory name, string memory symbol) ERC20(name, symbol) {
-        _initializer = _msgSender();
-    }
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
 
     function addAsset(
         address payToken_,
         uint256 balance_,
         uint256 fee_,
-        uint256 assetScale_,
-        uint256 k_
-    ) public nonReentrant {
-        if (_initializer != _msgSender()) revert Unauthorized(_initializer, _msgSender());
-
+        uint256 assetScale_
+    ) public nonReentrant onlyOwner {
         if (_isInitialized == 1) revert AlreadyInitialized();
-
-        uint256 available = IERC20(payToken_).allowance(
-            _msgSender(),
-            address(this)
-        );
-        if (balance_ > available)
-            revert InsufficientAllowance(available, balance_);
 
         _balance += assetScale_;
         _scale += assetScale_;
@@ -92,20 +76,26 @@ contract Pool is ReentrancyGuard, ERC20 {
                 IERC20Metadata(payToken_).decimals(),
                 balance_,
                 fee_,
-                assetScale_,
-                k_
+                assetScale_
             )
         );
     }
 
-    function initialize() public nonReentrant {
-        if (_initializer != _msgSender()) revert Unauthorized(_initializer, _msgSender());
+    function uninitialize(uint256 assetIndex) public nonReentrant onlyOwner {
+        if (_isInitialized == 1) revert AlreadyInitialized();
 
+        Asset memory x = _assets[assetIndex];
+        SafeERC20.safeTransfer(x.token, owner(), x.balance);
+    }
+
+    function initialize() public nonReentrant onlyOwner {
         if (_isInitialized == 1) revert AlreadyInitialized();
 
         _isInitialized = 1;
 
         _mint(_msgSender(), _scale);
+
+        renounceOwnership();
     }
 
     function pool()
@@ -144,24 +134,29 @@ contract Pool is ReentrancyGuard, ERC20 {
         return _balance;
     }
 
-    // function balance(address token) public view returns (uint256) {
-    //     return asset(token).balance;
+    function toCanonical(uint256 amount, uint8 decimals) internal pure returns (uint256) {
+        if (decimals == 18) return amount;
+        if (decimals < 18) return amount / (10**(18 - decimals));
+        return amount * (10**(decimals - 18));
+    }
+
+    // function transferIn(
+    //     address assetAddress,
+    //     uint256 amount,
+    //     uint8 decimals
+    // ) internal returns (uint256 absolute) {
+    //     absolute = toCanonical(amount, decimals);
+    //     SafeERC20.safeTransferFrom(IERC20(assetAddress), _msgSender(), address(this), absolute);
     // }
 
-    // function weight(address token) public view returns (uint256) {
-    //     return asset(token).scale.ddiv(_scale);
-    // }
-
-    // function scale() public view returns (uint256) {
-    //     return _scale;
-    // }
-
-    // function scale(address token) public view returns (uint256) {
-    //     return asset(token).scale;
-    // }
-
-    // function fee(address token) public view returns (uint256) {
-    //     return asset(token).fee;
+    // function transferOut(
+    //     address assetAddress,
+    //     address beneficiary,
+    //     uint256 amount,
+    //     uint8 decimals
+    // ) internal returns (uint256 absolute) {
+    //     absolute = toCanonical(amount, decimals);
+    //     SafeERC20.safeTransfer(IERC20(assetAddress), beneficiary, absolute);
     // }
 
     function multiswap(
@@ -170,6 +165,7 @@ contract Pool is ReentrancyGuard, ERC20 {
         address[] memory receiveTokens,
         uint256[] memory allocations
     ) public nonReentrant returns (uint256[] memory receiveAmounts) {
+        if (_isInitialized == 0) revert NotInitialized();
         // Check length mismatch
         {
             if (payTokens.length != amounts.length)
@@ -195,34 +191,6 @@ contract Pool is ReentrancyGuard, ERC20 {
             }
             if (totalAllocation != 1e18)
                 revert IncorrectAllocation(1e18, totalAllocation);
-        }
-        // Check for simple swaps
-        /*
-        {
-            if (payTokens.length == 1 && receiveTokens.length == 1) {
-                receiveAmounts = new uint256[](1);
-                if (receiveTokens[0] == address(this)) {
-                    receiveAmounts[0] = _stake(payTokens[0], amounts[0], _msgSender());
-                } else if (payTokens[0] == address(this)) {
-                    receiveAmounts[0] = _unstake(receiveTokens[0], allocations[0], _msgSender());
-                } else {
-                    receiveAmounts[0] = _swap(payTokens[0], receiveTokens[0], amounts[0], _msgSender());
-                }
-                return receiveAmounts;
-            }
-        }
-        */
-        // Check allowances
-        {
-            uint256 available;
-            for (uint256 i; i < payTokens.length; i++) {
-                available = IERC20(payTokens[i]).allowance(
-                    _msgSender(),
-                    address(this)
-                );
-                if (amounts[i] > available)
-                    revert InsufficientAllowance(available, amounts[i]);
-            }
         }
 
         uint256 fracValueIn;
@@ -290,7 +258,7 @@ contract Pool is ReentrancyGuard, ERC20 {
                         IERC20(payToken),
                         _msgSender(),
                         address(this),
-                        amount
+                        toCanonical(amount, IERC20Metadata(payToken).decimals())
                     );
                     delta = _assets[_index[payToken]].fee.dmul(amount);
                     _assets[_index[payToken]].scale += delta;
@@ -326,6 +294,7 @@ contract Pool is ReentrancyGuard, ERC20 {
         uint256 amountIn,
         address addressTo
     ) public nonReentrant returns (uint256) {
+        if (_isInitialized == 0) revert NotInitialized();
         Asset storage assetIn = _assets[_index[payToken]];
         Asset storage assetOut = _assets[_index[receiveToken]];
         // Check if swap
@@ -333,15 +302,6 @@ contract Pool is ReentrancyGuard, ERC20 {
             address(assetIn.token) != payToken ||
             address(assetOut.token) != receiveToken
         ) revert InvalidSwap(payToken, receiveToken);
-        // Check allowance
-        {
-            uint256 available = assetIn.token.allowance(
-                _msgSender(),
-                address(this)
-            );
-            if (amountIn > available)
-                revert InsufficientAllowance(available, amountIn);
-        }
 
         uint256 reserveIn = assetIn.balance + amountIn;
         uint256 reserveOut;
@@ -383,18 +343,10 @@ contract Pool is ReentrancyGuard, ERC20 {
         uint256 amountIn,
         address addressTo
     ) public nonReentrant returns (uint256) {
+        if (_isInitialized == 0) revert NotInitialized();
         Asset storage assetIn = _assets[_index[payToken]];
         // Check if stake
         if (address(assetIn.token) != payToken) revert InvalidStake(payToken);
-        // Check allowance
-        {
-            uint256 available = assetIn.token.allowance(
-                _msgSender(),
-                address(this)
-            );
-            if (amountIn > available)
-                revert InsufficientAllowance(available, amountIn);
-        }
 
         uint256 reserveIn = assetIn.balance + amountIn;
         uint256 weightIn = assetIn.scale.ddiv(_scale);
@@ -432,16 +384,11 @@ contract Pool is ReentrancyGuard, ERC20 {
         uint256 amountIn,
         address addressTo
     ) public nonReentrant returns (uint256) {
+        if (_isInitialized == 0) revert NotInitialized();
         Asset storage assetOut = _assets[_index[receiveToken]];
         // Check if unstake
         if (address(assetOut.token) != receiveToken)
             revert InvalidUnstake(receiveToken);
-        // Check allowance
-        {
-            uint256 available = this.allowance(_msgSender(), address(this));
-            if (amountIn > available)
-                revert InsufficientAllowance(available, amountIn);
-        }
 
         uint256 reserveIn = _balance - amountIn;
         uint256 weightOut = assetOut.scale.ddiv(_scale);

@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "../Token.sol";
-import "../Pool.sol";
-import "../libraries/ds-test/src/test.sol";
+import "@cavalre/test/Token.t.sol";
+import "@cavalre//Pool.sol";
+import "@cavalre/libraries/ds-test/src/test.sol";
 
 interface VM {
     // Expects an error on next call
@@ -17,7 +17,7 @@ interface VM {
 
 contract ContractTest is Context, DSTest {
 
-    uint256 private constant NTOKENS = 100000;
+    uint256 private constant NTOKENS = 10;
     VM private vm = VM(HEVM_ADDRESS);
 
     Token[] private tokens;
@@ -29,7 +29,6 @@ contract ContractTest is Context, DSTest {
     address[] private addresses;
     uint256[] private fees;
     uint256[] private scales;
-    uint256[] private ks;
     uint256[] private amounts;
 
     address private pay1Asset;
@@ -37,6 +36,8 @@ contract ContractTest is Context, DSTest {
     address private poolAddress;
 
     uint256 private pay1Amount;
+    uint256[] private assetIndices1 = new uint256[](1);
+    uint256[] private assetIndices2 = new uint256[](1);
     address[] private pay1Assets = new address[](1);
     address[] private pay1Pools = new address[](1);
     uint256[] private pay1Amounts = new uint256[](1);
@@ -58,11 +59,9 @@ contract ContractTest is Context, DSTest {
         amounts = new uint256[](NTOKENS);
         fees = new uint256[](NTOKENS);
         scales = new uint256[](NTOKENS);
-        ks = new uint256[](NTOKENS);
 
         uint256 scale = 1e27;
         uint256 fee = 1e15;
-        uint256 k = 1e18;
 
         for (uint256 i = 0; i < NTOKENS; i++) {
             uint256 amount = (i+1)*1e27;
@@ -78,15 +77,13 @@ contract ContractTest is Context, DSTest {
                 address(token),
                 balance,
                 fee,
-                scale,
-                k
+                scale
             );
 
             addresses[i] = address(token);
             amounts[i] = amount;
             fees[i] = fee;
             scales[i] = scale;
-            ks[i] = k;
         }
 
         pool.initialize();
@@ -97,6 +94,8 @@ contract ContractTest is Context, DSTest {
         pay1Amount = amounts[0];
         
         pay1Assets[0] = addresses[0];
+        assetIndices1[0] = 1;
+        assetIndices2[0] = 2;
         pay1Pools[0] = address(pool);
         pay1Amounts[0] = amounts[0];
 
@@ -114,6 +113,9 @@ contract ContractTest is Context, DSTest {
 
         receive1Asset1Pool[0] = addresses[0];
         receive1Asset1Pool[1] = address(pool);
+
+        tokens[0].mint(pay1Amounts[0]);
+        tokens[0].approve(address(pool),pay1Amounts[0]);
     }
 
     // function test1_0_SFMM() public {
@@ -132,31 +134,22 @@ contract ContractTest is Context, DSTest {
     // }
 
     function test1_1_Multiswap() public {
-        tokens[0].mint(pay1Amounts[0]);
-        tokens[0].approve(address(pool),pay1Amounts[0]);
         pool.multiswap(pay1Assets, pay1Amounts, receive1Assets, allocations1);
     }
 
     function test1_2_Swap() public {
-        tokens[0].mint(pay1Amount);
-        tokens[0].approve(address(pool),pay1Amount);
         pool.swap(pay1Asset, receive1Asset, pay1Amount, sender);
     }
 
     function test1_3_Multistake() public {
-        tokens[0].mint(pay1Amounts[0]);
-        tokens[0].approve(address(pool),pay1Amounts[0]);
         pool.multiswap(pay1Assets, pay1Amounts, receive1Pools, allocations1);
     }
 
     function test1_4_Stake() public {
-        tokens[0].mint(amounts[0]);
-        tokens[0].approve(address(pool), amounts[0]);
         pool.stake(pay1Asset, amounts[0], sender);
     }
 
     function test1_5_Multiunstake() public {
-        pool.approve(address(pool),pay1Amounts[0]);
         pool.multiswap(pay1Pools, pay1Amounts, pay1Assets, allocations1);
     }
 
@@ -189,7 +182,7 @@ contract ContractTest is Context, DSTest {
         emit log_named_uint("Pay token scale (after)", pool.asset(addresses[0]).scale);
         emit log_named_uint("Receive token scale (after)", pool.asset(addresses[1]).scale);
         console.log("Revert 1");
-        vm.expectRevert(abi.encodeWithSelector(Pool.InsufficientAllowance.selector,0,pay1Amount));
+        vm.expectRevert("ERC20: insufficient allowance");
         pool.multiswap(pay1Assets, pay1Amounts, receive1Assets, allocations1);
         console.log("********************************************************");
         setUp();
@@ -216,7 +209,7 @@ contract ContractTest is Context, DSTest {
         emit log_named_uint("Pay token scale (after)", pool.asset(addresses[0]).scale);
         emit log_named_uint("Receive token scale (after)", pool.asset(addresses[1]).scale);
         console.log("Revert 2");
-        vm.expectRevert(abi.encodeWithSelector(Pool.InsufficientAllowance.selector,0,pay1Amount));
+        vm.expectRevert("ERC20: insufficient allowance");
         pool.swap(pay1Asset, receive1Asset, pay1Amount, sender);
         console.log("Revert 3");
         vm.expectRevert(abi.encodeWithSelector(Pool.InvalidSwap.selector,poolAddress,receive1Asset));
