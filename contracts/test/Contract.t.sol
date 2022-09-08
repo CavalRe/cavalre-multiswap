@@ -138,7 +138,7 @@ contract ContractTest is Context, DSTest {
     }
 
     function test1_2_Swap() public {
-        pool.swap(pay1Asset, receive1Asset, pay1Amount, sender);
+        pool.swap(pay1Asset, receive1Asset, pay1Amount);
     }
 
     function test1_3_Multistake() public {
@@ -146,7 +146,7 @@ contract ContractTest is Context, DSTest {
     }
 
     function test1_4_Stake() public {
-        pool.stake(pay1Asset, amounts[0], sender);
+        pool.stake(pay1Asset, amounts[0]);
     }
 
     function test1_5_Multiunstake() public {
@@ -155,13 +155,11 @@ contract ContractTest is Context, DSTest {
 
     function test1_6_Unstake() public {
         pool.approve(address(pool),pay1Amount);
-        pool.unstake(pay1Asset, pay1Amount, sender);
+        pool.unstake(pay1Asset, pay1Amount);
     }
 
     function test2_1_Swapping() public {
         // 2-Asset Swaps
-        tokens[0].mint(pay1Amounts[0]);
-        tokens[0].approve(address(pool),pay1Amounts[0]);
         emit log_named_uint("Sender pay balance (before)", tokens[0].balanceOf(sender));
         emit log_named_uint("Sender receive balance (before)", tokens[1].balanceOf(sender));
         emit log_named_uint("Pool pay balance I (before)", pool.asset(addresses[0]).balance);
@@ -186,8 +184,6 @@ contract ContractTest is Context, DSTest {
         pool.multiswap(pay1Assets, pay1Amounts, receive1Assets, allocations1);
         console.log("********************************************************");
         setUp();
-        tokens[0].mint(pay1Amount);
-        tokens[0].approve(address(pool),pay1Amount);
         emit log_named_uint("Allowance",tokens[0].allowance(sender,address(pool)));
         emit log_named_uint("Sender pay balance (before)", tokens[0].balanceOf(sender));
         emit log_named_uint("Sender receive balance (before)", tokens[1].balanceOf(sender));
@@ -198,7 +194,7 @@ contract ContractTest is Context, DSTest {
         emit log_named_uint("Pay token scale (before)", pool.asset(addresses[0]).scale);
         emit log_named_uint("Receive token scale (before)", pool.asset(addresses[1]).scale);
         emit log_named_uint("Amount in", pay1Amounts[0]);
-        amountOut = pool.swap(pay1Asset, receive1Asset, pay1Amount, sender);
+        amountOut = pool.swap(pay1Asset, receive1Asset, pay1Amount);
         emit log_named_uint("Amount out", amountOut);
         emit log_named_uint("Sender pay balance (after)", tokens[0].balanceOf(sender));
         emit log_named_uint("Sender receive balance (after)", tokens[1].balanceOf(sender));
@@ -210,19 +206,17 @@ contract ContractTest is Context, DSTest {
         emit log_named_uint("Receive token scale (after)", pool.asset(addresses[1]).scale);
         console.log("Revert 2");
         vm.expectRevert("ERC20: insufficient allowance");
-        pool.swap(pay1Asset, receive1Asset, pay1Amount, sender);
+        pool.swap(pay1Asset, receive1Asset, pay1Amount);
         console.log("Revert 3");
         vm.expectRevert(abi.encodeWithSelector(Pool.InvalidSwap.selector,poolAddress,receive1Asset));
-        pool.swap(poolAddress, receive1Asset, pay1Amount, sender);
+        pool.swap(poolAddress, receive1Asset, pay1Amount);
         console.log("Revert 4");
         vm.expectRevert(abi.encodeWithSelector(Pool.InvalidSwap.selector,pay1Asset, poolAddress));
-        pool.swap(pay1Asset, poolAddress, pay1Amount, sender);
+        pool.swap(pay1Asset, poolAddress, pay1Amount);
     }
 
     function test2_2_Staking() public {
         // Staking
-        tokens[0].mint(pay1Amounts[0]);
-        tokens[0].approve(address(pool),pay1Amounts[0]);
         emit log_named_uint("Sender pay balance (before)", tokens[0].balanceOf(sender));
         emit log_named_uint("Sender receive balance (before)", pool.balanceOf(sender));
         emit log_named_uint("Pool pay balance I (before)", pool.asset(addresses[0]).balance);
@@ -242,8 +236,6 @@ contract ContractTest is Context, DSTest {
         emit log_named_uint("Pay token scale (after)", pool.asset(addresses[0]).scale);
         console.log("********************************************************");
         setUp();
-        tokens[0].mint(amounts[0]);
-        tokens[0].approve(address(pool),amounts[0]);
         emit log_named_uint("Sender pay balance (before)", tokens[0].balanceOf(sender));
         emit log_named_uint("Sender receive balance (before)", pool.balanceOf(sender));
         emit log_named_uint("Pool pay balance I (before)", pool.asset(addresses[0]).balance);
@@ -252,7 +244,7 @@ contract ContractTest is Context, DSTest {
         emit log_named_uint("Pool receive balance II (before)", pool.totalSupply());
         emit log_named_uint("Pay token scale (before)", pool.asset(addresses[0]).scale);
         emit log_named_uint("Amount in", pay1Amounts[0]);
-        amountOut = pool.stake(pay1Asset, amounts[0], sender);
+        amountOut = pool.stake(pay1Asset, amounts[0]);
         emit log_named_uint("Amount out", amountOut);
         emit log_named_uint("Sender pay balance (after)", tokens[0].balanceOf(sender));
         emit log_named_uint("Sender receive balance (after)", pool.balanceOf(sender));
@@ -264,7 +256,6 @@ contract ContractTest is Context, DSTest {
     }
 
     function test2_3_Unstaking() public {
-        pool.approve(address(pool),pay1Amounts[0]);
         emit log_named_uint("Sender pay balance (before)", pool.balanceOf(sender));
         emit log_named_uint("Sender receive balance (before)", tokens[1].balanceOf(sender));
         emit log_named_uint("Pool pay balance I (before)", pool.balance());
@@ -293,7 +284,7 @@ contract ContractTest is Context, DSTest {
         emit log_named_uint("Pool receive balance II (before)", tokens[1].balanceOf(address(pool)));
         emit log_named_uint("Receive token scale (before)", pool.asset(addresses[1]).scale);
         emit log_named_uint("Amount in", pay1Amounts[0]);
-        amountOut = pool.unstake(receive1Asset, pay1Amount, sender);
+        amountOut = pool.unstake(receive1Asset, pay1Amount);
         emit log_named_uint("Amount out", amountOut);
         emit log_named_uint("Sender pay balance (after)", pool.balanceOf(sender));
         emit log_named_uint("Sender receive balance (after)", tokens[1].balanceOf(sender));
