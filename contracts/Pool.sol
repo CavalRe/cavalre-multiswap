@@ -48,6 +48,10 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
 
     error InvalidUnstake(address receiveToken);
 
+    error TooSmall(uint256 size);
+
+    error TooLarge(uint256 size);
+
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
 
     function toCanonical(uint256 amount, uint8 decimals)
@@ -187,6 +191,20 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
             if (totalAllocation != 1e18)
                 revert IncorrectAllocation(1e18, totalAllocation);
         }
+        // Check size
+        {
+            for (uint256 i; i < payTokens.length; i++) {
+                if (amounts[i] < 10000) revert TooSmall(amounts[i]);
+                address payToken = payTokens[i];
+                uint256 balance_;
+                if (payToken == address(this)) {
+                    balance_ = _balance;
+                } else {
+                    balance_ = _assets[payToken].balance;
+                }
+                if (amounts[i]*3 > balance_*4) revert  TooLarge(amounts[i]);
+            }
+        }
 
         uint256 fracValueIn;
 
@@ -294,11 +312,11 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         if (_isInitialized == 0) revert NotInitialized();
         Asset storage assetIn = _assets[payToken];
         Asset storage assetOut = _assets[receiveToken];
-        // Check if swap
-        if (
-            address(assetIn.token) != payToken ||
-            address(assetOut.token) != receiveToken
-        ) revert InvalidSwap(payToken, receiveToken);
+        // Check size
+        {
+            if (amountIn < 10000) revert TooSmall(amountIn);
+            if (amountIn*3 > _assets[payToken].balance*4) revert  TooLarge(amountIn);
+        }
 
         uint256 reserveIn = assetIn.balance + amountIn;
         uint256 reserveOut;
@@ -345,9 +363,12 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         returns (uint256)
     {
         if (_isInitialized == 0) revert NotInitialized();
+        // Check size
+        {
+            if (amountIn < 10000) revert TooSmall(amountIn);
+            if (amountIn*3 > _assets[payToken].balance*4) revert  TooLarge(amountIn);
+        }
         Asset storage assetIn = _assets[payToken];
-        // Check if stake
-        if (address(assetIn.token) != payToken) revert InvalidStake(payToken);
 
         uint256 reserveIn = assetIn.balance + amountIn;
         uint256 weightIn = assetIn.scale.ddiv(_scale);
@@ -386,6 +407,12 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         returns (uint256)
     {
         if (_isInitialized == 0) revert NotInitialized();
+        // Check size
+        {
+            if (amountIn < 10000) revert TooSmall(amountIn);
+            if (amountIn*3 > _balance*4) revert  TooLarge(amountIn);
+        }
+
         Asset storage assetOut = _assets[receiveToken];
         // Check if unstake
         if (address(assetOut.token) != receiveToken)
