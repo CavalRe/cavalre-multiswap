@@ -13,7 +13,8 @@ struct Asset {
     string symbol;
     uint8 decimals;
     uint256 balance;
-    uint256 fee; // Transaction fee, e.g. 0.003
+    uint256 gamma;
+    uint256 fee;
     uint256 scale; // Used to compute weight of this asset token
 }
 
@@ -66,7 +67,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
     function addAsset(
         address payToken_,
         uint256 balance_,
-        uint256 fee_,
+        uint256 gamma_,
         uint256 assetScale_
     ) public nonReentrant onlyOwner {
         if (_isInitialized == 1) revert AlreadyInitialized();
@@ -90,7 +91,8 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
             IERC20Metadata(payToken_).symbol(),
             decimals_,
             balance_,
-            fee_,
+            gamma_,
+            DMath.ONE - gamma_.dmul(gamma_),
             assetScale_
         );
     }
@@ -116,7 +118,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         renounceOwnership();
     }
 
-    function pool()
+    function info()
         public
         view
         returns (
@@ -218,9 +220,8 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
                     fracValueIn += amountIn.ddiv(_balance);
                 } else {
                     Asset storage assetIn = _assets[payToken];
-                    uint256 gamma = DMath.ONE - assetIn.fee;
                     uint256 weightIn = assetIn.scale.ddiv(_scale);
-                    fracValueIn += gamma.dmul(weightIn).dmul(amountIn).ddiv(
+                    fracValueIn += assetIn.gamma.dmul(weightIn).dmul(amountIn).ddiv(
                         assetIn.balance + amountIn
                     );
                     assetIn.balance += amountIn;
@@ -243,9 +244,8 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
                     _balance += amountOut;
                 } else {
                     Asset storage assetOut = _assets[receiveToken];
-                    uint256 gamma = DMath.ONE - assetOut.fee;
                     uint256 weightOut = assetOut.scale.ddiv(_scale);
-                    factor = gamma.ddiv(weightOut).dmul(allocation).dmul(
+                    factor = assetOut.gamma.ddiv(weightOut).dmul(allocation).dmul(
                         fracValueIn
                     );
                     amountOut = assetOut.balance.dmul(factor).ddiv(
@@ -328,12 +328,9 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         uint256 amountOut;
 
         {
-            uint256 gamma = (DMath.ONE - assetIn.fee).dmul(
-                DMath.ONE - assetOut.fee
-            );
             uint256 weightRatio = assetIn.scale.ddiv(assetOut.scale);
             uint256 invGrowthOut = DMath.ONE +
-                gamma.dmul(weightRatio).dmul(amountIn.ddiv(reserveIn));
+                assetIn.gamma.dmul(assetOut.gamma).dmul(weightRatio).dmul(amountIn.ddiv(reserveIn));
             reserveOut = assetOut.balance.ddiv(invGrowthOut);
             amountOut = assetOut.balance - reserveOut;
         }
@@ -385,9 +382,8 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         uint256 amountOut;
 
         {
-            uint256 gamma = DMath.ONE - assetIn.fee;
             uint256 invGrowthOut = DMath.ONE -
-                gamma.dmul(weightIn).dmul(amountIn.ddiv(reserveIn));
+                assetIn.gamma.dmul(weightIn).dmul(amountIn.ddiv(reserveIn));
             reserveOut = _balance.ddiv(invGrowthOut);
             amountOut = reserveOut - _balance;
         }
@@ -437,9 +433,8 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         uint256 amountOut;
 
         {
-            uint256 gamma = DMath.ONE - assetOut.fee;
             uint256 invGrowthOut = DMath.ONE +
-                gamma.ddiv(weightOut).dmul(amountIn).ddiv(reserveIn);
+                assetOut.gamma.ddiv(weightOut).dmul(amountIn).ddiv(reserveIn);
             reserveOut = assetOut.balance.ddiv(invGrowthOut);
             amountOut = assetOut.balance - reserveOut;
         }
