@@ -102,11 +102,11 @@ contract ContractTest is Context, Test {
     }
 
     function showAsset(Asset memory _asset) internal {
-        emit log_named_string("name", _asset.name);
+        emit log_named_string("name", _asset.meta.name);
         // emit log_named_string("symbol", _asset.symbol);
         // emit log_named_uint("balanceOf", _asset.token.balanceOf(poolAddress));
-        emit log_named_uint("balance", _asset.balance);
-        emit log_named_uint("scale", _asset.scale);
+        emit log_named_uint("balance", _asset.state.balance);
+        emit log_named_uint("scale", _asset.state.scale);
         console.log("-------");
     }
 
