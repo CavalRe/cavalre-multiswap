@@ -1,24 +1,16 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-import "hardhat/console.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "forge-std/Test.sol";
+
 import "@cavalre/test/Token.t.sol";
 import "@cavalre//Pool.sol";
-import "@cavalre/libraries/ds-test/src/test.sol";
 
-interface VM {
-    // Expects an error on next call
-    function expectRevert() external;
-    function expectRevert(bytes calldata) external;
-    function expectRevert(bytes4) external;
-}
-
-contract ContractTest is Context, DSTest {
+contract ContractTest is Context, Test {
 
     uint256 private constant NTOKENS = 2;
-    VM private vm = VM(HEVM_ADDRESS);
 
     Token[] private tokens;
 
@@ -46,12 +38,6 @@ contract ContractTest is Context, DSTest {
     uint256[] private allocations1 = new uint256[](1);
 
     uint256 amountOut;
-
-    // address[] private pay2Assets = new address[](2);
-    // uint256[] private pay2Amounts = new uint256[](2);
-    // address[] private receive2Assets = new address[](2);
-    // address[] private receive1Asset1Pool = new address[](2);
-    // uint256[] private allocations2 = new uint256[](2);
 
     function setUp() public {
         pool = new Pool("Pool", "P");
@@ -110,17 +96,6 @@ contract ContractTest is Context, DSTest {
         receive1Assets[0] = addresses[1];
         receive1Pools[0] = address(pool);
         allocations1[0] = 1e18;
-
-        // pay2Assets[0] = addresses[0];
-        // pay2Assets[1] = addresses[2];
-        // pay2Amounts[0] = amounts[0];
-        // pay2Amounts[1] = amounts[2];
-
-        // receive2Assets[0] = addresses[1];
-        // receive2Assets[1] = addresses[3];
-
-        // receive1Asset1Pool[0] = addresses[0];
-        // receive1Asset1Pool[1] = address(pool);
 
         tokens[0].mint(pay1Amounts[0]);
         tokens[0].approve(address(pool),pay1Amounts[0]);
@@ -242,7 +217,6 @@ contract ContractTest is Context, DSTest {
     }
 
     function test2_2_Staking() public {
-        // Staking
         amountOut = pool.multiswap(pay1Assets, pay1Amounts, receive1Pools, allocations1)[0];
         emit log("Multiswap:");
         emit log("");
