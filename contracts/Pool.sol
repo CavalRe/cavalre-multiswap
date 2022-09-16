@@ -17,8 +17,8 @@ struct AssetMeta {
 
 struct AssetState {
     uint256 balance;
-    uint256 gamma;
     uint256 scale;
+    uint256 gamma;
 }
 
 struct Asset {
@@ -65,7 +65,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
 
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
 
-    function toCanonical(uint256 amount, uint8 decimals)
+    function fromCanonical(uint256 amount, uint8 decimals)
         internal
         pure
         returns (uint256)
@@ -92,7 +92,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
             IERC20(payToken_),
             _msgSender(),
             address(this),
-            toCanonical(balance_, decimals_)
+            fromCanonical(balance_, decimals_)
         );
 
         _addresses.push(payToken_);
@@ -103,7 +103,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
             decimals_,
             DMath.ONE - gamma_.dmul(gamma_)
         );
-        _assetState[payToken_] = AssetState(balance_, gamma_, assetScale_);
+        _assetState[payToken_] = AssetState(balance_, assetScale_, gamma_);
     }
 
     function uninitialize(address token) public nonReentrant onlyOwner {
@@ -114,7 +114,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         SafeERC20.safeTransfer(
             m.token,
             owner(),
-            toCanonical(s.balance, m.decimals)
+            fromCanonical(s.balance, m.decimals)
         );
     }
 
@@ -286,7 +286,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
                         IERC20(payToken),
                         _msgSender(),
                         address(this),
-                        toCanonical(amount, IERC20Metadata(payToken).decimals())
+                        fromCanonical(amount, IERC20Metadata(payToken).decimals())
                     );
                     delta = _assetMeta[payToken].fee.dmul(amount);
                     _assetState[payToken].scale += delta;
@@ -306,7 +306,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
                     SafeERC20.safeTransfer(
                         IERC20(receiveToken),
                         _msgSender(),
-                        toCanonical(
+                        fromCanonical(
                             amountOut,
                             IERC20Metadata(receiveToken).decimals()
                         )
@@ -362,12 +362,12 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
             IERC20(payToken),
             _msgSender(),
             address(this),
-            toCanonical(amountIn, IERC20Metadata(payToken).decimals())
+            fromCanonical(amountIn, IERC20Metadata(payToken).decimals())
         );
         SafeERC20.safeTransfer(
             IERC20(receiveToken),
             _msgSender(),
-            toCanonical(amountOut, IERC20Metadata(receiveToken).decimals())
+            fromCanonical(amountOut, IERC20Metadata(receiveToken).decimals())
         );
 
         uint256 deltaIn = _assetMeta[payToken].fee.dmul(amountIn);
@@ -418,7 +418,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
             IERC20(payToken),
             _msgSender(),
             address(this),
-            toCanonical(amountIn, IERC20Metadata(payToken).decimals())
+            fromCanonical(amountIn, IERC20Metadata(payToken).decimals())
         );
         _mint(_msgSender(), amountOut);
 
@@ -466,7 +466,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         SafeERC20.safeTransfer(
             IERC20(receiveToken),
             _msgSender(),
-            toCanonical(amountOut, IERC20Metadata(receiveToken).decimals())
+            fromCanonical(amountOut, IERC20Metadata(receiveToken).decimals())
         );
         _burn(_msgSender(), amountIn);
 
