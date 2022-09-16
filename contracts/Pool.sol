@@ -172,10 +172,10 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
     }
 
     function multiswap(
-        address[] memory payTokens,
-        uint256[] memory amounts,
-        address[] memory receiveTokens,
-        uint256[] memory allocations
+        address[] calldata payTokens,
+        uint256[] calldata amounts,
+        address[] calldata receiveTokens,
+        uint256[] calldata allocations
     ) public nonReentrant returns (uint256[] memory receiveAmounts) {
         if (_isInitialized == 0) revert NotInitialized();
         // Check length mismatch
