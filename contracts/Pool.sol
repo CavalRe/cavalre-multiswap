@@ -65,14 +65,13 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
 
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
 
-    function fromCanonical(uint256 amount, uint8 decimals)
-        internal
-        pure
-        returns (uint256)
-    {
+    function fromCanonical(
+        uint256 amount,
+        uint8 decimals
+    ) internal pure returns (uint256) {
         if (decimals == 18) return amount;
-        if (decimals < 18) return amount / (10**(18 - decimals));
-        return amount * (10**(decimals - 18));
+        if (decimals < 18) return amount / (10 ** (18 - decimals));
+        return amount * (10 ** (decimals - 18));
     }
 
     function addAsset(
@@ -131,14 +130,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
     function info()
         public
         view
-        returns (
-            address,
-            string memory,
-            string memory,
-            uint8,
-            uint256,
-            uint256
-        )
+        returns (address, string memory, string memory, uint8, uint256, uint256)
     {
         address poolAddress = address(this);
         IERC20Metadata poolMetadata = IERC20Metadata(poolAddress);
@@ -254,7 +246,9 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
                 allocation = allocations[i];
                 if (receiveToken == address(this)) {
                     factor = fracValueIn.dmul(allocation);
-                    amountOut = _poolState.balance.dmul(factor).ddiv(DMath.ONE - factor);
+                    amountOut = _poolState.balance.dmul(factor).ddiv(
+                        DMath.ONE - factor
+                    );
                     receiveAmounts[i] = amountOut;
                     _poolState.balance += amountOut;
                 } else {
@@ -286,7 +280,10 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
                         IERC20(payToken),
                         _msgSender(),
                         address(this),
-                        fromCanonical(amount, IERC20Metadata(payToken).decimals())
+                        fromCanonical(
+                            amount,
+                            IERC20Metadata(payToken).decimals()
+                        )
                     );
                     delta = _assetMeta[payToken].fee.dmul(amount);
                     _assetState[payToken].scale += delta;
@@ -337,8 +334,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         // Check size
         {
             if (amountIn < 10000) revert TooSmall(amountIn);
-            if (amountIn * 3 > assetIn.balance * 4)
-                revert TooLarge(amountIn);
+            if (amountIn * 3 > assetIn.balance * 4) revert TooLarge(amountIn);
         }
 
         uint256 reserveIn = assetIn.balance + amountIn;
@@ -379,11 +375,10 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         return amountOut;
     }
 
-    function stake(address payToken, uint256 amountIn)
-        public
-        nonReentrant
-        returns (uint256)
-    {
+    function stake(
+        address payToken,
+        uint256 amountIn
+    ) public nonReentrant returns (uint256) {
         if (_isInitialized == 0) revert NotInitialized();
         if (payToken == address(this) || _assetState[payToken].scale == 0)
             revert InvalidStake(payToken);
@@ -425,18 +420,20 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         return amountOut;
     }
 
-    function unstake(address receiveToken, uint256 amountIn)
-        public
-        nonReentrant
-        returns (uint256)
-    {
+    function unstake(
+        address receiveToken,
+        uint256 amountIn
+    ) public nonReentrant returns (uint256) {
         if (_isInitialized == 0) revert NotInitialized();
-        if (receiveToken == address(this) || _assetState[receiveToken].scale == 0)
-            revert InvalidUnstake(receiveToken);
+        if (
+            receiveToken == address(this) ||
+            _assetState[receiveToken].scale == 0
+        ) revert InvalidUnstake(receiveToken);
         // Check size
         {
             if (amountIn < 10000) revert TooSmall(amountIn);
-            if (amountIn * 3 > _poolState.balance * 4) revert TooLarge(amountIn);
+            if (amountIn * 3 > _poolState.balance * 4)
+                revert TooLarge(amountIn);
         }
 
         AssetState storage assetOut = _assetState[receiveToken];
