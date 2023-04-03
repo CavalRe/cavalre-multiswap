@@ -1,5 +1,5 @@
-@openzeppelin/=node_modules/@openzeppelin/
 @cavalre/=contracts/
+@openzeppelin/=node_modules/@openzeppelin/
 ds-test/=contracts/libraries/ds-test/src/
-forge-std/=node_modules/forge-std/src/
-hardhat/=node_modules/hardhat/
+forge-std/=node_modules/forge-std/
+solmate/=node_modules/solmate/src/

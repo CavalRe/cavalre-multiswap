@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Unlicense
-pragma solidity 0.8.16;
+pragma solidity 0.8.19;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./libraries/DMath.sol";
+import "solmate/utils/FixedPointMathLib.sol";
 
 struct AssetMeta {
     IERC20 token;
@@ -33,7 +33,9 @@ struct PoolState {
 
 contract Pool is ReentrancyGuard, ERC20, Ownable {
     using SafeERC20 for IERC20;
-    using DMath for uint256;
+    using FixedPointMathLib for uint256;
+
+    uint256 internal constant ONE = 1e18;
 
     uint256 private _isInitialized;
 
@@ -100,7 +102,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
             IERC20Metadata(payToken_).name(),
             IERC20Metadata(payToken_).symbol(),
             decimals_,
-            DMath.ONE - gamma_.dmul(gamma_)
+            ONE - gamma_.mulWadUp(gamma_)
         );
         _assetState[payToken_] = AssetState(balance_, assetScale_, gamma_);
     }
@@ -222,15 +224,15 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
                 uint256 amountIn = amounts[i];
                 if (payToken == address(this)) {
                     _poolState.balance -= amountIn;
-                    fracValueIn += amountIn.ddiv(_poolState.balance);
+                    fracValueIn += amountIn.divWadUp(_poolState.balance);
                 } else {
                     AssetState storage assetIn = _assetState[payToken];
-                    uint256 weightIn = assetIn.scale.ddiv(_poolState.scale);
+                    uint256 weightIn = assetIn.scale.divWadUp(_poolState.scale);
                     fracValueIn += assetIn
                         .gamma
-                        .dmul(weightIn)
-                        .dmul(amountIn)
-                        .ddiv(assetIn.balance + amountIn);
+                        .mulWadUp(weightIn)
+                        .mulWadUp(amountIn)
+                        .divWadUp(assetIn.balance + amountIn);
                     assetIn.balance += amountIn;
                 }
             }
@@ -245,22 +247,22 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
                 receiveToken = receiveTokens[i];
                 allocation = allocations[i];
                 if (receiveToken == address(this)) {
-                    factor = fracValueIn.dmul(allocation);
-                    amountOut = _poolState.balance.dmul(factor).ddiv(
-                        DMath.ONE - factor
+                    factor = fracValueIn.mulWadUp(allocation);
+                    amountOut = _poolState.balance.mulWadUp(factor).divWadUp(
+                        ONE - factor
                     );
                     receiveAmounts[i] = amountOut;
                     _poolState.balance += amountOut;
                 } else {
                     AssetState storage assetOut = _assetState[receiveToken];
-                    uint256 weightOut = assetOut.scale.ddiv(_poolState.scale);
+                    uint256 weightOut = assetOut.scale.divWadUp(_poolState.scale);
                     factor = assetOut
                         .gamma
-                        .ddiv(weightOut)
-                        .dmul(allocation)
-                        .dmul(fracValueIn);
-                    amountOut = assetOut.balance.dmul(factor).ddiv(
-                        factor + DMath.ONE
+                        .divWadUp(weightOut)
+                        .mulWadUp(allocation)
+                        .mulWadUp(fracValueIn);
+                    amountOut = assetOut.balance.mulWadUp(factor).divWadUp(
+                        factor + ONE
                     );
                     receiveAmounts[i] = amountOut;
                     assetOut.balance -= amountOut;
@@ -285,7 +287,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
                             IERC20Metadata(payToken).decimals()
                         )
                     );
-                    delta = _assetMeta[payToken].fee.dmul(amount);
+                    delta = _assetMeta[payToken].fee.mulWadUp(amount);
                     _assetState[payToken].scale += delta;
                     _poolState.scale += delta;
                 }
@@ -308,7 +310,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
                             IERC20Metadata(receiveToken).decimals()
                         )
                     );
-                    delta = _assetMeta[receiveToken].fee.dmul(amountOut);
+                    delta = _assetMeta[receiveToken].fee.mulWadUp(amountOut);
                     _assetState[receiveToken].scale += delta;
                     _poolState.scale += delta;
                 }
@@ -342,12 +344,12 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         uint256 amountOut;
 
         {
-            uint256 weightRatio = assetIn.scale.ddiv(assetOut.scale);
-            uint256 invGrowthOut = DMath.ONE +
-                assetIn.gamma.dmul(assetOut.gamma).dmul(weightRatio).dmul(
-                    amountIn.ddiv(reserveIn)
+            uint256 weightRatio = assetIn.scale.divWadUp(assetOut.scale);
+            uint256 invGrowthOut = ONE +
+                assetIn.gamma.mulWadUp(assetOut.gamma).mulWadUp(weightRatio).mulWadUp(
+                    amountIn.divWadUp(reserveIn)
                 );
-            reserveOut = assetOut.balance.ddiv(invGrowthOut);
+            reserveOut = assetOut.balance.divWadUp(invGrowthOut);
             amountOut = assetOut.balance - reserveOut;
         }
 
@@ -366,8 +368,8 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
             fromCanonical(amountOut, IERC20Metadata(receiveToken).decimals())
         );
 
-        uint256 deltaIn = _assetMeta[payToken].fee.dmul(amountIn);
-        uint256 deltaOut = _assetMeta[receiveToken].fee.dmul(amountOut);
+        uint256 deltaIn = _assetMeta[payToken].fee.mulWadUp(amountIn);
+        uint256 deltaOut = _assetMeta[receiveToken].fee.mulWadUp(amountOut);
         assetIn.scale += deltaIn;
         assetOut.scale += deltaOut;
         _poolState.scale += deltaIn + deltaOut;
@@ -391,21 +393,21 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         AssetState storage assetIn = _assetState[payToken];
 
         uint256 reserveIn = assetIn.balance + amountIn;
-        uint256 weightIn = assetIn.scale.ddiv(_poolState.scale);
+        uint256 weightIn = assetIn.scale.divWadUp(_poolState.scale);
         uint256 reserveOut;
         uint256 amountOut;
 
         {
-            uint256 invGrowthOut = DMath.ONE -
-                assetIn.gamma.dmul(weightIn).dmul(amountIn.ddiv(reserveIn));
-            reserveOut = _poolState.balance.ddiv(invGrowthOut);
+            uint256 invGrowthOut = ONE -
+                assetIn.gamma.mulWadUp(weightIn).mulWadUp(amountIn.divWadUp(reserveIn));
+            reserveOut = _poolState.balance.divWadUp(invGrowthOut);
             amountOut = reserveOut - _poolState.balance;
         }
 
         assetIn.balance = reserveIn;
         _poolState.balance = reserveOut;
 
-        uint256 delta = _assetMeta[payToken].fee.dmul(amountIn);
+        uint256 delta = _assetMeta[payToken].fee.mulWadUp(amountIn);
         assetIn.scale += delta;
         _poolState.scale += delta;
 
@@ -442,21 +444,21 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
             revert InvalidUnstake(receiveToken);
 
         uint256 reserveIn = _poolState.balance - amountIn;
-        uint256 weightOut = assetOut.scale.ddiv(_poolState.scale);
+        uint256 weightOut = assetOut.scale.divWadUp(_poolState.scale);
         uint256 reserveOut;
         uint256 amountOut;
 
         {
-            uint256 invGrowthOut = DMath.ONE +
-                assetOut.gamma.ddiv(weightOut).dmul(amountIn).ddiv(reserveIn);
-            reserveOut = assetOut.balance.ddiv(invGrowthOut);
+            uint256 invGrowthOut = ONE +
+                assetOut.gamma.divWadUp(weightOut).mulWadUp(amountIn).divWadUp(reserveIn);
+            reserveOut = assetOut.balance.divWadUp(invGrowthOut);
             amountOut = assetOut.balance - reserveOut;
         }
 
         _poolState.balance = reserveIn;
         assetOut.balance = reserveOut;
 
-        uint256 delta = _assetMeta[receiveToken].fee.dmul(amountOut);
+        uint256 delta = _assetMeta[receiveToken].fee.mulWadUp(amountOut);
         assetOut.scale += delta;
         _poolState.scale += delta;
 
