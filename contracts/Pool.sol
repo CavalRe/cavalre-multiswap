@@ -45,8 +45,6 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
     mapping(address => AssetState) private _assetState;
     address[] private _addresses;
 
-    error AlreadyInitialized();
-
     error NotInitialized();
 
     error LengthMismatch(uint256 expected, uint256 actual);
@@ -82,7 +80,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         uint256 gamma_,
         uint256 assetScale_
     ) public nonReentrant onlyOwner {
-        if (_isInitialized == 1) revert AlreadyInitialized();
+        if (_assetMeta[payToken_].token == IERC20(payToken_)) revert DuplicateToken(payToken_);
 
         _poolState.balance += assetScale_;
         _poolState.scale += assetScale_;
@@ -108,8 +106,6 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
     }
 
     function uninitialize(address token) public nonReentrant onlyOwner {
-        if (_isInitialized == 1) revert AlreadyInitialized();
-
         AssetMeta memory m = _assetMeta[token];
         AssetState memory s = _assetState[token];
         SafeERC20.safeTransfer(
@@ -120,8 +116,6 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
     }
 
     function initialize() public nonReentrant onlyOwner {
-        if (_isInitialized == 1) revert AlreadyInitialized();
-
         _isInitialized = 1;
 
         _mint(_msgSender(), _poolState.scale);
