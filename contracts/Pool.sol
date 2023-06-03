@@ -82,7 +82,8 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         uint256 gamma_,
         uint256 assetScale_
     ) public nonReentrant onlyOwner {
-        if (_assetMeta[payToken_].token == IERC20(payToken_)) revert DuplicateToken(payToken_);
+        if (_assetMeta[payToken_].token == IERC20(payToken_))
+            revert DuplicateToken(payToken_);
 
         _poolState.balance += assetScale_;
         _poolState.scale += assetScale_;
@@ -254,7 +255,9 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
                     _poolState.balance += amountOut;
                 } else {
                     AssetState storage assetOut = _assetState[receiveToken];
-                    uint256 weightOut = assetOut.scale.divWadUp(_poolState.scale);
+                    uint256 weightOut = assetOut.scale.divWadUp(
+                        _poolState.scale
+                    );
                     factor = assetOut
                         .gamma
                         .divWadUp(weightOut)
@@ -345,9 +348,11 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         {
             uint256 weightRatio = assetIn.scale.divWadUp(assetOut.scale);
             uint256 invGrowthOut = ONE +
-                assetIn.gamma.mulWadUp(assetOut.gamma).mulWadUp(weightRatio).mulWadUp(
-                    amountIn.divWadUp(reserveIn)
-                );
+                assetIn
+                    .gamma
+                    .mulWadUp(assetOut.gamma)
+                    .mulWadUp(weightRatio)
+                    .mulWadUp(amountIn.divWadUp(reserveIn));
             reserveOut = assetOut.balance.divWadUp(invGrowthOut);
             amountOut = assetOut.balance - reserveOut;
         }
@@ -383,12 +388,8 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         if (_isInitialized == 0) revert NotInitialized();
         if (payToken == address(this) || _assetState[payToken].scale == 0)
             revert InvalidStake(payToken);
-        // Check size
-        {
-            if (amountIn < 10000) revert TooSmall(amountIn);
-            if (amountIn * 3 > _assetState[payToken].balance * 4)
-                revert TooLarge(amountIn);
-        }
+        if (amountIn * 3 > _assetState[payToken].balance * 4)
+            revert TooLarge(amountIn);
         AssetState storage assetIn = _assetState[payToken];
 
         uint256 reserveIn = assetIn.balance + amountIn;
@@ -398,7 +399,9 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
 
         {
             uint256 invGrowthOut = ONE -
-                assetIn.gamma.mulWadUp(weightIn).mulWadUp(amountIn.divWadUp(reserveIn));
+                assetIn.gamma.mulWadUp(weightIn).mulWadUp(
+                    amountIn.divWadUp(reserveIn)
+                );
             reserveOut = _poolState.balance.divWadUp(invGrowthOut);
             amountOut = reserveOut - _poolState.balance;
         }
@@ -449,7 +452,9 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
 
         {
             uint256 invGrowthOut = ONE +
-                assetOut.gamma.divWadUp(weightOut).mulWadUp(amountIn).divWadUp(reserveIn);
+                assetOut.gamma.divWadUp(weightOut).mulWadUp(amountIn).divWadUp(
+                    reserveIn
+                );
             reserveOut = assetOut.balance.divWadUp(invGrowthOut);
             amountOut = assetOut.balance - reserveOut;
         }
