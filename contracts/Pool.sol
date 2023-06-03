@@ -63,6 +63,8 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
 
     error TooLarge(uint256 size);
 
+    error AssetNotFound(address asset);
+
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
 
     function fromCanonical(
@@ -152,7 +154,10 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
     }
 
     function asset(address token) public view returns (Asset memory) {
-        return Asset(_assetMeta[token], _assetState[token]);
+        AssetMeta memory meta = _assetMeta[token];
+        if (address(meta.token) != token) revert AssetNotFound(token);
+        AssetState memory state = _assetState[token];
+        return Asset(meta, state);
     }
 
     function balance() public view returns (uint256) {
