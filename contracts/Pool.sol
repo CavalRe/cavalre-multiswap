@@ -433,12 +433,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
             receiveToken == address(this) ||
             _assetState[receiveToken].scale == 0
         ) revert InvalidUnstake(receiveToken);
-        // Check size
-        {
-            if (amountIn < 10000) revert TooSmall(amountIn);
-            if (amountIn * 3 > _poolState.balance * 4)
-                revert TooLarge(amountIn);
-        }
+        if (amountIn * 3 > _poolState.balance * 4) revert TooLarge(amountIn);
 
         AssetState storage assetOut = _assetState[receiveToken];
         // Check if unstake
