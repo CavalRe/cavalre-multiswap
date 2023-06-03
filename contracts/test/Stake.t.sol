@@ -20,6 +20,8 @@ contract StakeTest is TestRoot {
     }
 
     function testStakeFuzz(uint256 amount, uint256 depositIndex) public {
+        vm.assume(amount > 0);
+
         address alice = address(1);
         vm.startPrank(alice);
 
@@ -28,7 +30,7 @@ contract StakeTest is TestRoot {
         Asset memory depositAsset = pool.asset(address(depositToken));
 
         uint256 balance = depositAsset.state.balance;
-        amount = (amount % (8 * balance / 3)) + 1e17;
+        amount = (amount % (8 * balance / 3));
 
         assertEq(pool.balanceOf(alice), 0);
 

@@ -335,11 +335,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         ) revert InvalidSwap(payToken, receiveToken);
         AssetState storage assetIn = _assetState[payToken];
         AssetState storage assetOut = _assetState[receiveToken];
-        // Check size
-        {
-            if (amountIn < 10000) revert TooSmall(amountIn);
-            if (amountIn * 3 > assetIn.balance * 4) revert TooLarge(amountIn);
-        }
+        if (amountIn * 3 > assetIn.balance * 4) revert TooLarge(amountIn);
 
         uint256 reserveIn = assetIn.balance + amountIn;
         uint256 reserveOut;

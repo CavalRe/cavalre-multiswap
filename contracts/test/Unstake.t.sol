@@ -27,6 +27,8 @@ contract UnstakeTest is TestRoot {
     }
 
     function testUnstakeFuzz(uint256 amount, uint256 receiveIndex) public {
+        vm.assume(amount > 0);
+
         address alice = address(1);
         vm.startPrank(alice);
 
