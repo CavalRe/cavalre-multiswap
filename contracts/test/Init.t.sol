@@ -29,7 +29,12 @@ contract InitTest is Test {
         tokenB.approve(address(pool), amount);
         pool.addAsset(address(tokenB), amount, 1e18, 1e18);
 
-        vm.expectRevert(abi.encodeWithSelector(Pool.DuplicateToken.selector, address(tokenB)));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Pool.DuplicateToken.selector,
+                address(tokenB)
+            )
+        );
         pool.addAsset(address(tokenB), amount, 1e18, 1e18);
 
         pool.initialize();
@@ -38,6 +43,15 @@ contract InitTest is Test {
         pool.addAsset(address(tokenB), amount, 1e18, 1e18);
         vm.expectRevert("Ownable: caller is not the owner");
         pool.initialize();
+
+        Asset[] memory assets = pool.assets();
+        for (uint256 i = 0; i < assets.length; i++) {
+            address token = address(assets[i].meta.token);
+            assertEq(
+                token,
+                address(assets[pool.index(token)].meta.token)
+            );
+        }
 
         vm.stopPrank();
     }

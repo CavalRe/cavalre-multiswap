@@ -44,6 +44,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
     mapping(address => AssetMeta) private _assetMeta;
     mapping(address => AssetState) private _assetState;
     address[] private _addresses;
+    mapping(address => uint256) private _index;
 
     error NotInitialized();
 
@@ -97,6 +98,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
             fromCanonical(balance_, decimals_)
         );
 
+        _index[payToken_] = _addresses.length;
         _addresses.push(payToken_);
         _assetMeta[payToken_] = AssetMeta(
             IERC20(payToken_),
@@ -161,6 +163,10 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         return Asset(meta, state);
     }
 
+    function index(address token) public view returns (uint256) {
+        return _index[token];
+    }
+
     function balance() public view returns (uint256) {
         return _poolState.balance;
     }
@@ -181,12 +187,28 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         }
         // Check duplicates
         {
+            bool[] memory _check = new bool[](_addresses.length+1);
             for (uint256 i; i < payTokens.length; i++) {
-                address payToken = payTokens[i];
-                for (uint256 j; j < receiveTokens.length; j++) {
-                    if (payToken == receiveTokens[j])
-                        revert DuplicateToken(payToken);
+                address token = payTokens[i];
+                if (address(this) == token) {
+                    if (_check[0]) revert DuplicateToken(token);
+                    _check[0] = true;
+                    continue;
                 }
+                if (address(_assetMeta[token].token) != token) revert AssetNotFound(token);
+                if (_check[_index[token]+1]) revert DuplicateToken(token);
+                _check[_index[token]+1] = true;
+            }
+            for (uint256 i; i < receiveTokens.length; i++) {
+                address token = receiveTokens[i];
+                if (address(this) == token) {
+                    if (_check[0]) revert DuplicateToken(token);
+                    _check[0] = true;
+                    continue;
+                }
+                if (address(_assetMeta[token].token) != token) revert AssetNotFound(token);
+                if (_check[_index[token]+1]) revert DuplicateToken(token);
+                _check[_index[token]+1] = true;
             }
         }
         // Check allocations
