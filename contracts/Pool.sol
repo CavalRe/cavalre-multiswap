@@ -39,12 +39,23 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
 
     uint256 private _isInitialized;
 
+    modifier onlyInitialized() {
+        if (_isInitialized == 0) revert NotInitialized();
+        _;
+    }
+
     PoolState private _poolState;
 
     mapping(address => AssetMeta) private _assetMeta;
     mapping(address => AssetState) private _assetState;
     address[] private _addresses;
     mapping(address => uint256) private _index;
+
+    enum Type {
+        Swap,
+        Stake,
+        Unstake
+    }
 
     error NotInitialized();
 
@@ -172,12 +183,18 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
     }
 
     function multiswap(
-        address[] calldata payTokens,
-        uint256[] calldata amounts,
-        address[] calldata receiveTokens,
-        uint256[] calldata allocations
-    ) public nonReentrant returns (uint256[] memory receiveAmounts) {
-        if (_isInitialized == 0) revert NotInitialized();
+        address[] memory payTokens,
+        uint256[] memory amounts,
+        address[] memory receiveTokens,
+        uint256[] memory allocations
+    )
+        public
+        nonReentrant
+        onlyInitialized
+        returns (uint256[] memory receiveAmounts)
+    {
+        Type t = Type.Swap;
+
         // Check length mismatch
         {
             if (payTokens.length != amounts.length)
@@ -187,28 +204,50 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         }
         // Check duplicates
         {
-            bool[] memory _check = new bool[](_addresses.length+1);
+            bool isLP;
+            uint256 temp;
+            bool[] memory check_ = new bool[](_addresses.length);
             for (uint256 i; i < payTokens.length; i++) {
                 address token = payTokens[i];
                 if (address(this) == token) {
-                    if (_check[0]) revert DuplicateToken(token);
-                    _check[0] = true;
+                    if (isLP) revert DuplicateToken(token);
+                    isLP = true;
+                    if (i != 0) {
+                        payTokens[i] = payTokens[0];
+                        payTokens[0] = address(this);
+                        temp = amounts[i];
+                        amounts[i] = amounts[0];
+                        amounts[0] = temp;
+                    }
+                    t = Type.Unstake;
                     continue;
                 }
-                if (address(_assetMeta[token].token) != token) revert AssetNotFound(token);
-                if (_check[_index[token]+1]) revert DuplicateToken(token);
-                _check[_index[token]+1] = true;
+                if (address(_assetMeta[token].token) != token)
+                    revert AssetNotFound(token);
+                if (check_[_index[token]]) revert DuplicateToken(token);
+                check_[_index[token]] = true;
             }
+
+            isLP = false;
             for (uint256 i; i < receiveTokens.length; i++) {
                 address token = receiveTokens[i];
                 if (address(this) == token) {
-                    if (_check[0]) revert DuplicateToken(token);
-                    _check[0] = true;
+                    if (isLP) revert DuplicateToken(token);
+                    isLP = true;
+                    if (i != 0) {
+                        receiveTokens[i] = receiveTokens[0];
+                        receiveTokens[0] = address(this);
+                        temp = allocations[i];
+                        allocations[i] = allocations[0];
+                        allocations[0] = temp;
+                    }
+                    t = Type.Stake;
                     continue;
                 }
-                if (address(_assetMeta[token].token) != token) revert AssetNotFound(token);
-                if (_check[_index[token]+1]) revert DuplicateToken(token);
-                _check[_index[token]+1] = true;
+                if (address(_assetMeta[token].token) != token)
+                    revert AssetNotFound(token);
+                if (check_[_index[token]]) revert DuplicateToken(token);
+                check_[_index[token]] = true;
             }
         }
         // Check allocations
@@ -223,7 +262,6 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
         // Check size
         {
             for (uint256 i; i < payTokens.length; i++) {
-                if (amounts[i] < 10000) revert TooSmall(amounts[i]);
                 address payToken = payTokens[i];
                 uint256 balance_;
                 if (payToken == address(this)) {
@@ -235,61 +273,81 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
             }
         }
 
-        uint256 fracValueIn;
-
         receiveAmounts = new uint256[](receiveTokens.length);
 
-        // Compute fracValueIn
+        // Compute fee
+        uint256 fee;
         {
-            for (uint256 i; i < payTokens.length; i++) {
-                address payToken = payTokens[i];
-                uint256 amountIn = amounts[i];
-                if (payToken == address(this)) {
-                    _poolState.balance -= amountIn;
-                    fracValueIn += amountIn.divWadUp(_poolState.balance);
-                } else {
-                    AssetState storage assetIn = _assetState[payToken];
-                    uint256 weightIn = assetIn.scale.divWadUp(_poolState.scale);
-                    fracValueIn += assetIn
-                        .gamma
-                        .mulWadUp(weightIn)
-                        .mulWadUp(amountIn)
-                        .divWadUp(assetIn.balance + amountIn);
-                    assetIn.balance += amountIn;
-                }
+            for (uint256 i; i < receiveTokens.length; i++) {
+                fee += allocations[i].mulWadUp(
+                    _assetMeta[receiveTokens[i]].fee
+                );
             }
         }
+
+        // Compute fracValueIn
+        uint256 fracValueIn;
+        uint256 feeAmount;
+        {
+            for (uint256 i; i < payTokens.length; i++) {
+                address token_ = payTokens[i];
+                uint256 amount_ = amounts[i];
+                if (token_ != address(this)) {
+                    AssetState storage asset_ = _assetState[token_];
+                    uint256 weight_ = asset_.scale.divWadUp(_poolState.scale);
+                    fracValueIn += weight_.mulWadUp(amount_).divWadUp(
+                        asset_.balance + amount_
+                    );
+                }
+            }
+
+            if (t == Type.Unstake) {
+                uint256 amountIn = amounts[0];
+                uint256 factor_ = fracValueIn.mulWadUp(fee);
+                feeAmount = (factor_.mulWadUp(_poolState.balance - amountIn) +
+                    fee.mulWadUp(amountIn)).divWadUp(ONE - factor_);
+                fracValueIn += amountIn.divWadUp(
+                    _poolState.balance + feeAmount - amountIn
+                );
+            } else {
+                uint256 factor_ = fracValueIn.mulWadUp(fee);
+                feeAmount = factor_.mulWadUp(_poolState.balance).divWadUp(
+                    ONE - factor_
+                );
+            }
+        }
+
         // Compute receiveAmounts
         {
+            uint256 factor;
+            uint256 gamma = ONE - fee;
+
             address receiveToken;
             uint256 allocation;
-            uint256 factor;
             uint256 amountOut;
             for (uint256 i; i < receiveTokens.length; i++) {
                 receiveToken = receiveTokens[i];
-                allocation = allocations[i];
+                allocation = allocations[i].mulWadUp(gamma);
                 if (receiveToken == address(this)) {
                     factor = fracValueIn.mulWadUp(allocation);
                     amountOut = _poolState.balance.mulWadUp(factor).divWadUp(
                         ONE - factor
                     );
                     receiveAmounts[i] = amountOut;
-                    _poolState.balance += amountOut;
+                    // _poolState.balance += amountOut;
                 } else {
                     AssetState storage assetOut = _assetState[receiveToken];
                     uint256 weightOut = assetOut.scale.divWadUp(
                         _poolState.scale
                     );
-                    factor = assetOut
-                        .gamma
-                        .divWadUp(weightOut)
-                        .mulWadUp(allocation)
-                        .mulWadUp(fracValueIn);
+                    factor = weightOut.mulWadUp(allocation).mulWadUp(
+                        fracValueIn
+                    );
                     amountOut = assetOut.balance.mulWadUp(factor).divWadUp(
                         factor + ONE
                     );
                     receiveAmounts[i] = amountOut;
-                    assetOut.balance -= amountOut;
+                    // assetOut.balance -= amountOut;
                 }
             }
         }
