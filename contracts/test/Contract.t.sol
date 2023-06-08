@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "forge-std/Test.sol";
 
 import "@cavalre/test/Token.t.sol";
-import "@cavalre//Pool.sol";
+import "@cavalre/Pool.sol";
 
 contract ContractTest is Context, Test {
 
