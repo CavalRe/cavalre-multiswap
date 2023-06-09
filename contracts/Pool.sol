@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@cavalre/LPToken.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -31,7 +31,7 @@ struct PoolState {
     uint256 scale;
 }
 
-contract Pool is ReentrancyGuard, ERC20, Ownable {
+contract Pool is LPToken, ReentrancyGuard, Ownable {
     using SafeERC20 for IERC20;
     using FixedPointMathLib for uint256;
 
@@ -77,7 +77,7 @@ contract Pool is ReentrancyGuard, ERC20, Ownable {
 
     error AssetNotFound(address asset);
 
-    constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
+    constructor(string memory name, string memory symbol) LPToken(name, symbol) {}
 
     function fromCanonical(
         uint256 amount,
