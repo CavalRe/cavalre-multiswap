@@ -16,6 +16,7 @@ struct AssetMeta {
 }
 
 struct AssetState {
+    uint256 fee;
     uint256 balance;
     uint256 scale;
     uint256 gamma;
@@ -91,7 +92,7 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
     function addAsset(
         address payToken_,
         uint256 balance_,
-        uint256 gamma_,
+        uint256 fee_,
         uint256 assetScale_
     ) public nonReentrant onlyOwner {
         if (_assetMeta[payToken_].token == IERC20(payToken_))
@@ -116,9 +117,9 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
             IERC20Metadata(payToken_).name(),
             IERC20Metadata(payToken_).symbol(),
             decimals_,
-            ONE - gamma_.mulWadUp(gamma_)
+            fee_
         );
-        _assetState[payToken_] = AssetState(balance_, assetScale_, gamma_);
+        _assetState[payToken_] = AssetState(fee_, balance_, assetScale_, ONE - fee_);
     }
 
     function uninitialize(address token) public nonReentrant onlyOwner {
@@ -334,7 +335,6 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
                         ONE - factor
                     );
                     receiveAmounts[i] = amountOut;
-                    // _poolState.balance += amountOut;
                 } else {
                     AssetState storage assetOut = _assetState[receiveToken];
                     uint256 weightOut = assetOut.scale.divWadUp(
@@ -347,55 +347,48 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
                         factor + ONE
                     );
                     receiveAmounts[i] = amountOut;
-                    // assetOut.balance -= amountOut;
                 }
             }
         }
-        // Transfer tokens to the pool
-        {
-            for (uint256 i; i < payTokens.length; i++) {
-                address payToken = payTokens[i];
-                uint256 amount = amounts[i];
-                uint256 delta;
-                if (payToken == address(this)) {
-                    _burn(_msgSender(), amount);
-                } else {
-                    SafeERC20.safeTransferFrom(
-                        IERC20(payToken),
-                        _msgSender(),
-                        address(this),
-                        fromCanonical(
-                            amount,
-                            IERC20Metadata(payToken).decimals()
-                        )
-                    );
-                    delta = _assetMeta[payToken].fee.mulWadUp(amount);
-                    _assetState[payToken].scale += delta;
-                    _poolState.scale += delta;
-                }
-            }
 
-            // Transfer tokens to the receiving address
-            for (uint256 i; i < receiveTokens.length; i++) {
-                address receiveToken = receiveTokens[i];
-                uint256 amountOut = receiveAmounts[i];
-                uint256 delta;
-                // Update _balance and asset balances.
-                if (receiveToken == address(this)) {
-                    _mint(_msgSender(), amountOut);
-                } else {
-                    SafeERC20.safeTransfer(
-                        IERC20(receiveToken),
-                        _msgSender(),
-                        fromCanonical(
-                            amountOut,
-                            IERC20Metadata(receiveToken).decimals()
-                        )
-                    );
-                    delta = _assetMeta[receiveToken].fee.mulWadUp(amountOut);
-                    _assetState[receiveToken].scale += delta;
-                    _poolState.scale += delta;
-                }
+        // Distribute fee
+        distributeFee(feeAmount);
+
+        // Transfer tokens to the pool
+        for (uint256 i; i < payTokens.length; i++) {
+            address payToken = payTokens[i];
+            uint256 amount = amounts[i];
+            if (payToken == address(this)) {
+                _burn(_msgSender(), amount);
+            } else {
+                SafeERC20.safeTransferFrom(
+                    IERC20(payToken),
+                    _msgSender(),
+                    address(this),
+                    fromCanonical(
+                        amount,
+                        IERC20Metadata(payToken).decimals()
+                    )
+                );
+            }
+        }
+
+        // Transfer tokens to the receiving address
+        for (uint256 i; i < receiveTokens.length; i++) {
+            address receiveToken = receiveTokens[i];
+            uint256 amountOut = receiveAmounts[i];
+            // Update _balance and asset balances.
+            if (receiveToken == address(this)) {
+                _mint(_msgSender(), amountOut);
+            } else {
+                SafeERC20.safeTransfer(
+                    IERC20(receiveToken),
+                    _msgSender(),
+                    fromCanonical(
+                        amountOut,
+                        IERC20Metadata(receiveToken).decimals()
+                    )
+                );
             }
         }
     }

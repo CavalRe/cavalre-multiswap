@@ -70,7 +70,7 @@ contract LPToken is ERC20 {
     }
 
     function distributeFee(uint256 amount) public returns (bool)  {
-        _ratio = (totalSupply()+amount)/super.totalSupply();
+        _ratio = (totalSupply()+amount).divWadUp(super.totalSupply());
         return true;
     }
 
