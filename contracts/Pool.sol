@@ -78,7 +78,10 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
 
     error AssetNotFound(address asset);
 
-    constructor(string memory name, string memory symbol) LPToken(name, symbol) {}
+    constructor(
+        string memory name,
+        string memory symbol
+    ) LPToken(name, symbol) {}
 
     function fromCanonical(
         uint256 amount,
@@ -119,7 +122,12 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
             decimals_,
             fee_
         );
-        _assetState[payToken_] = AssetState(fee_, balance_, assetScale_, ONE - fee_);
+        _assetState[payToken_] = AssetState(
+            fee_,
+            balance_,
+            assetScale_,
+            ONE - fee_
+        );
     }
 
     function uninitialize(address token) public nonReentrant onlyOwner {
@@ -365,10 +373,7 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
                     IERC20(payToken),
                     _msgSender(),
                     address(this),
-                    fromCanonical(
-                        amount,
-                        IERC20Metadata(payToken).decimals()
-                    )
+                    fromCanonical(amount, IERC20Metadata(payToken).decimals())
                 );
             }
         }
@@ -396,7 +401,7 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
     function swap(
         address payToken,
         address receiveToken,
-        uint256 amountIn
+        uint256 payAmount
     ) public nonReentrant returns (uint256) {
         if (_isInitialized == 0) revert NotInitialized();
         if (
@@ -408,46 +413,50 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
         ) revert InvalidSwap(payToken, receiveToken);
         AssetState storage assetIn = _assetState[payToken];
         AssetState storage assetOut = _assetState[receiveToken];
-        if (amountIn * 3 > assetIn.balance * 4) revert TooLarge(amountIn);
+        if (payAmount * 3 > assetIn.balance * 4) revert TooLarge(payAmount);
 
-        uint256 reserveIn = assetIn.balance + amountIn;
-        uint256 reserveOut;
-        uint256 amountOut;
-
+        uint256 feeAmount;
+        uint256 receiveAmount;
         {
-            uint256 weightRatio = assetIn.scale.divWadUp(assetOut.scale);
-            uint256 invGrowthOut = ONE +
-                assetIn
-                    .gamma
-                    .mulWadUp(assetOut.gamma)
-                    .mulWadUp(weightRatio)
-                    .mulWadUp(amountIn.divWadUp(reserveIn));
-            reserveOut = assetOut.balance.divWadUp(invGrowthOut);
-            amountOut = assetOut.balance - reserveOut;
+            uint256 scaledValueIn = assetIn.scale.mulWadUp(payAmount).divWadUp(
+                assetIn.balance + payAmount
+            );
+            uint256 scaledFee = assetOut.fee.mulWadUp(scaledValueIn);
+            feeAmount = _poolState.balance.mulWadUp(scaledFee).divWadUp(
+                _poolState.scale - scaledFee
+            );
+
+            uint256 factor = (ONE - assetOut.fee)
+                .mulWadUp(scaledValueIn)
+                .divWadUp(assetOut.scale);
+            receiveAmount = assetOut.balance.mulWadUp(factor).divWadUp(
+                ONE + factor
+            );
         }
 
-        assetIn.balance = reserveIn;
-        assetOut.balance = reserveOut;
+        _poolState.balance += feeAmount;
+        assetIn.balance += payAmount;
+        assetOut.balance -= receiveAmount;
+
+        distributeFee(feeAmount);
 
         SafeERC20.safeTransferFrom(
             IERC20(payToken),
             _msgSender(),
             address(this),
-            fromCanonical(amountIn, IERC20Metadata(payToken).decimals())
+            fromCanonical(payAmount, IERC20Metadata(payToken).decimals())
         );
+
         SafeERC20.safeTransfer(
             IERC20(receiveToken),
             _msgSender(),
-            fromCanonical(amountOut, IERC20Metadata(receiveToken).decimals())
+            fromCanonical(
+                receiveAmount,
+                IERC20Metadata(receiveToken).decimals()
+            )
         );
 
-        uint256 deltaIn = _assetMeta[payToken].fee.mulWadUp(amountIn);
-        uint256 deltaOut = _assetMeta[receiveToken].fee.mulWadUp(amountOut);
-        assetIn.scale += deltaIn;
-        assetOut.scale += deltaOut;
-        _poolState.scale += deltaIn + deltaOut;
-
-        return amountOut;
+        return receiveAmount;
     }
 
     function stake(
