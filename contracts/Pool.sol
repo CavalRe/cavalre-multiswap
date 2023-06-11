@@ -360,6 +360,7 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
         }
 
         // Distribute fee
+        _poolState.balance += feeAmount;
         distributeFee(feeAmount);
 
         // Transfer tokens to the pool
@@ -367,8 +368,10 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
             address payToken = payTokens[i];
             uint256 amount = amounts[i];
             if (payToken == address(this)) {
+                _poolState.balance -= amount;
                 _burn(_msgSender(), amount);
             } else {
+                _assetState[payToken].balance += amount;
                 SafeERC20.safeTransferFrom(
                     IERC20(payToken),
                     _msgSender(),
@@ -384,8 +387,10 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
             uint256 amountOut = receiveAmounts[i];
             // Update _balance and asset balances.
             if (receiveToken == address(this)) {
+                _poolState.balance += amountOut;
                 _mint(_msgSender(), amountOut);
             } else {
+                _assetState[receiveToken].balance -= amountOut;
                 SafeERC20.safeTransfer(
                     IERC20(receiveToken),
                     _msgSender(),
