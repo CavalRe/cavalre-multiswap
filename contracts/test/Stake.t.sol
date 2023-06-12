@@ -26,7 +26,7 @@ contract StakeTest is TestRoot {
         address alice = address(1);
         vm.startPrank(alice);
 
-        checkLP(0, 0);
+        checkLP();
 
         payIndex = payIndex % tokens.length;
         Token payToken = tokens[payIndex];

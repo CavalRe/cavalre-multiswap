@@ -500,6 +500,7 @@ contract MultiswapTest is TestRoot {
         uint256[] memory amounts = new uint256[](numberOfTokens);
         address[] memory withdrawals = new address[](numberOfTokens);
         uint256[] memory allocations = new uint256[](numberOfTokens);
+        uint256[] memory receiveAmounts = new uint256[](numberOfTokens);
 
         for (uint256 i; i < numberOfTokens; i++) {
             Token token = tokens[i];
@@ -517,6 +518,8 @@ contract MultiswapTest is TestRoot {
             allocations[i - numberOfTokens] = totalAllocation / numberOfTokens;
         }
 
-        pool.multiswap(deposits, amounts, withdrawals, allocations);
+        receiveAmounts = pool.multiswap(deposits, amounts, withdrawals, allocations);
+
+        checkSF(deposits, amounts, withdrawals, allocations, receiveAmounts);
     } // !! TODO check that valid deposit/withdrawal addresses are being used
 }
