@@ -38,7 +38,8 @@ contract SwapTest is TestRoot {
         Asset memory depositAsset = pool.asset(address(depositToken));
         uint256 balance = depositAsset.state.balance;
 
-        amount = (amount % (8 * balance / 3));
+        amount = (amount % ((8 * balance) / 3));
+        vm.assume(amount > 1e17);
 
         address alice = address(1);
         vm.startPrank(alice);
@@ -47,11 +48,24 @@ contract SwapTest is TestRoot {
         depositToken.approve(address(pool), amount);
 
         if (amount * 3 > balance * 4) {
-            vm.expectRevert(abi.encodeWithSelector(Pool.TooLarge.selector, amount));
+            vm.expectRevert(
+                abi.encodeWithSelector(Pool.TooLarge.selector, amount)
+            );
             pool.swap(address(depositToken), address(withdrawToken), amount);
         } else {
-            pool.swap(address(depositToken), address(withdrawToken), amount);
+            uint256 amountOut = pool.swap(
+                address(depositToken),
+                address(withdrawToken),
+                amount
+            );
+            checkSF(
+                address(depositToken),
+                address(withdrawToken),
+                amount,
+                amountOut
+            );
             assertGt(withdrawToken.balanceOf(alice), 0);
+            checkLP(amount, amountOut);
         }
 
         vm.stopPrank();

@@ -11,6 +11,8 @@ contract UnstakeTest is TestRoot {
         address alice = address(1);
         vm.startPrank(alice);
 
+        checkLP();
+
         Token receiveToken = tokens[0];
         uint256 amount = 1e27;
         receiveToken.mint(amount);
@@ -18,45 +20,96 @@ contract UnstakeTest is TestRoot {
 
         uint256 amountOut = pool.stake(address(receiveToken), amount);
         pool.approve(address(pool), amountOut);
-        pool.unstake(address(receiveToken), amountOut);
+        uint256 receiveAmount = pool.unstake(address(receiveToken), amountOut);
 
-        assertEq(pool.balanceOf(alice), 0);
+        checkSF(address(pool), address(receiveToken), amountOut, receiveAmount);
+
+        assertEq(
+            pool.balanceOf(alice),
+            0,
+            "Alice's pool balance is not zero after unstaking."
+        );
         assertEq(receiveToken.balanceOf(alice) > 0, true);
+
+        checkLP();
 
         vm.stopPrank();
     }
 
     function testUnstakeFuzz(uint256 amount, uint256 receiveIndex) public {
-        vm.assume(amount > 0);
+        vm.assume((amount > 1e17) && (amount < 1e50));
 
         address alice = address(1);
         vm.startPrank(alice);
+
+        checkLP();
 
         receiveIndex = receiveIndex % tokens.length;
         Token receiveToken = tokens[receiveIndex];
         Asset memory receiveAsset = pool.asset(address(receiveToken));
 
-        uint256 poolBalance = pool.balance();
         uint256 assetBalance = receiveAsset.state.balance;
-        amount = (amount % poolBalance) + 1e17;
+        vm.assume((amount > 1e17) && (3 * amount < 4 * assetBalance));
 
         receiveToken.mint(amount);
         receiveToken.approve(address(pool), amount);
 
-        assertEq(pool.balanceOf(alice), 0);
-        assertEq(receiveToken.balanceOf(alice) > 0, true);
+        assertEq(
+            pool.balanceOf(alice),
+            0,
+            "Alice's initial pool balance is not zero."
+        );
+        assertGt(
+            receiveToken.balanceOf(alice),
+            0,
+            "Alice's initial receive token balance is zero."
+        );
 
         uint256 amountOut = pool.stake(address(receiveToken), amount);
+        assertGt(
+            pool.balanceOf(alice),
+            0,
+            "Alice's pool balance is zero before unstaking."
+        );
+        assertEq(
+            receiveToken.balanceOf(alice),
+            0,
+            "Alice's receive token balance is not zero before unstaking."
+        );
+
+        uint256 poolBalance = pool.balance();
         pool.approve(address(pool), amountOut);
-        if (amountOut * 3 > assetBalance * 4) {
-            vm.expectRevert(abi.encodeWithSelector(Pool.TooLarge.selector, amountOut));
+        if (amountOut * 3 > poolBalance * 4) {
+            vm.expectRevert(
+                abi.encodeWithSelector(Pool.TooLarge.selector, amountOut)
+            );
             pool.unstake(address(receiveToken), amountOut);
         } else {
-            pool.unstake(address(receiveToken), amountOut);
-            assertGt(receiveToken.balanceOf(alice), 0);
-        }
+            uint256 receiveAmount = pool.unstake(
+                address(receiveToken),
+                amountOut
+            );
 
-        assertEq(pool.balanceOf(alice), 0);
+            checkSF(
+                address(pool),
+                address(receiveToken),
+                amountOut,
+                receiveAmount
+            );
+
+            assertGt(
+                receiveToken.balanceOf(alice),
+                0,
+                "Alice's receive token balance is zero after unstaking."
+            );
+            assertEq(
+                pool.balanceOf(alice),
+                0,
+                "Alice's pool balance is not zero after unstaking."
+            );
+            assertEq(pool.balanceOf(alice), 0, Strings.toString(amountOut));
+            checkLP(amountOut, receiveAmount);
+        }
 
         vm.stopPrank();
     }

@@ -69,9 +69,8 @@ contract LPToken is ERC20 {
         return super.decreaseAllowance(spender, subtractedValue);
     }
 
-    function distributeFee(uint256 amount) public returns (bool)  {
+    function _distributeFee(uint256 amount) internal virtual {
         _ratio = (totalSupply()+amount).divWadUp(super.totalSupply());
-        return true;
     }
 
     function _transfer(
