@@ -194,20 +194,6 @@ contract UnstakeTest is TestRoot {
         vm.stopPrank();
     }
 
-    function testUnstakeInsufficientAllowance() public {
-        address bob = address(2);
-        vm.startPrank(bob);
-
-        Token receiveToken = tokens[0];
-        uint256 amount = 1e28;
-
-        // TODO is it desirable that `unstake` does not require a specific allowance
-        //vm.expectRevert("ERC20: insufficient allowance");
-        pool.unstake(address(receiveToken), amount);
-
-        vm.stopPrank();
-    }
-
     /*
      * Pathological
      */

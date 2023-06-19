@@ -302,14 +302,25 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
         uint256 scaledValueIn;
         uint256 feeAmount;
         {
+            // Contribution from assets only
+            uint256 delta;
             for (uint256 i; i < payTokens.length; i++) {
                 address token_ = payTokens[i];
                 uint256 amount_ = amounts[i];
                 if (token_ != address(this)) {
                     AssetState storage asset_ = _assetState[token_];
-                    scaledValueIn += asset_.scale.mulWadUp(amount_).divWadUp(
-                        asset_.balance + amount_
-                    );
+                    // Compute using pre-trade scale to determine change in scale
+                    delta = asset_
+                        .scale
+                        .divWadUp(asset_.balance + amount_)
+                        .mulWadUp(amount_);
+                    _assetState[token_].scale -= delta;
+                    _poolState.scale -= delta;
+                    // Compute using post-trade
+                    scaledValueIn += asset_
+                        .scale
+                        .divWadUp(asset_.balance + amount_)
+                        .mulWadUp(amount_);
                 }
             }
 
@@ -317,16 +328,21 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
             if (t == Type.Unstake) {
                 uint256 amountIn = amounts[0];
                 feeAmount = (scaledFee.mulWadUp(_poolState.balance - amountIn) +
-                    _poolState.scale.mulWadUp(fee).mulWadUp(amountIn)).divWadUp(
-                        _poolState.scale - scaledFee
-                    );
-                scaledValueIn += _poolState.scale.mulWadUp(amountIn).divWadUp(
-                    _poolState.balance + feeAmount - amountIn
-                );
+                    _poolState
+                        .scale
+                        .divWadUp(_poolState.scale - scaledFee)
+                        .mulWadUp(fee)
+                        .mulWadUp(amountIn));
+                // Contribution from LP tokens
+                scaledValueIn += _poolState
+                    .scale
+                    .divWadUp(_poolState.balance + feeAmount - amountIn)
+                    .mulWadUp(amountIn);
             } else {
-                feeAmount = _poolState.balance.mulWadUp(scaledFee).divWadUp(
-                    _poolState.scale - scaledFee
-                );
+                feeAmount = _poolState
+                    .balance
+                    .divWadUp(_poolState.scale - scaledFee)
+                    .mulWadUp(scaledFee);
             }
         }
 
@@ -344,14 +360,14 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
                 if (receiveToken == address(this)) {
                     receiveAmounts[i] = _poolState
                         .balance
-                        .mulWadUp(scaledValueOut)
-                        .divWadUp(_poolState.scale - scaledValueOut);
+                        .divWadUp(_poolState.scale - scaledValueOut)
+                        .mulWadUp(scaledValueOut);
                 } else {
                     AssetState storage assetOut = _assetState[receiveToken];
                     receiveAmounts[i] = assetOut
                         .balance
-                        .mulWadUp(scaledValueOut)
-                        .divWadUp(assetOut.scale + scaledValueOut);
+                        .divWadUp(assetOut.scale + scaledValueOut)
+                        .mulWadUp(scaledValueOut);
                 }
             }
         }
@@ -420,20 +436,32 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
         uint256 feeAmount;
         uint256 receiveAmount;
         {
-            uint256 scaledValueIn = assetIn.scale.mulWadUp(payAmount).divWadUp(
-                assetIn.balance + payAmount
-            );
+            // Compute using pre-trade scale to determine change in scale
+            uint256 scaledValueIn = assetIn
+                .scale
+                .divWadUp(assetIn.balance + payAmount)
+                .mulWadUp(payAmount);
+            assetIn.scale -= scaledValueIn;
+            _poolState.scale -= scaledValueIn;
+            // Compute using post-trade scale
+            scaledValueIn = assetIn
+                .scale
+                .divWadUp(assetIn.balance + payAmount)
+                .mulWadUp(payAmount);
+
             uint256 scaledFee = assetOut.fee.mulWadUp(scaledValueIn);
-            feeAmount = _poolState.balance.mulWadUp(scaledFee).divWadUp(
-                _poolState.scale - scaledFee
-            );
+            feeAmount = _poolState
+                .balance
+                .divWadUp(_poolState.scale - scaledFee)
+                .mulWadUp(scaledFee);
 
             uint256 scaledValueOut = (ONE - assetOut.fee).mulWadUp(
                 scaledValueIn
             );
-            receiveAmount = assetOut.balance.mulWadUp(scaledValueOut).divWadUp(
-                assetOut.scale + scaledValueOut
-            );
+            receiveAmount = assetOut
+                .balance
+                .divWadUp(assetOut.scale + scaledValueOut)
+                .mulWadUp(scaledValueOut);
         }
 
         _poolState.balance += feeAmount;
@@ -472,13 +500,22 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
             revert TooLarge(payAmount);
         AssetState storage assetIn = _assetState[payToken];
 
-        uint256 scaledValueIn = assetIn.scale.mulWadUp(payAmount).divWadUp(
-            assetIn.balance + payAmount
-        );
+        // Compute using pre-trade scale to determine change in scale
+        uint256 scaledValueIn = assetIn
+            .scale
+            .divWadUp(assetIn.balance + payAmount)
+            .mulWadUp(payAmount);
+        assetIn.scale -= scaledValueIn;
+        _poolState.scale -= scaledValueIn;
+        // Compute using post-trade scale
+        scaledValueIn = assetIn
+            .scale
+            .divWadUp(assetIn.balance + payAmount)
+            .mulWadUp(payAmount);
         uint256 receiveAmount = _poolState
             .balance
-            .mulWadUp(scaledValueIn)
-            .divWadUp(_poolState.scale - scaledValueIn);
+            .divWadUp(_poolState.scale - scaledValueIn)
+            .mulWadUp(scaledValueIn);
 
         assetIn.balance += payAmount;
         SafeERC20.safeTransferFrom(
@@ -509,15 +546,17 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
         uint256 feeAmount = payAmount.mulWadUp(assetOut.fee);
         uint256 delta = payAmount - feeAmount;
 
-        uint256 scaledValueIn = _poolState.scale.mulWadUp(payAmount).divWadUp(
-            _poolState.balance - delta
-        );
+        uint256 scaledValueIn = _poolState
+            .scale
+            .divWadUp(_poolState.balance - delta)
+            .mulWadUp(payAmount);
 
         uint256 scaledValueOut = scaledValueIn.mulWadUp(ONE - assetOut.fee);
+
         uint256 receiveAmount = assetOut
             .balance
-            .mulWadUp(scaledValueOut)
-            .divWadUp(assetOut.scale + scaledValueOut);
+            .divWadUp(assetOut.scale + scaledValueOut)
+            .mulWadUp(scaledValueOut);
 
         _poolState.balance -= delta;
         _burn(_msgSender(), payAmount);

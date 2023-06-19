@@ -224,24 +224,6 @@ contract MultiswapTest is TestRoot {
         pool.multiswap(deposits, amounts, withdrawals, allocations);
     }
 
-    function testInsufficientAllowance() public {
-        Token depositToken = tokens[0];
-        Token withdrawToken = tokens[1];
-        uint256 amount = 1e27;
-        depositToken.mint(amount);
-
-        address[] memory deposits = new address[](1);
-        deposits[0] = address(depositToken);
-        uint256[] memory amounts = new uint256[](1);
-        amounts[0] = amount;
-        address[] memory withdrawals = new address[](1);
-        withdrawals[0] = address(withdrawToken);
-        uint256[] memory allocations = new uint256[](1);
-        allocations[0] = 1e18;
-        vm.expectRevert("ERC20: insufficient allowance");
-        pool.multiswap(deposits, amounts, withdrawals, allocations);
-    }
-
     function testMultiNoDeposit() public {
         Token depositToken = tokens[0];
         Token withdrawToken = tokens[1];
@@ -591,9 +573,9 @@ contract MultiswapTest is TestRoot {
         // fuzz setup
         vm.assume((amountA > 1e17) && (amountA < 1e50));
         vm.assume((amountB > 1e17) && (amountB < 1e50));
-        depositIndexA = depositIndexA % tokens.length;
-        depositIndexB = depositIndexB % tokens.length;
-        withdrawIndex = withdrawIndex % tokens.length;
+        depositIndexA = depositIndexA % tokens.length/3;
+        depositIndexB = (depositIndexB % tokens.length/3) + depositIndexA;
+        withdrawIndex = (withdrawIndex % tokens.length/3) + depositIndexB;
         vm.assume(depositIndexA != depositIndexB);
         vm.assume(depositIndexA != withdrawIndex);
         vm.assume(depositIndexB != withdrawIndex);

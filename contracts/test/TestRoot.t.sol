@@ -71,9 +71,22 @@ contract TestRoot is Test {
         uint256 receiveAmount
     ) public {
         uint256 valueIn = payAmount.mulWadUp(price(payToken));
-        uint256 valueOut = receiveAmount.mulWadUp(price(receiveToken))+fee(receiveToken).mulWadUp(valueIn);
+        uint256 valueOut = receiveAmount.mulWadUp(price(receiveToken)) +
+            fee(receiveToken).mulWadUp(valueIn);
 
-        assertApproxEqRel(valueIn, valueOut, 1e6, "Value in does not equal value out.");
+        assertApproxEqRel(
+            valueIn,
+            valueOut,
+            1e6,
+            string(
+                abi.encodePacked(
+                    "Value in does not equal value out. ",
+                    Strings.toString(payAmount),
+                    " ",
+                    Strings.toString(receiveAmount)
+                )
+            )
+        );
     }
 
     function checkSF(
@@ -97,7 +110,12 @@ contract TestRoot is Test {
         }
         valueOut += fee_.mulWadUp(valueIn);
 
-        assertApproxEqRel(valueIn, valueOut, 1e8, "Value in does not equal value out.");
+        assertApproxEqRel(
+            valueIn,
+            valueOut,
+            1e8,
+            "Value in does not equal value out."
+        );
     }
 
     function checkLP() public {

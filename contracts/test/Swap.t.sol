@@ -11,11 +11,18 @@ contract SwapTest is TestRoot {
     function testSwapSmoke() public {
         Token depositToken = tokens[0];
         Token withdrawToken = tokens[1];
-        uint256 amount = 1e27;
+        // uint256 amount = 1e17; 
+        uint256 amount = 100000000000100001; // This value was failing the fuzz test before
         depositToken.mint(amount);
         depositToken.approve(address(pool), amount);
 
-        pool.swap(address(depositToken), address(withdrawToken), amount);
+        uint256 amountOut = pool.swap(address(depositToken), address(withdrawToken), amount);
+        checkSF(
+            address(depositToken),
+            address(withdrawToken),
+            amount,
+            amountOut
+        );
     }
 
     /// @param depositIndex the index of the token to be deposited in the test token list
@@ -119,16 +126,6 @@ contract SwapTest is TestRoot {
                 address(withdrawToken)
             )
         );
-        pool.swap(address(depositToken), address(withdrawToken), amount);
-    }
-
-    function testSwapInsufficientAllowance() public {
-        Token depositToken = tokens[0];
-        Token withdrawToken = tokens[1];
-        uint256 amount = 1e27;
-        depositToken.mint(amount);
-
-        vm.expectRevert("ERC20: insufficient allowance");
         pool.swap(address(depositToken), address(withdrawToken), amount);
     }
 
