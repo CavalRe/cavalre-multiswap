@@ -55,7 +55,7 @@ contract TestRoot is Test {
         if (token == address(pool)) return ONE;
         Asset memory asset_ = pool.asset(token);
         uint256 weight_ = weight(token);
-        return weight_.mulWadUp(pool.balance()).divWadUp(asset_.state.balance);
+        return weight_.fullMulDiv(pool.balance(), asset_.state.balance);
     }
 
     function fee(address token) public view returns (uint256) {
