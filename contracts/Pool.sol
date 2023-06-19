@@ -5,7 +5,6 @@ import "@cavalre/LPToken.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "solmate/utils/FixedPointMathLib.sol";
 
 struct AssetMeta {
     IERC20 token;

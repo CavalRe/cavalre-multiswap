@@ -16,6 +16,6 @@
   "dependencies": {
     "@openzeppelin/contracts": "^4.9.1",
     "forge-std": "^1.1.2",
-    "solmate": "^6.7.0"
+    "solady": "^0.0.105"
   }
 }

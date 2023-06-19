@@ -5,7 +5,7 @@ import "@cavalre/Pool.sol";
 import "@cavalre/test/Token.t.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "forge-std/Test.sol";
-import "solmate/utils/FixedPointMathLib.sol";
+import "solady/utils/FixedPointMathLib.sol";
 
 contract TestRoot is Test {
     using FixedPointMathLib for uint256;
