@@ -11,14 +11,12 @@ struct AssetMeta {
     string name;
     string symbol;
     uint8 decimals;
-    uint256 fee;
 }
 
 struct AssetState {
     uint256 fee;
     uint256 balance;
     uint256 scale;
-    uint256 gamma;
 }
 
 struct Asset {
@@ -118,14 +116,12 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
             IERC20(payToken_),
             IERC20Metadata(payToken_).name(),
             IERC20Metadata(payToken_).symbol(),
-            decimals_,
-            fee_
+            decimals_
         );
         _assetState[payToken_] = AssetState(
             fee_,
             balance_,
-            assetScale_,
-            ONE - fee_
+            assetScale_
         );
     }
 
@@ -292,7 +288,7 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
         {
             for (uint256 i; i < receiveTokens.length; i++) {
                 fee += allocations[i].mulWadUp(
-                    _assetMeta[receiveTokens[i]].fee
+                    _assetState[receiveTokens[i]].fee
                 );
             }
         }
