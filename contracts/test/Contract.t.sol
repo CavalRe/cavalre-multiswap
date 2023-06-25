@@ -40,7 +40,7 @@ contract ContractTest is Context, Test {
     uint256 amountOut;
 
     function setUp() public {
-        pool = new Pool("Pool", "P");
+        pool = new Pool("Pool", "P", int256(1e16));
         tokens = new Token[](NTOKENS);
 
         addresses = new address[](NTOKENS);
@@ -124,7 +124,7 @@ contract ContractTest is Context, Test {
             poolSymbol,
             poolDecimals,
             poolBalance,
-            poolScale
+            poolScale, ,
         ) = _pool.info();
         // console.log("Name:",poolName);
         // console.log("Symbol:",poolSymbol);

@@ -347,7 +347,7 @@ contract MultiswapTest is TestRoot {
 
     function checkScale() internal {
         uint256 scale;
-        (, , , , , scale) = pool.info();
+        (, , , , , scale, , ) = pool.info();
         Asset[] memory initialAssets = pool.assets();
         uint256 scaleSum = 0;
 
@@ -573,9 +573,9 @@ contract MultiswapTest is TestRoot {
         // fuzz setup
         vm.assume((amountA > 1e17) && (amountA < 1e50));
         vm.assume((amountB > 1e17) && (amountB < 1e50));
-        depositIndexA = depositIndexA % tokens.length/3;
-        depositIndexB = (depositIndexB % tokens.length/3) + depositIndexA;
-        withdrawIndex = (withdrawIndex % tokens.length/3) + depositIndexB;
+        depositIndexA = (depositIndexA % tokens.length) / 3;
+        depositIndexB = ((depositIndexB % tokens.length) / 3) + depositIndexA;
+        withdrawIndex = ((withdrawIndex % tokens.length) / 3) + depositIndexB;
         vm.assume(depositIndexA != depositIndexB);
         vm.assume(depositIndexA != withdrawIndex);
         vm.assume(depositIndexB != withdrawIndex);

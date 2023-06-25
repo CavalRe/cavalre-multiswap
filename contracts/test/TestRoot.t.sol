@@ -21,7 +21,7 @@ contract TestRoot is Test {
         address bob = address(2);
         vm.startPrank(bob);
 
-        pool = new Pool("Pool", "P");
+        pool = new Pool("Pool", "P", int256(1e16));
         tokens = new Token[](NTOKENS);
 
         uint256 scale_ = 1e27;

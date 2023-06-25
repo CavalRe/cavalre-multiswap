@@ -17,6 +17,8 @@ struct AssetState {
     uint256 fee;
     uint256 balance;
     uint256 scale;
+    uint256 meanBalance;
+    uint256 meanScale;
 }
 
 struct Asset {
@@ -27,13 +29,18 @@ struct Asset {
 struct PoolState {
     uint256 balance;
     uint256 scale;
+    uint256 meanBalance;
+    uint256 meanScale;
 }
 
 contract Pool is LPToken, ReentrancyGuard, Ownable {
     using SafeERC20 for IERC20;
     using FixedPointMathLib for uint256;
+    using FixedPointMathLib for int256;
 
     uint256 internal constant ONE = 1e18;
+
+    int256 private _tau;
 
     uint256 private _isInitialized;
 
@@ -77,8 +84,11 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
 
     constructor(
         string memory name,
-        string memory symbol
-    ) LPToken(name, symbol) {}
+        string memory symbol,
+        int256 tau
+    ) LPToken(name, symbol) {
+        _tau = tau;
+    }
 
     function fromCanonical(
         uint256 amount,
@@ -100,6 +110,8 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
 
         _poolState.balance += assetScale_;
         _poolState.scale += assetScale_;
+        _poolState.meanBalance += assetScale_;
+        _poolState.meanScale += assetScale_;
 
         uint8 decimals_ = IERC20Metadata(payToken_).decimals();
 
@@ -120,6 +132,8 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
         );
         _assetState[payToken_] = AssetState(
             fee_,
+            balance_,
+            assetScale_,
             balance_,
             assetScale_
         );
@@ -146,7 +160,16 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
     function info()
         public
         view
-        returns (address, string memory, string memory, uint8, uint256, uint256)
+        returns (
+            address,
+            string memory,
+            string memory,
+            uint8,
+            uint256,
+            uint256,
+            uint256,
+            uint256
+        )
     {
         address poolAddress = address(this);
         IERC20Metadata poolMetadata = IERC20Metadata(poolAddress);
@@ -156,7 +179,9 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
             poolMetadata.symbol(),
             poolMetadata.decimals(),
             _poolState.balance,
-            _poolState.scale
+            _poolState.scale,
+            _poolState.meanBalance,
+            _poolState.meanScale
         );
     }
 
@@ -433,17 +458,42 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
         uint256 feeAmount;
         uint256 receiveAmount;
         {
+            assetIn.balance += payAmount;
+            assetIn.meanBalance = assetIn.meanBalance.mulWadUp(
+                uint256(
+                    int256(assetIn.balance.divWadUp(assetIn.meanBalance))
+                        .powWad(_tau)
+                )
+            );
+
             // Compute using pre-trade scale to determine change in scale
             uint256 scaledValueIn = assetIn.scale.fullMulDiv(
                 payAmount,
-                assetIn.balance + payAmount
+                assetIn.balance
+            ).fullMulDiv(
+                assetIn.balance - assetIn.meanBalance,
+                assetIn.balance
             );
             assetIn.scale -= scaledValueIn;
+            assetIn.meanScale = assetIn.meanScale.mulWadUp(
+                uint256(
+                    int256(assetIn.scale.divWadUp(assetIn.meanScale)).powWad(
+                        _tau
+                    )
+                )
+            );
+
             _poolState.scale -= scaledValueIn;
-            // Compute using post-trade scale
+            _poolState.meanScale = _poolState.meanScale.mulWadUp(
+                uint256(
+                    int256(_poolState.scale.divWadUp(_poolState.meanScale))
+                        .powWad(int256(ONE) - _tau)
+                )
+            );
+            // Re-compute using post-trade scale
             scaledValueIn = assetIn.scale.fullMulDiv(
                 payAmount,
-                assetIn.balance + payAmount
+                assetIn.balance
             );
 
             uint256 scaledFee = assetOut.fee.mulWadUp(scaledValueIn);
@@ -462,8 +512,21 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
         }
 
         _poolState.balance += feeAmount;
-        assetIn.balance += payAmount;
+        _poolState.meanBalance = _poolState.meanBalance.mulWadUp(
+            uint256(
+                int256(_poolState.balance.divWadUp(_poolState.meanBalance))
+                    .powWad(_tau)
+            )
+        );
+
         assetOut.balance -= receiveAmount;
+        assetOut.meanBalance = assetOut.meanBalance.mulWadUp(
+            uint256(
+                int256(assetOut.balance.divWadUp(assetOut.meanBalance)).powWad(
+                    _tau
+                )
+            )
+        );
 
         _distributeFee(feeAmount);
 
