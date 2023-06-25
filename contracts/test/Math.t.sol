@@ -16,8 +16,8 @@ contract TestMath is Test {
         uint256 HALF = 5e17;
         assertEq(y, 4e9, "sqrt(16e18) = 4e9");
         assertApproxEqRel(
-            int256(x).powWad(int256(HALF)),
-            int256(4e18),
+            uint256(int256(x).powWad(int256(HALF))),
+            4e18,
             1e6,
             "16e18^(1/2) = 4e18"
         );
