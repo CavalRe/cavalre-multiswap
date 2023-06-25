@@ -335,6 +335,12 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
                         asset_.balance + amount_
                     );
                     asset_.scale -= delta;
+                    asset_.meanScale = asset_.meanScale.mulWadUp(
+                        uint256(
+                            int256(asset_.scale.divWadUp(asset_.meanScale))
+                                .powWad(_tau)
+                        )
+                    );
                     _poolState.scale -= delta;
                     // Compute using post-trade
                     scaledValueIn += asset_.scale.fullMulDiv(
@@ -404,9 +410,24 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
             uint256 amount = amounts[i];
             if (payToken == address(this)) {
                 _poolState.balance -= amount;
+                _poolState.meanBalance = _poolState.meanBalance.mulWadUp(
+                    uint256(
+                        int256(
+                            _poolState.balance.divWadUp(_poolState.meanBalance)
+                        ).powWad(_tau)
+                    )
+                );
                 _burn(_msgSender(), amount);
             } else {
-                _assetState[payToken].balance += amount;
+                AssetState storage assetIn = _assetState[payToken];
+                assetIn.balance += amount;
+                assetIn.meanBalance = assetIn.meanBalance.mulWadUp(
+                    uint256(
+                        int256(assetIn.balance.divWadUp(assetIn.meanBalance))
+                            .powWad(_tau)
+                    )
+                );
+
                 SafeERC20.safeTransferFrom(
                     IERC20(payToken),
                     _msgSender(),
@@ -487,7 +508,7 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
             _poolState.meanScale = _poolState.meanScale.mulWadUp(
                 uint256(
                     int256(_poolState.scale.divWadUp(_poolState.meanScale))
-                        .powWad(int256(ONE) - _tau)
+                        .powWad(_tau)
                 )
             );
             // Re-compute using post-trade scale
@@ -585,7 +606,7 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
         _poolState.meanScale = _poolState.meanScale.mulWadUp(
             uint256(
                 int256(_poolState.scale.divWadUp(_poolState.meanScale)).powWad(
-                    int256(ONE) - _tau
+                    _tau
                 )
             )
         );
