@@ -334,7 +334,7 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
                         amount_,
                         asset_.balance + amount_
                     );
-                    _assetState[token_].scale -= delta;
+                    asset_.scale -= delta;
                     _poolState.scale -= delta;
                     // Compute using post-trade
                     scaledValueIn += asset_.scale.fullMulDiv(
@@ -467,13 +467,13 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
             );
 
             // Compute using pre-trade scale to determine change in scale
-            uint256 scaledValueIn = assetIn.scale.fullMulDiv(
-                payAmount,
-                assetIn.balance
-            ).fullMulDiv(
-                assetIn.balance - assetIn.meanBalance,
-                assetIn.balance
-            );
+            uint256 scaledValueIn = assetIn
+                .scale
+                .fullMulDiv(payAmount, assetIn.balance)
+                .fullMulDiv(
+                    assetIn.balance - assetIn.meanBalance,
+                    assetIn.balance
+                );
             assetIn.scale -= scaledValueIn;
             assetIn.meanScale = assetIn.meanScale.mulWadUp(
                 uint256(
@@ -560,24 +560,51 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
             revert TooLarge(payAmount);
         AssetState storage assetIn = _assetState[payToken];
 
+        assetIn.balance += payAmount;
+        assetIn.meanBalance = assetIn.meanBalance.mulWadUp(
+            uint256(
+                int256(assetIn.balance.divWadUp(assetIn.meanBalance)).powWad(
+                    _tau
+                )
+            )
+        );
+
         // Compute using pre-trade scale to determine change in scale
-        uint256 scaledValueIn = assetIn.scale.fullMulDiv(
-            payAmount,
-            assetIn.balance + payAmount
-        );
+        uint256 scaledValueIn = assetIn
+            .scale
+            .fullMulDiv(payAmount, assetIn.balance)
+            .fullMulDiv(assetIn.balance - assetIn.meanBalance, assetIn.balance);
         assetIn.scale -= scaledValueIn;
-        _poolState.scale -= scaledValueIn;
-        // Compute using post-trade scale
-        scaledValueIn = assetIn.scale.fullMulDiv(
-            payAmount,
-            assetIn.balance + payAmount
+        assetIn.meanScale = assetIn.meanScale.mulWadUp(
+            uint256(
+                int256(assetIn.scale.divWadUp(assetIn.meanScale)).powWad(_tau)
+            )
         );
+
+        _poolState.scale -= scaledValueIn;
+        _poolState.meanScale = _poolState.meanScale.mulWadUp(
+            uint256(
+                int256(_poolState.scale.divWadUp(_poolState.meanScale)).powWad(
+                    int256(ONE) - _tau
+                )
+            )
+        );
+
+        // Re-compute using post-trade scale
+        scaledValueIn = assetIn.scale.fullMulDiv(payAmount, assetIn.balance);
         uint256 receiveAmount = _poolState.balance.fullMulDiv(
             scaledValueIn,
             _poolState.scale - scaledValueIn
         );
 
-        assetIn.balance += payAmount;
+        _poolState.balance += receiveAmount;
+        _poolState.meanBalance = _poolState.meanBalance.mulWadUp(
+            uint256(
+                int256(_poolState.balance.divWadUp(_poolState.meanBalance))
+                    .powWad(_tau)
+            )
+        );
+
         SafeERC20.safeTransferFrom(
             IERC20(payToken),
             _msgSender(),
@@ -585,7 +612,6 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
             fromCanonical(payAmount, IERC20Metadata(payToken).decimals())
         );
 
-        _poolState.balance += receiveAmount;
         _mint(_msgSender(), receiveAmount);
 
         return receiveAmount;
