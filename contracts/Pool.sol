@@ -302,7 +302,7 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
                 } else {
                     balance_ = _assetState[payToken].balance;
                 }
-                if (amounts[i] * 3 > balance_ * 4) revert TooLarge(amounts[i]);
+                if (amounts[i] * 3 > balance_) revert TooLarge(amounts[i]);
             }
         }
 
@@ -323,29 +323,14 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
         uint256 feeAmount;
         {
             // Contribution from assets only
-            uint256 delta;
             for (uint256 i; i < payTokens.length; i++) {
                 address token_ = payTokens[i];
                 uint256 amount_ = amounts[i];
                 if (token_ != address(this)) {
-                    AssetState storage asset_ = _assetState[token_];
-                    // Compute using pre-trade scale to determine change in scale
-                    delta = asset_.scale.fullMulDiv(
+                    AssetState storage assetIn = _assetState[token_];
+                    scaledValueIn += assetIn.scale.fullMulDiv(
                         amount_,
-                        asset_.balance + amount_
-                    );
-                    asset_.scale -= delta;
-                    asset_.meanScale = asset_.meanScale.mulWadUp(
-                        uint256(
-                            int256(asset_.scale.divWadUp(asset_.meanScale))
-                                .powWad(_tau)
-                        )
-                    );
-                    _poolState.scale -= delta;
-                    // Compute using post-trade
-                    scaledValueIn += asset_.scale.fullMulDiv(
-                        amount_,
-                        asset_.balance + amount_
+                        assetIn.balance + amount_
                     );
                 }
             }
@@ -474,7 +459,7 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
         ) revert InvalidSwap(payToken, receiveToken);
         AssetState storage assetIn = _assetState[payToken];
         AssetState storage assetOut = _assetState[receiveToken];
-        if (payAmount * 3 > assetIn.balance * 4) revert TooLarge(payAmount);
+        if (payAmount * 3 > assetIn.balance) revert TooLarge(payAmount);
 
         uint256 feeAmount;
         uint256 receiveAmount;
@@ -487,32 +472,7 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
                 )
             );
 
-            // Compute using pre-trade scale to determine change in scale
-            uint256 scaledValueIn = assetIn
-                .scale
-                .fullMulDiv(payAmount, assetIn.balance)
-                .fullMulDiv(
-                    assetIn.balance - assetIn.meanBalance,
-                    assetIn.balance
-                );
-            assetIn.scale -= scaledValueIn;
-            assetIn.meanScale = assetIn.meanScale.mulWadUp(
-                uint256(
-                    int256(assetIn.scale.divWadUp(assetIn.meanScale)).powWad(
-                        _tau
-                    )
-                )
-            );
-
-            _poolState.scale -= scaledValueIn;
-            _poolState.meanScale = _poolState.meanScale.mulWadUp(
-                uint256(
-                    int256(_poolState.scale.divWadUp(_poolState.meanScale))
-                        .powWad(_tau)
-                )
-            );
-            // Re-compute using post-trade scale
-            scaledValueIn = assetIn.scale.fullMulDiv(
+            uint256 scaledValueIn = assetIn.scale.fullMulDiv(
                 payAmount,
                 assetIn.balance
             );
@@ -577,7 +537,7 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
         if (_isInitialized == 0) revert NotInitialized();
         if (payToken == address(this) || _assetState[payToken].scale == 0)
             revert InvalidStake(payToken);
-        if (payAmount * 3 > _assetState[payToken].balance * 4)
+        if (payAmount * 3 > _assetState[payToken].balance)
             revert TooLarge(payAmount);
         AssetState storage assetIn = _assetState[payToken];
 
@@ -590,29 +550,7 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
             )
         );
 
-        // Compute using pre-trade scale to determine change in scale
-        uint256 scaledValueIn = assetIn
-            .scale
-            .fullMulDiv(payAmount, assetIn.balance)
-            .fullMulDiv(assetIn.balance - assetIn.meanBalance, assetIn.balance);
-        assetIn.scale -= scaledValueIn;
-        assetIn.meanScale = assetIn.meanScale.mulWadUp(
-            uint256(
-                int256(assetIn.scale.divWadUp(assetIn.meanScale)).powWad(_tau)
-            )
-        );
-
-        _poolState.scale -= scaledValueIn;
-        _poolState.meanScale = _poolState.meanScale.mulWadUp(
-            uint256(
-                int256(_poolState.scale.divWadUp(_poolState.meanScale)).powWad(
-                    _tau
-                )
-            )
-        );
-
-        // Re-compute using post-trade scale
-        scaledValueIn = assetIn.scale.fullMulDiv(payAmount, assetIn.balance);
+        uint256 scaledValueIn = assetIn.scale.fullMulDiv(payAmount, assetIn.balance);
         uint256 receiveAmount = _poolState.balance.fullMulDiv(
             scaledValueIn,
             _poolState.scale - scaledValueIn
@@ -647,7 +585,7 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
             receiveToken == address(this) ||
             _assetState[receiveToken].scale == 0
         ) revert InvalidUnstake(receiveToken);
-        if (payAmount * 3 > _poolState.balance * 4) revert TooLarge(payAmount);
+        if (payAmount * 3 > _poolState.balance) revert TooLarge(payAmount);
         AssetState storage assetOut = _assetState[receiveToken];
 
         uint256 feeAmount = payAmount.mulWadUp(assetOut.fee);

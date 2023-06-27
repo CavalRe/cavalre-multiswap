@@ -44,7 +44,7 @@ contract StakeTest is TestRoot {
 
         payToken.mint(amount);
         payToken.approve(address(pool), amount);
-        if (amount * 3 > balance * 4) {
+        if (amount * 3 > balance) {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amount)
             );

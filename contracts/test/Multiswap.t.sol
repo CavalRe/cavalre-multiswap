@@ -31,7 +31,7 @@ contract MultiswapTest is TestRoot {
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 1e18;
         uint256[] memory receiveAmounts = new uint256[](1);
-        if (amount * 3 > pool.asset(deposits[0]).state.balance * 4) {
+        if (amount * 3 > pool.asset(deposits[0]).state.balance) {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amount)
             );
@@ -95,7 +95,7 @@ contract MultiswapTest is TestRoot {
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 1e18;
         uint256[] memory receiveAmounts = new uint256[](1);
-        if (amount * 3 > pool.asset(deposits[0]).state.balance * 4) {
+        if (amount * 3 > pool.asset(deposits[0]).state.balance) {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amount)
             );
@@ -414,12 +414,12 @@ contract MultiswapTest is TestRoot {
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 1e18;
         uint256[] memory receiveAmounts = new uint256[](1);
-        if (amountA * 3 > pool.asset(deposits[0]).state.balance * 4) {
+        if (amountA * 3 > pool.asset(deposits[0]).state.balance) {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amountA)
             );
             pool.multiswap(deposits, amounts, withdrawals, allocations);
-        } else if (amountB * 3 > pool.asset(deposits[1]).state.balance * 4) {
+        } else if (amountB * 3 > pool.asset(deposits[1]).state.balance) {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amountB)
             );
@@ -470,7 +470,7 @@ contract MultiswapTest is TestRoot {
 
         pool.approve(address(pool), pool.balanceOf(alice));
 
-        if (amounts[0] * 3 > pool.balance() * 4) {
+        if (amounts[0] * 3 > pool.balance()) {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amounts[0])
             );
@@ -535,7 +535,7 @@ contract MultiswapTest is TestRoot {
         );
 
         // perform swap
-        if (amount * 3 > pool.asset(address(depositToken)).state.balance * 4) {
+        if (amount * 3 > pool.asset(address(depositToken)).state.balance) {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amount)
             );
@@ -610,12 +610,12 @@ contract MultiswapTest is TestRoot {
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 1e18;
         uint256[] memory receiveAmounts = new uint256[](1);
-        if (amountA * 3 > pool.asset(deposits[0]).state.balance * 4) {
+        if (amountA * 3 > pool.asset(deposits[0]).state.balance) {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amountA)
             );
             pool.multiswap(deposits, amounts, withdrawals, allocations);
-        } else if (amountB * 3 > pool.asset(deposits[1]).state.balance * 4) {
+        } else if (amountB * 3 > pool.asset(deposits[1]).state.balance) {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amountB)
             );

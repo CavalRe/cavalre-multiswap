@@ -54,7 +54,7 @@ contract SwapTest is TestRoot {
         depositToken.mint(amount);
         depositToken.approve(address(pool), amount);
 
-        if (amount * 3 > balance * 4) {
+        if (amount * 3 > balance) {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amount)
             );

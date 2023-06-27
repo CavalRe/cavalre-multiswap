@@ -49,7 +49,7 @@ contract UnstakeTest is TestRoot {
         Asset memory receiveAsset = pool.asset(address(receiveToken));
 
         uint256 assetBalance = receiveAsset.state.balance;
-        vm.assume((amount > 1e17) && (3 * amount < 4 * assetBalance));
+        vm.assume((amount > 1e17) && (3 * amount < assetBalance));
 
         receiveToken.mint(amount);
         receiveToken.approve(address(pool), amount);
@@ -79,7 +79,7 @@ contract UnstakeTest is TestRoot {
 
         uint256 poolBalance = pool.balance();
         pool.approve(address(pool), amountOut);
-        if (amountOut * 3 > poolBalance * 4) {
+        if (amountOut * 3 > poolBalance) {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amountOut)
             );
