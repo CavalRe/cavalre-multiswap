@@ -28,6 +28,7 @@ contract InfoTest is TestRoot {
             name,
             symbol,
             decimals,
+            ,
             balance,
             scale,
             meanBalance,

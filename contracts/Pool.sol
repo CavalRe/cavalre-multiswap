@@ -6,6 +6,13 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+struct PoolState {
+    uint256 balance;
+    uint256 scale;
+    uint256 meanBalance;
+    uint256 meanScale;
+}
+
 struct AssetMeta {
     IERC20 token;
     string name;
@@ -26,11 +33,9 @@ struct Asset {
     AssetState state;
 }
 
-struct PoolState {
-    uint256 balance;
-    uint256 scale;
-    uint256 meanBalance;
-    uint256 meanScale;
+struct UserState {
+    bool isAllowed;
+    uint256 discount;
 }
 
 contract Pool is LPToken, ReentrancyGuard, Ownable {
@@ -49,12 +54,19 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
         _;
     }
 
+    modifier onlyAllowed() {
+        if (!_userState[_msgSender()].isAllowed) revert NotAllowed();
+        _;
+    }
+
     PoolState private _poolState;
 
     mapping(address => AssetMeta) private _assetMeta;
     mapping(address => AssetState) private _assetState;
     address[] private _addresses;
     mapping(address => uint256) private _index;
+
+    mapping(address => UserState) private _userState;
 
     enum Type {
         Swap,
@@ -63,6 +75,8 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
     }
 
     error NotInitialized();
+
+    error NotAllowed();
 
     error LengthMismatch(uint256 expected, uint256 actual);
 
@@ -75,8 +89,6 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
     error InvalidStake(address payToken);
 
     error InvalidUnstake(address receiveToken);
-
-    error TooSmall(uint256 size);
 
     error TooLarge(uint256 size);
 
@@ -165,6 +177,7 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
             string memory,
             string memory,
             uint8,
+            int256,
             uint256,
             uint256,
             uint256,
@@ -178,6 +191,7 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
             poolMetadata.name(),
             poolMetadata.symbol(),
             poolMetadata.decimals(),
+            _tau,
             _poolState.balance,
             _poolState.scale,
             _poolState.meanBalance,
@@ -213,6 +227,12 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
 
     function scale() public view returns (uint256) {
         return _poolState.scale;
+    }
+
+    function meanPrice(address token) public view returns (uint256) {
+        AssetState memory asset_ = _assetState[token];
+        uint256 weight_ = asset_.meanScale.divWadUp(_poolState.meanScale);
+        return weight_.fullMulDiv(asset_.meanBalance, _poolState.meanBalance);
     }
 
     function multiswap(
@@ -550,7 +570,10 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
             )
         );
 
-        uint256 scaledValueIn = assetIn.scale.fullMulDiv(payAmount, assetIn.balance);
+        uint256 scaledValueIn = assetIn.scale.fullMulDiv(
+            payAmount,
+            assetIn.balance
+        );
         uint256 receiveAmount = _poolState.balance.fullMulDiv(
             scaledValueIn,
             _poolState.scale - scaledValueIn

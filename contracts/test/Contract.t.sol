@@ -9,7 +9,6 @@ import "@cavalre/test/Token.t.sol";
 import "@cavalre/Pool.sol";
 
 contract ContractTest is Context, Test {
-
     uint256 private constant NTOKENS = 2;
 
     Token[] private tokens;
@@ -57,22 +56,17 @@ contract ContractTest is Context, Test {
         string memory symbol;
 
         for (uint256 i = 0; i < NTOKENS; i++) {
-            amount = (i+1)*1e27;
-            balance = 100*amount;
+            amount = (i + 1) * 1e27;
+            balance = 100 * amount;
             scale = balance;
             name = string(abi.encodePacked("Token ", Strings.toString(i + 1)));
             symbol = string(abi.encodePacked("T", Strings.toString(i + 1)));
-            Token token = new Token(name,symbol);
+            Token token = new Token(name, symbol);
             token.mint(balance);
             token.approve(address(pool), balance);
             tokens[i] = token;
- 
-            pool.addAsset(
-                address(token),
-                balance,
-                fee,
-                scale
-            );
+
+            pool.addAsset(address(token), balance, fee, scale);
 
             addresses[i] = address(token);
             amounts[i] = amount;
@@ -81,12 +75,12 @@ contract ContractTest is Context, Test {
         }
 
         pool.initialize();
-       
+
         pay1Asset = addresses[0];
         receive1Asset = addresses[1];
         poolAddress = address(pool);
         pay1Amount = amounts[0];
-        
+
         pay1Assets[0] = addresses[0];
         assetIndices1[0] = 1;
         assetIndices2[0] = 2;
@@ -98,7 +92,7 @@ contract ContractTest is Context, Test {
         allocations1[0] = 1e18;
 
         tokens[0].mint(pay1Amounts[0]);
-        tokens[0].approve(address(pool),pay1Amounts[0]);
+        tokens[0].approve(address(pool), pay1Amounts[0]);
     }
 
     function showAsset(Asset memory _asset) internal {
@@ -123,8 +117,11 @@ contract ContractTest is Context, Test {
             poolName,
             poolSymbol,
             poolDecimals,
+            ,
             poolBalance,
-            poolScale, ,
+            poolScale,
+            ,
+
         ) = _pool.info();
         // console.log("Name:",poolName);
         // console.log("Symbol:",poolSymbol);
@@ -184,7 +181,12 @@ contract ContractTest is Context, Test {
         emit log("");
         showPool(pool);
         emit log("");
-        amountOut = pool.multiswap(pay1Assets, pay1Amounts, receive1Assets, allocations1)[0];
+        amountOut = pool.multiswap(
+            pay1Assets,
+            pay1Amounts,
+            receive1Assets,
+            allocations1
+        )[0];
         emit log("State after multiswap");
         emit log("");
         emit log_named_uint("amountIn", pay1Amounts[0]);
@@ -209,15 +211,32 @@ contract ContractTest is Context, Test {
         vm.expectRevert("ERC20: insufficient allowance");
         pool.swap(pay1Asset, receive1Asset, pay1Amount);
 
-        vm.expectRevert(abi.encodeWithSelector(Pool.InvalidSwap.selector,poolAddress,receive1Asset));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Pool.InvalidSwap.selector,
+                poolAddress,
+                receive1Asset
+            )
+        );
         pool.swap(poolAddress, receive1Asset, pay1Amount);
 
-        vm.expectRevert(abi.encodeWithSelector(Pool.InvalidSwap.selector,pay1Asset, poolAddress));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Pool.InvalidSwap.selector,
+                pay1Asset,
+                poolAddress
+            )
+        );
         pool.swap(pay1Asset, poolAddress, pay1Amount);
     }
 
     function test2_2_Staking() public {
-        amountOut = pool.multiswap(pay1Assets, pay1Amounts, receive1Pools, allocations1)[0];
+        amountOut = pool.multiswap(
+            pay1Assets,
+            pay1Amounts,
+            receive1Pools,
+            allocations1
+        )[0];
         emit log("Multiswap:");
         emit log("");
         emit log_named_uint("amountIn", pay1Amounts[0]);
@@ -232,12 +251,19 @@ contract ContractTest is Context, Test {
         emit log_named_uint("amountIn", amounts[0]);
         emit log_named_uint("amountOut", amountOut);
 
-        vm.expectRevert(abi.encodeWithSelector(Pool.InvalidStake.selector,poolAddress));
+        vm.expectRevert(
+            abi.encodeWithSelector(Pool.InvalidStake.selector, poolAddress)
+        );
         pool.stake(poolAddress, amounts[0]);
     }
 
     function test2_3_Unstaking() public {
-        amountOut = pool.multiswap(pay1Pools, pay1Amounts, receive1Assets, allocations1)[0];
+        amountOut = pool.multiswap(
+            pay1Pools,
+            pay1Amounts,
+            receive1Assets,
+            allocations1
+        )[0];
         emit log("Multiswap:");
         emit log("");
         emit log_named_uint("amountIn", pay1Amounts[0]);
@@ -251,7 +277,9 @@ contract ContractTest is Context, Test {
         emit log_named_uint("amountIn", pay1Amount);
         emit log_named_uint("amountOut", amountOut);
 
-        vm.expectRevert(abi.encodeWithSelector(Pool.InvalidUnstake.selector,poolAddress));
+        vm.expectRevert(
+            abi.encodeWithSelector(Pool.InvalidUnstake.selector, poolAddress)
+        );
         pool.unstake(poolAddress, amounts[0]);
     }
 }

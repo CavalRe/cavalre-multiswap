@@ -347,7 +347,7 @@ contract MultiswapTest is TestRoot {
 
     function checkScale() internal {
         uint256 scale;
-        (, , , , , scale, , ) = pool.info();
+        (, , , , , , scale, , ) = pool.info();
         Asset[] memory initialAssets = pool.assets();
         uint256 scaleSum = 0;
 
