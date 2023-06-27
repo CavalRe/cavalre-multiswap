@@ -13,14 +13,20 @@ struct PoolState {
     uint256 meanScale;
 }
 
-struct AssetMeta {
-    IERC20 token;
+struct PoolInfo {
+    address token;
     string name;
     string symbol;
     uint8 decimals;
+    int256 tau;
+    uint256 balance;
+    uint256 scale;
+    uint256 meanBalance;
+    uint256 meanScale;
 }
 
 struct AssetState {
+    address token;
     uint256 fee;
     uint256 balance;
     uint256 scale;
@@ -28,9 +34,16 @@ struct AssetState {
     uint256 meanScale;
 }
 
-struct Asset {
-    AssetMeta meta;
-    AssetState state;
+struct AssetInfo {
+    address token;
+    string name;
+    string symbol;
+    uint8 decimals;
+    uint256 fee;
+    uint256 balance;
+    uint256 scale;
+    uint256 meanBalance;
+    uint256 meanScale;
 }
 
 struct UserState {
@@ -61,7 +74,6 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
 
     PoolState private _poolState;
 
-    mapping(address => AssetMeta) private _assetMeta;
     mapping(address => AssetState) private _assetState;
     address[] private _addresses;
     mapping(address => uint256) private _index;
@@ -117,7 +129,7 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
         uint256 fee_,
         uint256 assetScale_
     ) public nonReentrant onlyOwner {
-        if (_assetMeta[payToken_].token == IERC20(payToken_))
+        if (_assetState[payToken_].token == payToken_)
             revert DuplicateToken(payToken_);
 
         _poolState.balance += assetScale_;
@@ -136,13 +148,8 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
 
         _index[payToken_] = _addresses.length;
         _addresses.push(payToken_);
-        _assetMeta[payToken_] = AssetMeta(
-            IERC20(payToken_),
-            IERC20Metadata(payToken_).name(),
-            IERC20Metadata(payToken_).symbol(),
-            decimals_
-        );
         _assetState[payToken_] = AssetState(
+            payToken_,
             fee_,
             balance_,
             assetScale_,
@@ -152,12 +159,13 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
     }
 
     function uninitialize(address token) public nonReentrant onlyOwner {
-        AssetMeta memory m = _assetMeta[token];
         AssetState memory s = _assetState[token];
+        IERC20Metadata m = IERC20Metadata(token);
+        if (s.token != token) revert AssetNotFound(token);
         SafeERC20.safeTransfer(
-            m.token,
+            IERC20(token),
             owner(),
-            fromCanonical(s.balance, m.decimals)
+            fromCanonical(s.balance, m.decimals())
         );
     }
 
@@ -172,21 +180,11 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
     function info()
         public
         view
-        returns (
-            address,
-            string memory,
-            string memory,
-            uint8,
-            int256,
-            uint256,
-            uint256,
-            uint256,
-            uint256
-        )
+        returns (PoolInfo memory)
     {
         address poolAddress = address(this);
         IERC20Metadata poolMetadata = IERC20Metadata(poolAddress);
-        return (
+        return PoolInfo(
             poolAddress,
             poolMetadata.name(),
             poolMetadata.symbol(),
@@ -199,22 +197,30 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
         );
     }
 
-    function assets() public view returns (Asset[] memory) {
-        Asset[] memory assets_ = new Asset[](_addresses.length);
+    function assets() public view returns (AssetInfo[] memory) {
+        AssetInfo[] memory assets_ = new AssetInfo[](_addresses.length);
+
         for (uint256 i; i < _addresses.length; i++) {
-            assets_[i] = Asset(
-                _assetMeta[_addresses[i]],
-                _assetState[_addresses[i]]
-            );
+            assets_[i] = asset(_addresses[i]);
         }
+
         return assets_;
     }
 
-    function asset(address token) public view returns (Asset memory) {
-        AssetMeta memory meta = _assetMeta[token];
-        if (address(meta.token) != token) revert AssetNotFound(token);
-        AssetState memory state = _assetState[token];
-        return Asset(meta, state);
+    function asset(address token) public view returns (AssetInfo memory) {
+        AssetState memory a = _assetState[token];
+        if (a.token != token) revert AssetNotFound(token);
+        return AssetInfo(
+            token,
+            IERC20Metadata(token).name(),
+            IERC20Metadata(token).symbol(),
+            IERC20Metadata(token).decimals(),
+            a.fee,
+            a.balance,
+            a.scale,
+            a.meanBalance,
+            a.meanScale
+        );
     }
 
     function index(address token) public view returns (uint256) {
@@ -231,8 +237,8 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
 
     function meanPrice(address token) public view returns (uint256) {
         AssetState memory asset_ = _assetState[token];
-        uint256 weight_ = asset_.meanScale.divWadUp(_poolState.meanScale);
-        return weight_.fullMulDiv(asset_.meanBalance, _poolState.meanBalance);
+        uint256 meanWeight = asset_.meanScale.divWadUp(_poolState.meanScale);
+        return meanWeight.fullMulDiv(asset_.meanBalance, _poolState.meanBalance);
     }
 
     function multiswap(
@@ -275,7 +281,7 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
                     t = Type.Unstake;
                     continue;
                 }
-                if (address(_assetMeta[token].token) != token)
+                if (_assetState[token].token != token)
                     revert AssetNotFound(token);
                 if (check_[_index[token]]) revert DuplicateToken(token);
                 check_[_index[token]] = true;
@@ -297,7 +303,7 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
                     t = Type.Stake;
                     continue;
                 }
-                if (address(_assetMeta[token].token) != token)
+                if (_assetState[token].token != token)
                     revert AssetNotFound(token);
                 if (check_[_index[token]]) revert DuplicateToken(token);
                 check_[_index[token]] = true;

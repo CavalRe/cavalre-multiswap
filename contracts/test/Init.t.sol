@@ -44,12 +44,12 @@ contract InitTest is Test {
         vm.expectRevert("Ownable: caller is not the owner");
         pool.initialize();
 
-        Asset[] memory assets = pool.assets();
+        AssetInfo[] memory assets = pool.assets();
         for (uint256 i = 0; i < assets.length; i++) {
-            address token = address(assets[i].meta.token);
+            address token = address(assets[i].token);
             assertEq(
                 token,
-                address(assets[pool.index(token)].meta.token)
+                address(assets[pool.index(token)].token)
             );
         }
 

@@ -8,37 +8,18 @@ import "@cavalre/Pool.sol";
 contract InfoTest is TestRoot {
     /// @dev check number of tokens return is equal to the initial number of tokens
     function testAssets() public {
-        Asset[] memory assets = pool.assets();
+        AssetInfo[] memory assets = pool.assets();
         assertEq(assets.length, NTOKENS);
     }
 
     /// @dev check that `pool` returns expected values
     function testPool() public {
-        address poolAddress;
-        string memory name;
-        string memory symbol;
-        uint8 decimals;
-        uint256 balance;
-        uint256 scale;
-        uint256 meanBalance;
-        uint256 meanScale;
-
-        (
-            poolAddress,
-            name,
-            symbol,
-            decimals,
-            ,
-            balance,
-            scale,
-            meanBalance,
-            meanScale
-        ) = pool.info();
-        assertEq(poolAddress, address(pool));
-        assertEq(name, "Pool");
-        assertEq(symbol, "P");
-        assertEq(balance, meanBalance);
-        assertEq(scale, meanScale);
+        PoolInfo memory pool_ = pool.info();
+        assertEq(pool_.token, address(pool));
+        assertEq(pool_.name, "Pool");
+        assertEq(pool_.symbol, "P");
+        assertEq(pool_.balance, pool_.meanBalance);
+        assertEq(pool_.scale, pool_.meanScale);
     }
 
     /// @dev check that `balance` returns some balance
@@ -49,8 +30,8 @@ contract InfoTest is TestRoot {
 
     /// @dev smoke test for `asset`
     function testAsset() public {
-        Asset memory asset = pool.asset(address(tokens[0]));
-        assertGt(asset.state.balance, 0);
+        AssetInfo memory asset = pool.asset(address(tokens[0]));
+        assertGt(asset.balance, 0);
     }
 
     /// @dev `asset` should revert with `AssetNotFound` if the address is not a managed asset

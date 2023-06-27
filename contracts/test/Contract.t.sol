@@ -95,40 +95,26 @@ contract ContractTest is Context, Test {
         tokens[0].approve(address(pool), pay1Amounts[0]);
     }
 
-    function showAsset(Asset memory _asset) internal {
-        emit log_named_string("name", _asset.meta.name);
+    function showAsset(AssetInfo memory _asset) internal {
+        emit log_named_string("name", _asset.name);
         // emit log_named_string("symbol", _asset.symbol);
         // emit log_named_uint("balanceOf", _asset.token.balanceOf(poolAddress));
-        emit log_named_uint("balance", _asset.state.balance);
-        emit log_named_uint("scale", _asset.state.scale);
+        emit log_named_uint("balance", _asset.balance);
+        emit log_named_uint("scale", _asset.scale);
         console.log("-------");
     }
 
     function showPool(Pool _pool) internal {
-        string memory poolName;
-        string memory poolSymbol;
-        uint8 poolDecimals;
-        uint256 poolBalance;
-        uint256 poolScale;
+        PoolInfo memory pool_;
         console.log("Pool Info");
         console.log("=========");
-        (
-            poolAddress,
-            poolName,
-            poolSymbol,
-            poolDecimals,
-            ,
-            poolBalance,
-            poolScale,
-            ,
-
-        ) = _pool.info();
+        pool_ = _pool.info();
         // console.log("Name:",poolName);
         // console.log("Symbol:",poolSymbol);
         // emit log_named_uint("Decimals", poolDecimals);
         // emit log_named_uint("totalSupply", pool.totalSupply());
-        emit log_named_uint("balance", poolBalance);
-        emit log_named_uint("scale", poolScale);
+        emit log_named_uint("balance", pool_.balance);
+        emit log_named_uint("scale", pool_.scale);
         console.log("");
         console.log("Assets:");
         console.log("-------");

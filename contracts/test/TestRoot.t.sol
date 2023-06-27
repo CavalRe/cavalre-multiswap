@@ -47,21 +47,21 @@ contract TestRoot is Test {
 
     function weight(address token) public view returns (uint256) {
         if (token == address(pool)) return ONE;
-        Asset memory asset_ = pool.asset(token);
-        return asset_.state.scale.divWadUp(pool.scale());
+        AssetInfo memory asset_ = pool.asset(token);
+        return asset_.scale.divWadUp(pool.scale());
     }
 
     function price(address token) public view returns (uint256) {
         if (token == address(pool)) return ONE;
-        Asset memory asset_ = pool.asset(token);
+        AssetInfo memory asset_ = pool.asset(token);
         uint256 weight_ = weight(token);
-        return weight_.fullMulDiv(pool.balance(), asset_.state.balance);
+        return weight_.fullMulDiv(pool.balance(), asset_.balance);
     }
 
     function fee(address token) public view returns (uint256) {
         if (token == address(pool)) return 0;
-        Asset memory asset_ = pool.asset(token);
-        return asset_.state.fee;
+        AssetInfo memory asset_ = pool.asset(token);
+        return asset_.fee;
     }
 
     function checkSF(

@@ -46,9 +46,9 @@ contract UnstakeTest is TestRoot {
 
         receiveIndex = receiveIndex % tokens.length;
         Token receiveToken = tokens[receiveIndex];
-        Asset memory receiveAsset = pool.asset(address(receiveToken));
+        AssetInfo memory receiveAsset = pool.asset(address(receiveToken));
 
-        uint256 assetBalance = receiveAsset.state.balance;
+        uint256 assetBalance = receiveAsset.balance;
         vm.assume((amount > 1e17) && (3 * amount < assetBalance));
 
         receiveToken.mint(amount);

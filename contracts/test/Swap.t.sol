@@ -42,8 +42,8 @@ contract SwapTest is TestRoot {
         Token depositToken = tokens[depositIndex];
         Token withdrawToken = tokens[withdrawalIndex];
 
-        Asset memory depositAsset = pool.asset(address(depositToken));
-        uint256 balance = depositAsset.state.balance;
+        AssetInfo memory depositAsset = pool.asset(address(depositToken));
+        uint256 balance = depositAsset.balance;
 
         amount = (amount % ((8 * balance) / 3));
         vm.assume(amount > 1e17);

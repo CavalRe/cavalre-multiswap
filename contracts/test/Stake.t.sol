@@ -30,9 +30,9 @@ contract StakeTest is TestRoot {
 
         payIndex = payIndex % tokens.length;
         Token payToken = tokens[payIndex];
-        Asset memory payAsset = pool.asset(address(payToken));
+        AssetInfo memory payAsset = pool.asset(address(payToken));
 
-        uint256 balance = payAsset.state.balance;
+        uint256 balance = payAsset.balance;
         amount = (amount % ((8 * balance) / 3));
         vm.assume(amount > 1e17);
 
