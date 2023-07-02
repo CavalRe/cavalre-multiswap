@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "solady/utils/FixedPointMathLib.sol";
+import {ERC20, IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {FixedPointMathLib} from "solady/utils/FixedPointMathLib.sol";
 
 struct UserState {
     address user;
@@ -60,7 +60,7 @@ contract LPToken is ERC20, ReentrancyGuard, Ownable {
         UserState memory state = _userState[user];
         return state.isAllowed;
     }
-    
+
     function totalSupply() public view override returns (uint256) {
         return super.totalSupply().mulWadUp(_ratio);
     }
@@ -72,7 +72,7 @@ contract LPToken is ERC20, ReentrancyGuard, Ownable {
     function transfer(
         address to,
         uint256 amount
-    ) public onlyAllowed override returns (bool) {
+    ) public override onlyAllowed returns (bool) {
         if (!isAllowed(to)) revert UserNotAllowed(to);
         amount = amount.divWadUp(_ratio);
         return super.transfer(to, amount);
@@ -133,12 +133,12 @@ contract LPToken is ERC20, ReentrancyGuard, Ownable {
         super._transfer(from, to, amount);
     }
 
-    function _mint(address to, uint256 amount) internal onlyAllowed override {
+    function _mint(address to, uint256 amount) internal override onlyAllowed {
         amount = amount.divWadUp(_ratio);
         super._mint(to, amount);
     }
 
-    function _burn(address from, uint256 amount) internal onlyAllowed override {
+    function _burn(address from, uint256 amount) internal override onlyAllowed {
         amount = amount.divWadUp(_ratio);
         super._burn(from, amount);
     }

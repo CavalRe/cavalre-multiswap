@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import "@cavalre/LPToken.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {LPToken, FixedPointMathLib, IERC20, IERC20Metadata} from "@cavalre/LPToken.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 struct PoolState {
     address token;
@@ -212,6 +212,7 @@ contract Pool is LPToken {
         public
         nonReentrant
         onlyInitialized
+        onlyAllowed
         returns (uint256[] memory receiveAmounts)
     {
         Type t = Type.Swap;
@@ -383,13 +384,6 @@ contract Pool is LPToken {
             uint256 amount = amounts[i];
             if (payToken == address(this)) {
                 _poolState.balance -= amount;
-                _poolState.meanBalance = _poolState.meanBalance.mulWadUp(
-                    uint256(
-                        int256(
-                            _poolState.balance.divWadUp(_poolState.meanBalance)
-                        ).powWad(_tau)
-                    )
-                );
                 _burn(_msgSender(), amount);
             } else {
                 AssetState storage assetIn = _assetState[payToken];
@@ -414,12 +408,20 @@ contract Pool is LPToken {
         for (uint256 i; i < receiveTokens.length; i++) {
             address receiveToken = receiveTokens[i];
             uint256 amountOut = receiveAmounts[i];
+            AssetState storage assetOut;
             // Update _balance and asset balances.
             if (receiveToken == address(this)) {
                 _poolState.balance += amountOut;
                 _mint(_msgSender(), amountOut);
             } else {
-                _assetState[receiveToken].balance -= amountOut;
+                assetOut = _assetState[receiveToken];
+                assetOut.balance -= amountOut;
+                assetOut.meanBalance = assetOut.meanBalance.mulWadUp(
+                    uint256(
+                        int256(assetOut.balance.divWadUp(assetOut.meanBalance))
+                            .powWad(_tau)
+                    )
+                );
                 SafeERC20.safeTransfer(
                     IERC20(receiveToken),
                     _msgSender(),
@@ -430,14 +432,20 @@ contract Pool is LPToken {
                 );
             }
         }
+
+        _poolState.meanBalance = _poolState.meanBalance.mulWadUp(
+            uint256(
+                int256(_poolState.balance.divWadUp(_poolState.meanBalance))
+                    .powWad(_tau)
+            )
+        );
     }
 
     function swap(
         address payToken,
         address receiveToken,
         uint256 payAmount
-    ) public nonReentrant onlyAllowed returns (uint256) {
-        if (_isInitialized == 0) revert NotInitialized();
+    ) public nonReentrant onlyInitialized onlyAllowed returns (uint256) {
         if (
             payToken == address(this) ||
             receiveToken == address(this) ||
@@ -521,8 +529,7 @@ contract Pool is LPToken {
     function stake(
         address payToken,
         uint256 payAmount
-    ) public nonReentrant returns (uint256) {
-        if (_isInitialized == 0) revert NotInitialized();
+    ) public nonReentrant onlyInitialized onlyAllowed returns (uint256) {
         if (payToken == address(this) || _assetState[payToken].scale == 0)
             revert InvalidStake(payToken);
         if (payAmount * 3 > _assetState[payToken].balance)
@@ -570,8 +577,7 @@ contract Pool is LPToken {
     function unstake(
         address receiveToken,
         uint256 payAmount
-    ) public nonReentrant returns (uint256) {
-        if (_isInitialized == 0) revert NotInitialized();
+    ) public nonReentrant onlyInitialized onlyAllowed returns (uint256) {
         if (
             receiveToken == address(this) ||
             _assetState[receiveToken].scale == 0
@@ -595,10 +601,24 @@ contract Pool is LPToken {
         );
 
         _poolState.balance -= delta;
+        _poolState.meanBalance = _poolState.meanBalance.mulWadUp(
+            uint256(
+                int256(_poolState.balance.divWadUp(_poolState.meanBalance))
+                    .powWad(_tau)
+            )
+        );
         _burn(_msgSender(), payAmount);
+
         _distributeFee(feeAmount);
 
         assetOut.balance -= receiveAmount;
+        assetOut.meanBalance = assetOut.meanBalance.mulWadUp(
+            uint256(
+                int256(assetOut.balance.divWadUp(assetOut.meanBalance)).powWad(
+                    _tau
+                )
+            )
+        );
         SafeERC20.safeTransfer(
             IERC20(receiveToken),
             _msgSender(),
@@ -609,5 +629,57 @@ contract Pool is LPToken {
         );
 
         return receiveAmount;
+    }
+
+    function addLiquidity(
+        address token,
+        uint256 amount
+    ) public nonReentrant onlyAllowed returns (uint256) {
+        AssetState storage assetIn;
+        uint256 g;
+        uint256 amountOut;
+        if (token == address(this)) {
+            g = (_poolState.balance + amount).divWadUp(_poolState.balance);
+            amountOut = amount;
+        } else {
+            assetIn = _assetState[token];
+            if (assetIn.token != token) revert AssetNotFound(token);
+            g = (assetIn.balance + amount).divWadUp(assetIn.balance);
+            amountOut = _poolState.balance.mulWadUp(g) - _poolState.balance;
+        }
+        for (uint256 i; i < _assetAddress.length; i++) {
+            assetIn = _assetState[_assetAddress[i]];
+            uint256 amountIn;
+            if (assetIn.token == token) {
+                amountIn = amount;
+            } else {
+                amountIn = assetIn.balance.mulWadUp(g) - assetIn.balance;
+            }
+            assetIn.balance += amount;
+            assetIn.meanBalance = assetIn.meanBalance.mulWadUp(
+                uint256(
+                    int256(assetIn.balance.divWadUp(assetIn.meanBalance))
+                        .powWad(_tau)
+                )
+            );
+
+            SafeERC20.safeTransferFrom(
+                IERC20(assetIn.token),
+                _msgSender(),
+                address(this),
+                fromCanonical(amount, IERC20Metadata(assetIn.token).decimals())
+            );
+        }
+
+        _poolState.balance += amountOut;
+        _poolState.meanBalance = _poolState.meanBalance.mulWadUp(
+            uint256(
+                int256(_poolState.balance.divWadUp(_poolState.meanBalance))
+                    .powWad(_tau)
+            )
+        );
+        _mint(_msgSender(), amountOut);
+
+        return amountOut;
     }
 }
