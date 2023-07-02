@@ -9,38 +9,46 @@ contract StakeTest is TestRoot {
     using FixedPointMathLib for uint256;
 
     function testStakeSmoke() public {
-        address alice = address(1);
-        vm.startPrank(alice);
-
         Token payToken = tokens[0];
+        uint256 payBalance = payToken.balanceOf(alice);
+        uint256 poolBalance = pool.balanceOf(alice);
+
         uint256 amount = 1e27;
         payToken.mint(amount);
+
+        assertEq(
+            payToken.balanceOf(alice),
+            payBalance + amount,
+            "Pay token balance before stake."
+        );
+
         payToken.approve(address(pool), amount);
 
-        pool.stake(address(payToken), amount);
+        uint256 amountOut = pool.stake(address(payToken), amount);
 
-        vm.stopPrank();
+        assertEq(
+            payToken.balanceOf(alice),
+            payBalance,
+            "Pay token balance after stake."
+        );
+
+        assertEq(
+            pool.balanceOf(alice),
+            poolBalance + amountOut,
+            "Pool balance after stake."
+        );
     }
 
     function testStakeFuzz(uint256 amount, uint256 payIndex) public {
-        address alice = address(1);
-        vm.startPrank(alice);
-
         checkLP();
 
         payIndex = payIndex % tokens.length;
         Token payToken = tokens[payIndex];
-        AssetInfo memory payAsset = pool.asset(address(payToken));
+        AssetState memory payAsset = pool.asset(address(payToken));
 
         uint256 balance = payAsset.balance;
         amount = (amount % ((8 * balance) / 3));
         vm.assume(amount > 1e17);
-
-        assertEq(
-            pool.balanceOf(alice),
-            0,
-            "Alice's initial pool balance is not zero."
-        );
 
         payToken.mint(amount);
         payToken.approve(address(pool), amount);
@@ -66,8 +74,6 @@ contract StakeTest is TestRoot {
             );
             checkLP(amount, amountOut);
         }
-
-        vm.stopPrank();
     }
 
     // function testStakeOtherAccount(uint256 payIndex, uint256 amount) public {
@@ -109,44 +115,30 @@ contract StakeTest is TestRoot {
     }
 
     function testStakeZeroAmount(uint256 payIndex) public {
-        address alice = address(1);
-        vm.startPrank(alice);
-
         payIndex = payIndex % tokens.length;
         Token payToken = tokens[payIndex];
 
-        assertEq(pool.balanceOf(alice), 0);
-        pool.stake(address(payToken), 0);
-        assertEq(pool.balanceOf(alice), 0);
+        uint256 balance = pool.balanceOf(alice);
 
-        vm.stopPrank();
+        pool.stake(address(payToken), 0);
+        assertEq(pool.balanceOf(alice), balance);
     }
 
     function testStakeNoAllowance() public {
-        address alice = address(1);
-        vm.startPrank(alice);
-
         Token payToken = tokens[0];
         uint256 amount = 1e27;
         payToken.mint(amount);
 
         vm.expectRevert("ERC20: insufficient allowance");
         pool.stake(address(payToken), amount);
-
-        vm.stopPrank();
     }
 
     /*
      * Pathological
      */
     function testFailStakeBadToken(uint256 amount) public {
-        address alice = address(1);
-        vm.startPrank(alice);
-
         amount = (amount % 1e59) + 1e15;
 
         pool.stake(address(0), amount);
-
-        vm.stopPrank();
     }
 }

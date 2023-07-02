@@ -2,17 +2,65 @@
 pragma solidity 0.8.19;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "solady/utils/FixedPointMathLib.sol";
 
-contract LPToken is ERC20 {
+struct UserState {
+    address user;
+    bool isAllowed;
+    uint256 discount;
+}
+
+contract LPToken is ERC20, ReentrancyGuard, Ownable {
     using FixedPointMathLib for uint256;
 
+    mapping(address => UserState) private _userState;
+    mapping(address => uint256) private _userIndex;
+
     uint256 private _ratio; // virtual -> real
+
+    modifier onlyAllowed() {
+        address user = _msgSender();
+        UserState memory state = _userState[user];
+        if (!state.isAllowed) revert UserNotAllowed(user);
+        _;
+    }
+
+    error UserNotFound(address user);
+
+    error UserNotAllowed(address user);
+
+    error UserAlreadyAdded(address user);
 
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {
         _ratio = 1e18;
     }
 
+    function addUser(address user, uint256 discount) public onlyOwner {
+        UserState memory state = _userState[user];
+        if (state.user == user) revert UserAlreadyAdded(user);
+        _userState[user] = UserState(user, true, discount);
+        _userIndex[user] = totalSupply();
+    }
+
+    function allowUser(address user) public onlyOwner {
+        UserState memory state = _userState[user];
+        if (state.user != user) revert UserNotFound(user);
+        _userState[user].isAllowed = true;
+    }
+
+    function disallowUser(address user) public onlyOwner {
+        UserState memory state = _userState[user];
+        if (state.user != user) revert UserNotFound(user);
+        _userState[user].isAllowed = false;
+    }
+
+    function isAllowed(address user) public view returns (bool) {
+        UserState memory state = _userState[user];
+        return state.isAllowed;
+    }
+    
     function totalSupply() public view override returns (uint256) {
         return super.totalSupply().mulWadUp(_ratio);
     }
@@ -24,7 +72,8 @@ contract LPToken is ERC20 {
     function transfer(
         address to,
         uint256 amount
-    ) public override returns (bool) {
+    ) public onlyAllowed override returns (bool) {
+        if (!isAllowed(to)) revert UserNotAllowed(to);
         amount = amount.divWadUp(_ratio);
         return super.transfer(to, amount);
     }
@@ -49,6 +98,8 @@ contract LPToken is ERC20 {
         address to,
         uint256 amount
     ) public override returns (bool) {
+        if (!isAllowed(from)) revert UserNotAllowed(from);
+        if (!isAllowed(to)) revert UserNotAllowed(to);
         amount = amount.divWadUp(_ratio);
         return super.transferFrom(from, to, amount);
     }
@@ -70,7 +121,7 @@ contract LPToken is ERC20 {
     }
 
     function _distributeFee(uint256 amount) internal virtual {
-        _ratio = (totalSupply()+amount).divWadUp(super.totalSupply());
+        _ratio = (totalSupply() + amount).divWadUp(super.totalSupply());
     }
 
     function _transfer(
@@ -82,12 +133,12 @@ contract LPToken is ERC20 {
         super._transfer(from, to, amount);
     }
 
-    function _mint(address to, uint256 amount) internal override {
+    function _mint(address to, uint256 amount) internal onlyAllowed override {
         amount = amount.divWadUp(_ratio);
         super._mint(to, amount);
     }
 
-    function _burn(address from, uint256 amount) internal override {
+    function _burn(address from, uint256 amount) internal onlyAllowed override {
         amount = amount.divWadUp(_ratio);
         super._burn(from, amount);
     }
@@ -109,5 +160,4 @@ contract LPToken is ERC20 {
         amount = amount.divWadUp(_ratio);
         super._spendAllowance(owner, spender, amount);
     }
-
 }

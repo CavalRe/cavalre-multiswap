@@ -4,10 +4,11 @@ pragma solidity 0.8.19;
 import "@cavalre/Pool.sol";
 import "@cavalre/test/Token.t.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/utils/Context.sol";
 import "forge-std/Test.sol";
 import "solady/utils/FixedPointMathLib.sol";
 
-contract TestRoot is Test {
+contract TestRoot is Test, Context {
     using FixedPointMathLib for uint256;
     using Strings for uint256;
 
@@ -16,13 +17,18 @@ contract TestRoot is Test {
 
     Token[] internal tokens;
     Pool internal pool;
+    address alice = address(1);
+    address bob = address(2);
+    address carol = address(3);
 
     function setUp() public {
-        address bob = address(2);
-        vm.startPrank(bob);
+
+        vm.startPrank(alice);
 
         pool = new Pool("Pool", "P", int256(1e16));
         tokens = new Token[](NTOKENS);
+
+        pool.addUser(alice, 0);
 
         uint256 scale_ = 1e27;
         uint256 fee_ = 1e15;
@@ -34,6 +40,7 @@ contract TestRoot is Test {
             string memory name = "Token";
             string memory symbol = "T";
             Token token = new Token(name, symbol);
+            token.burn(token.balanceOf(alice));
             token.mint(balance);
             token.approve(address(pool), balance);
             tokens[i] = token;
@@ -42,25 +49,24 @@ contract TestRoot is Test {
         }
 
         pool.initialize();
-        vm.stopPrank();
     }
 
     function weight(address token) public view returns (uint256) {
         if (token == address(pool)) return ONE;
-        AssetInfo memory asset_ = pool.asset(token);
+        AssetState memory asset_ = pool.asset(token);
         return asset_.scale.divWadUp(pool.scale());
     }
 
     function price(address token) public view returns (uint256) {
         if (token == address(pool)) return ONE;
-        AssetInfo memory asset_ = pool.asset(token);
+        AssetState memory asset_ = pool.asset(token);
         uint256 weight_ = weight(token);
         return weight_.fullMulDiv(pool.balance(), asset_.balance);
     }
 
     function fee(address token) public view returns (uint256) {
         if (token == address(pool)) return 0;
-        AssetInfo memory asset_ = pool.asset(token);
+        AssetState memory asset_ = pool.asset(token);
         return asset_.fee;
     }
 
@@ -70,6 +76,9 @@ contract TestRoot is Test {
         uint256 payAmount,
         uint256 receiveAmount
     ) public {
+        assertGt(payAmount, 0, "Pay amount must be greater than 0");
+        assertGt(receiveAmount, 0, "Receive amount must be greater than 0");
+
         uint256 valueIn = payAmount.mulWadUp(price(payToken));
         uint256 valueOut = receiveAmount.mulWadUp(price(receiveToken)) +
             fee(receiveToken).mulWadUp(valueIn);
@@ -102,6 +111,8 @@ contract TestRoot is Test {
         for (uint256 i = 0; i < payTokens.length; i++) {
             valueIn += amounts[i].mulWadUp(price(payTokens[i]));
         }
+
+        assertGt(valueIn, 0, "Value in must be greater than 0");
 
         uint256 fee_;
         for (uint256 i = 0; i < receiveTokens.length; i++) {

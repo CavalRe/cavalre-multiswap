@@ -39,8 +39,15 @@ contract ContractTest is Context, Test {
     uint256 amountOut;
 
     function setUp() public {
+
+        address alice = address(1);
+
+        vm.startPrank(alice);
+
         pool = new Pool("Pool", "P", int256(1e16));
         tokens = new Token[](NTOKENS);
+
+        pool.addUser(alice, 0);
 
         addresses = new address[](NTOKENS);
         amounts = new uint256[](NTOKENS);
@@ -95,7 +102,7 @@ contract ContractTest is Context, Test {
         tokens[0].approve(address(pool), pay1Amounts[0]);
     }
 
-    function showAsset(AssetInfo memory _asset) internal {
+    function showAsset(AssetState memory _asset) internal {
         emit log_named_string("name", _asset.name);
         // emit log_named_string("symbol", _asset.symbol);
         // emit log_named_uint("balanceOf", _asset.token.balanceOf(poolAddress));
@@ -105,7 +112,7 @@ contract ContractTest is Context, Test {
     }
 
     function showPool(Pool _pool) internal {
-        PoolInfo memory pool_;
+        PoolState memory pool_;
         console.log("Pool Info");
         console.log("=========");
         pool_ = _pool.info();

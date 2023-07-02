@@ -8,13 +8,13 @@ import "@cavalre/Pool.sol";
 contract InfoTest is TestRoot {
     /// @dev check number of tokens return is equal to the initial number of tokens
     function testAssets() public {
-        AssetInfo[] memory assets = pool.assets();
+        AssetState[] memory assets = pool.assets();
         assertEq(assets.length, NTOKENS);
     }
 
     /// @dev check that `pool` returns expected values
     function testPool() public {
-        PoolInfo memory pool_ = pool.info();
+        PoolState memory pool_ = pool.info();
         assertEq(pool_.token, address(pool));
         assertEq(pool_.name, "Pool");
         assertEq(pool_.symbol, "P");
@@ -30,7 +30,7 @@ contract InfoTest is TestRoot {
 
     /// @dev smoke test for `asset`
     function testAsset() public {
-        AssetInfo memory asset = pool.asset(address(tokens[0]));
+        AssetState memory asset = pool.asset(address(tokens[0]));
         assertGt(asset.balance, 0);
     }
 

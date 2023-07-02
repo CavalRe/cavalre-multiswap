@@ -8,12 +8,15 @@ import "@cavalre/test/Token.t.sol";
 contract InitTest is Test {
     function testInit() public {
         address alice = address(1);
+
         vm.startPrank(alice);
         Pool pool = new Pool("Pool", "P", int256(1e16));
 
         Token tokenA = new Token("Foo", "FOOA");
         Token tokenB = new Token("Foo", "FOOB");
         uint256 amount = 1e27;
+
+        pool.addUser(alice, 0);
 
         vm.expectRevert(abi.encodeWithSelector(Pool.NotInitialized.selector));
         pool.stake(address(tokenA), amount);
@@ -44,7 +47,7 @@ contract InitTest is Test {
         vm.expectRevert("Ownable: caller is not the owner");
         pool.initialize();
 
-        AssetInfo[] memory assets = pool.assets();
+        AssetState[] memory assets = pool.assets();
         for (uint256 i = 0; i < assets.length; i++) {
             address token = address(assets[i].token);
             assertEq(

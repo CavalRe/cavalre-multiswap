@@ -4,82 +4,104 @@ pragma solidity 0.8.19;
 import "@cavalre/test/TestRoot.t.sol";
 
 contract UnstakeTest is TestRoot {
+    using FixedPointMathLib for uint256;
+
     /*
      * Basic
      */
     function testUnstakeSmoke() public {
-        address alice = address(1);
-        vm.startPrank(alice);
-
         checkLP();
 
         Token receiveToken = tokens[0];
+        uint256 receiveBalance = receiveToken.balanceOf(alice);
+        uint256 poolBalance = pool.balanceOf(alice);
+
         uint256 amount = 1e27;
         receiveToken.mint(amount);
+
+        assertEq(
+            receiveToken.balanceOf(alice),
+            receiveBalance + amount,
+            "Alice's receive token balance before unstake."
+        );
+
         receiveToken.approve(address(pool), amount);
 
         uint256 amountOut = pool.stake(address(receiveToken), amount);
-        pool.approve(address(pool), amountOut);
-        uint256 receiveAmount = pool.unstake(address(receiveToken), amountOut);
 
-        checkSF(address(pool), address(receiveToken), amountOut, receiveAmount);
+        assertEq(
+            receiveToken.balanceOf(alice),
+            receiveBalance,
+            "Alice's receive token balance after staking."
+        );
 
         assertEq(
             pool.balanceOf(alice),
-            0,
-            "Alice's pool balance is not zero after unstaking."
+            poolBalance + amountOut,
+            "Alice's pool balance after staking."
         );
-        assertEq(receiveToken.balanceOf(alice) > 0, true);
+
+        pool.approve(address(pool), amountOut);
+
+        uint256 receiveAmount = pool.unstake(address(receiveToken), amountOut);
+
+        assertEq(
+            receiveToken.balanceOf(alice),
+            receiveBalance + receiveAmount,
+            "Alice's pool balance after unstaking."
+        );
+        assertApproxEqRel(
+            pool.balanceOf(alice),
+            poolBalance,
+            1e12,
+            "Alice's pool balance after unstaking."
+        );
+
+        checkSF(address(pool), address(receiveToken), amountOut, receiveAmount);
 
         checkLP();
-
-        vm.stopPrank();
     }
 
     function testUnstakeFuzz(uint256 amount, uint256 receiveIndex) public {
-        vm.assume((amount > 1e17) && (amount < 1e50));
-
-        address alice = address(1);
-        vm.startPrank(alice);
-
+        // vm.assume((amount > 1e17) && (amount < 1e50));
         checkLP();
 
         receiveIndex = receiveIndex % tokens.length;
         Token receiveToken = tokens[receiveIndex];
-        AssetInfo memory receiveAsset = pool.asset(address(receiveToken));
+        uint256 assetBalance = receiveToken.balanceOf(address(pool));
+        uint256 receiveBalance = receiveToken.balanceOf(alice);
+        uint256 poolBalance = pool.balanceOf(alice);
 
-        uint256 assetBalance = receiveAsset.balance;
-        vm.assume((amount > 1e17) && (3 * amount < assetBalance));
-
+        vm.assume(
+            (amount > 1e17) && (amount < 1e50) && (3 * amount < assetBalance)
+        );
         receiveToken.mint(amount);
+
+        assertEq(
+            receiveToken.balanceOf(alice),
+            receiveBalance + amount,
+            "Alice's receive token balance before unstake."
+        );
+
         receiveToken.approve(address(pool), amount);
 
-        assertEq(
-            pool.balanceOf(alice),
-            0,
-            "Alice's initial pool balance is not zero."
-        );
-        assertGt(
-            receiveToken.balanceOf(alice),
-            0,
-            "Alice's initial receive token balance is zero."
-        );
-
         uint256 amountOut = pool.stake(address(receiveToken), amount);
-        assertGt(
-            pool.balanceOf(alice),
-            0,
-            "Alice's pool balance is zero before unstaking."
-        );
+
         assertEq(
             receiveToken.balanceOf(alice),
-            0,
-            "Alice's receive token balance is not zero before unstaking."
+            receiveBalance,
+            "Alice's receive token balance after staking."
         );
 
-        uint256 poolBalance = pool.balance();
+        assertEq(
+            pool.balanceOf(alice),
+            poolBalance + amountOut,
+            "Alice's pool balance after staking."
+        );
+
         pool.approve(address(pool), amountOut);
-        if (amountOut * 3 > poolBalance) {
+
+        if (amountOut * 3 > pool.balance()) {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amountOut)
             );
@@ -90,6 +112,26 @@ contract UnstakeTest is TestRoot {
                 amountOut
             );
 
+            uint256 feeAmount = receiveAmount
+                .mulWadUp(price(address(receiveToken)))
+                .mulWadUp(fee(address(receiveToken)));
+
+            assertEq(
+                receiveToken.balanceOf(alice),
+                receiveBalance + receiveAmount,
+                "Alice's pool balance after unstaking."
+            );
+            assertApproxEqRel(
+                pool.balanceOf(alice),
+                poolBalance +
+                    feeAmount.fullMulDiv(
+                        pool.balanceOf(alice),
+                        pool.totalSupply()
+                    ),
+                1e10,
+                "Alice's pool balance after unstaking."
+            );
+
             checkSF(
                 address(pool),
                 address(receiveToken),
@@ -97,21 +139,8 @@ contract UnstakeTest is TestRoot {
                 receiveAmount
             );
 
-            assertGt(
-                receiveToken.balanceOf(alice),
-                0,
-                "Alice's receive token balance is zero after unstaking."
-            );
-            assertEq(
-                pool.balanceOf(alice),
-                0,
-                "Alice's pool balance is not zero after unstaking."
-            );
-            assertEq(pool.balanceOf(alice), 0, Strings.toString(amountOut));
             checkLP(amountOut, receiveAmount);
         }
-
-        vm.stopPrank();
     }
 
     // function testUnstakeOtherAccount(
@@ -165,46 +194,39 @@ contract UnstakeTest is TestRoot {
     }
 
     function testUnstakeZeroAmount(uint256 receiveIndex) public {
-        address alice = address(1);
-        vm.startPrank(alice);
-
         receiveIndex = receiveIndex % tokens.length;
         Token receiveToken = tokens[receiveIndex];
+        uint256 receiveBalance = receiveToken.balanceOf(alice);
+        uint256 poolBalance = pool.balanceOf(alice);
 
-        assertEq(pool.balanceOf(alice), 0);
         pool.unstake(address(receiveToken), 0);
-        assertEq(pool.balanceOf(alice), 0);
-        assertEq(receiveToken.balanceOf(alice), 0);
-
-        vm.stopPrank();
+        assertEq(pool.balanceOf(alice), poolBalance);
+        assertEq(receiveToken.balanceOf(alice), receiveBalance);
     }
 
     // TODO check no balance for other functions
     // TODO is `_burn` as secure as `safeTransfer` ?
     function testUnstakeNoBalance() public {
-        address alice = address(1);
-        vm.startPrank(alice);
-
         Token receiveToken = tokens[0];
-        uint256 amount = 1e27;
+        uint256 amount = pool.balanceOf(address(alice))*2;
 
-        vm.expectRevert("ERC20: burn amount exceeds balance");
-        pool.unstake(address(receiveToken), amount);
-
-        vm.stopPrank();
+        if (3 * amount > pool.balance()) {
+            vm.expectRevert(
+                abi.encodeWithSelector(Pool.TooLarge.selector, amount)
+            );
+            pool.unstake(address(receiveToken), amount);
+        } else {
+            vm.expectRevert("ERC20: burn amount exceeds balance");
+            pool.unstake(address(receiveToken), amount);
+        }
     }
 
     /*
      * Pathological
      */
     function testFailUnstakeBadToken(uint256 amount) public {
-        address alice = address(1);
-        vm.startPrank(alice);
-
         amount = (amount % 1e59) + 1e15;
 
         pool.stake(address(0), amount);
-
-        vm.stopPrank();
     }
 }

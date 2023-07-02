@@ -11,12 +11,33 @@ contract SwapTest is TestRoot {
     function testSwapSmoke() public {
         Token depositToken = tokens[0];
         Token withdrawToken = tokens[1];
+        uint256 depositBalance = depositToken.balanceOf(alice);
+        uint256 withdrawBalance = withdrawToken.balanceOf(alice);
         // uint256 amount = 1e17; 
         uint256 amount = 100000000000100001; // This value was failing the fuzz test before
         depositToken.mint(amount);
+
+        assertEq(
+            depositToken.balanceOf(alice),
+            depositBalance + amount,
+            "Alice's deposit token balance before swap."
+        );
+
         depositToken.approve(address(pool), amount);
 
         uint256 amountOut = pool.swap(address(depositToken), address(withdrawToken), amount);
+
+        assertEq(
+            depositToken.balanceOf(alice),
+            depositBalance,
+            "Alice's deposit token balance after swap."
+        );
+        assertEq(
+            withdrawToken.balanceOf(alice),
+            withdrawBalance + amountOut,
+            "Alice's withdraw token balance after swap."
+        );
+
         checkSF(
             address(depositToken),
             address(withdrawToken),
@@ -42,7 +63,7 @@ contract SwapTest is TestRoot {
         Token depositToken = tokens[depositIndex];
         Token withdrawToken = tokens[withdrawalIndex];
 
-        AssetInfo memory depositAsset = pool.asset(address(depositToken));
+        AssetState memory depositAsset = pool.asset(address(depositToken));
         uint256 balance = depositAsset.balance;
 
         amount = (amount % ((8 * balance) / 3));

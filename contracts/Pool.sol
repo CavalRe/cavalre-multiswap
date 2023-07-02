@@ -3,17 +3,8 @@ pragma solidity 0.8.19;
 
 import "@cavalre/LPToken.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 struct PoolState {
-    uint256 balance;
-    uint256 scale;
-    uint256 meanBalance;
-    uint256 meanScale;
-}
-
-struct PoolInfo {
     address token;
     string name;
     string symbol;
@@ -27,15 +18,6 @@ struct PoolInfo {
 
 struct AssetState {
     address token;
-    uint256 fee;
-    uint256 balance;
-    uint256 scale;
-    uint256 meanBalance;
-    uint256 meanScale;
-}
-
-struct AssetInfo {
-    address token;
     string name;
     string symbol;
     uint8 decimals;
@@ -46,12 +28,7 @@ struct AssetInfo {
     uint256 meanScale;
 }
 
-struct UserState {
-    bool isAllowed;
-    uint256 discount;
-}
-
-contract Pool is LPToken, ReentrancyGuard, Ownable {
+contract Pool is LPToken {
     using SafeERC20 for IERC20;
     using FixedPointMathLib for uint256;
     using FixedPointMathLib for int256;
@@ -67,18 +44,11 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
         _;
     }
 
-    modifier onlyAllowed() {
-        if (!_userState[_msgSender()].isAllowed) revert NotAllowed();
-        _;
-    }
-
     PoolState private _poolState;
 
     mapping(address => AssetState) private _assetState;
-    address[] private _addresses;
-    mapping(address => uint256) private _index;
-
-    mapping(address => UserState) private _userState;
+    address[] private _assetAddress;
+    mapping(address => uint256) private _assetIndex;
 
     enum Type {
         Swap,
@@ -87,8 +57,6 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
     }
 
     error NotInitialized();
-
-    error NotAllowed();
 
     error LengthMismatch(uint256 expected, uint256 actual);
 
@@ -111,7 +79,11 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
         string memory symbol,
         int256 tau
     ) LPToken(name, symbol) {
-        _tau = tau;
+        _poolState.token = address(this);
+        _poolState.name = name;
+        _poolState.symbol = symbol;
+        _poolState.decimals = 18;
+        _poolState.tau = tau;
     }
 
     function fromCanonical(
@@ -146,10 +118,13 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
             fromCanonical(balance_, decimals_)
         );
 
-        _index[payToken_] = _addresses.length;
-        _addresses.push(payToken_);
+        _assetIndex[payToken_] = _assetAddress.length;
+        _assetAddress.push(payToken_);
         _assetState[payToken_] = AssetState(
             payToken_,
+            IERC20Metadata(payToken_).name(),
+            IERC20Metadata(payToken_).symbol(),
+            decimals_,
             fee_,
             balance_,
             assetScale_,
@@ -177,54 +152,40 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
         renounceOwnership();
     }
 
-    function info()
-        public
-        view
-        returns (PoolInfo memory)
-    {
+    function info() public view returns (PoolState memory) {
         address poolAddress = address(this);
         IERC20Metadata poolMetadata = IERC20Metadata(poolAddress);
-        return PoolInfo(
-            poolAddress,
-            poolMetadata.name(),
-            poolMetadata.symbol(),
-            poolMetadata.decimals(),
-            _tau,
-            _poolState.balance,
-            _poolState.scale,
-            _poolState.meanBalance,
-            _poolState.meanScale
-        );
+        return
+            PoolState(
+                poolAddress,
+                poolMetadata.name(),
+                poolMetadata.symbol(),
+                poolMetadata.decimals(),
+                _tau,
+                _poolState.balance,
+                _poolState.scale,
+                _poolState.meanBalance,
+                _poolState.meanScale
+            );
     }
 
-    function assets() public view returns (AssetInfo[] memory) {
-        AssetInfo[] memory assets_ = new AssetInfo[](_addresses.length);
+    function assets() public view returns (AssetState[] memory) {
+        AssetState[] memory assets_ = new AssetState[](_assetAddress.length);
 
-        for (uint256 i; i < _addresses.length; i++) {
-            assets_[i] = asset(_addresses[i]);
+        for (uint256 i; i < _assetAddress.length; i++) {
+            assets_[i] = asset(_assetAddress[i]);
         }
 
         return assets_;
     }
 
-    function asset(address token) public view returns (AssetInfo memory) {
-        AssetState memory a = _assetState[token];
-        if (a.token != token) revert AssetNotFound(token);
-        return AssetInfo(
-            token,
-            IERC20Metadata(token).name(),
-            IERC20Metadata(token).symbol(),
-            IERC20Metadata(token).decimals(),
-            a.fee,
-            a.balance,
-            a.scale,
-            a.meanBalance,
-            a.meanScale
-        );
+    function asset(address token) public view returns (AssetState memory) {
+        if (_assetState[token].token != token) revert AssetNotFound(token);
+        return _assetState[token];
     }
 
     function index(address token) public view returns (uint256) {
-        return _index[token];
+        return _assetIndex[token];
     }
 
     function balance() public view returns (uint256) {
@@ -238,7 +199,8 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
     function meanPrice(address token) public view returns (uint256) {
         AssetState memory asset_ = _assetState[token];
         uint256 meanWeight = asset_.meanScale.divWadUp(_poolState.meanScale);
-        return meanWeight.fullMulDiv(asset_.meanBalance, _poolState.meanBalance);
+        return
+            meanWeight.fullMulDiv(asset_.meanBalance, _poolState.meanBalance);
     }
 
     function multiswap(
@@ -265,7 +227,7 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
         {
             bool isLP;
             uint256 temp;
-            bool[] memory check_ = new bool[](_addresses.length);
+            bool[] memory check_ = new bool[](_assetAddress.length);
             for (uint256 i; i < payTokens.length; i++) {
                 address token = payTokens[i];
                 if (address(this) == token) {
@@ -283,8 +245,8 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
                 }
                 if (_assetState[token].token != token)
                     revert AssetNotFound(token);
-                if (check_[_index[token]]) revert DuplicateToken(token);
-                check_[_index[token]] = true;
+                if (check_[_assetIndex[token]]) revert DuplicateToken(token);
+                check_[_assetIndex[token]] = true;
             }
 
             isLP = false;
@@ -305,8 +267,8 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
                 }
                 if (_assetState[token].token != token)
                     revert AssetNotFound(token);
-                if (check_[_index[token]]) revert DuplicateToken(token);
-                check_[_index[token]] = true;
+                if (check_[_assetIndex[token]]) revert DuplicateToken(token);
+                check_[_assetIndex[token]] = true;
             }
         }
         // Check allocations
@@ -474,7 +436,7 @@ contract Pool is LPToken, ReentrancyGuard, Ownable {
         address payToken,
         address receiveToken,
         uint256 payAmount
-    ) public nonReentrant returns (uint256) {
+    ) public nonReentrant onlyAllowed returns (uint256) {
         if (_isInitialized == 0) revert NotInitialized();
         if (
             payToken == address(this) ||
