@@ -41,8 +41,8 @@ contract LPTokenTest is Test {
         vm.startPrank(alice);
 
         lpToken.mint(amount);
-        assertEq(lpToken.balanceOf(alice), amount);
-        assertEq(lpToken.totalSupply(), amount);
+        assertEq(lpToken.balanceOf(alice), amount, "Balance of alice after minting.");
+        assertEq(lpToken.totalSupply(), amount, "Total supply after minting.");
 
         vm.stopPrank();
 
@@ -68,8 +68,8 @@ contract LPTokenTest is Test {
 
         lpToken.mint(amount);
         lpToken.burn(burnAmount);
-        assertEq(lpToken.balanceOf(alice), amount - burnAmount);
-        assertEq(lpToken.totalSupply(), amount - burnAmount);
+        assertEq(lpToken.balanceOf(alice), amount - burnAmount, "Balance of alice after burning.");
+        assertEq(lpToken.totalSupply(), amount - burnAmount, "Total supply after burning.");
 
         vm.stopPrank();
 
@@ -94,8 +94,8 @@ contract LPTokenTest is Test {
         vm.startPrank(alice);
 
         lpToken.mint(amount);
-        assertEq(lpToken.balanceOf(alice), amount);
-        assertEq(lpToken.totalSupply(), amount);
+        assertEq(lpToken.balanceOf(alice), amount, "Balance of alice after minting.");
+        assertEq(lpToken.totalSupply(), amount, "Total supply after minting.");
 
         vm.expectRevert(
             abi.encodeWithSelector(LPToken.UserNotAllowed.selector, bob)
@@ -127,8 +127,8 @@ contract LPTokenTest is Test {
         lpToken.increaseAllowance(bob, amount);
 
         lpToken.mint(amount);
-        assertEq(lpToken.balanceOf(alice), amount);
-        assertEq(lpToken.totalSupply(), amount);
+        assertEq(lpToken.balanceOf(alice), amount, "Balance of alice after minting.");
+        assertEq(lpToken.totalSupply(), amount, "Total supply after minting.");
 
         vm.stopPrank();
 
@@ -171,8 +171,8 @@ contract LPTokenTest is Test {
         vm.startPrank(alice);
 
         lpToken.mint(amount);
-        assertEq(lpToken.balanceOf(alice), amount);
-        assertEq(lpToken.totalSupply(), amount);
+        assertEq(lpToken.balanceOf(alice), amount, "Balance of alice after minting.");
+        assertEq(lpToken.totalSupply(), amount, "Total supply after minting.");
 
         vm.stopPrank();
 
@@ -183,15 +183,15 @@ contract LPTokenTest is Test {
         vm.startPrank(bob);
 
         lpToken.mint(amount);
-        assertEq(lpToken.balanceOf(bob), amount);
-        assertEq(lpToken.totalSupply(), 2 * amount);
+        assertEq(lpToken.balanceOf(bob), amount, "Balance of bob after minting.");
+        assertEq(lpToken.totalSupply(), 2 * amount, "Total supply after second minting.");
 
         vm.stopPrank();
 
         lpToken.distributeFee(2 * amount);
 
-        assertEq(lpToken.balanceOf(alice), 2 * amount);
-        assertEq(lpToken.balanceOf(bob), 2 * amount);
-        assertEq(lpToken.totalSupply(), 4 * amount);
+        assertEq(lpToken.balanceOf(alice), 2 * amount, "Balance of alice after fee distribution.");
+        assertEq(lpToken.balanceOf(bob), 2 * amount, "Balance of bob after fee distribution.");
+        assertEq(lpToken.totalSupply(), 4 * amount, "Total supply after fee distribution.");
     }
 }
