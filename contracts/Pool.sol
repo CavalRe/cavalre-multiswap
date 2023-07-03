@@ -141,25 +141,28 @@ contract Pool is LPToken {
     function removeAsset(
         address token
     ) public nonReentrant onlyUninitialized onlyOwner {
-        AssetState memory s = _assetState[token];
-        if (address(s.token) != token) revert AssetNotFound(token);
+        AssetState storage asset_ = _assetState[token];
+        if (asset_.token != token) revert AssetNotFound(token);
 
-        uint256 assetScale_ = s.scale;
+        uint256 assetScale_ = asset_.scale;
 
         _poolState.balance -= assetScale_;
         _poolState.scale -= assetScale_;
         _poolState.meanBalance -= assetScale_;
         _poolState.meanScale -= assetScale_;
 
+        asset_.balance = 0;
+        asset_.scale = 0;
+        asset_.meanBalance = 0;
+        asset_.meanScale = 0;
+
         SafeERC20.safeTransfer(
             IERC20(token),
             owner(),
-            fromCanonical(s.balance, s.decimals)
+            fromCanonical(asset_.balance, asset_.decimals)
         );
 
-        delete _assetState[token];
-
-        _assetAddress[s.index] = _assetAddress[_assetAddress.length - 1];
+        _assetAddress[asset_.index] = _assetAddress[_assetAddress.length - 1];
         _assetAddress.pop();
         for (uint256 i; i < _assetAddress.length; i++) {
             _assetState[_assetAddress[i]].index = i;
