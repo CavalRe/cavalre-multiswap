@@ -53,8 +53,8 @@ contract InitTest is Test {
 
         AssetState[] memory assets = pool.assets();
         for (uint256 i = 0; i < assets.length; i++) {
-            address token = address(assets[i].token);
-            assertEq(token, address(assets[pool.index(token)].token));
+            address token = assets[i].token;
+            assertEq(token, assets[assets[i].index].token);
         }
 
         vm.stopPrank();

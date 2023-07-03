@@ -18,6 +18,7 @@ struct PoolState {
 
 struct AssetState {
     address token;
+    uint256 index;
     string name;
     string symbol;
     uint8 decimals;
@@ -51,7 +52,6 @@ contract Pool is LPToken {
 
     mapping(address => AssetState) private _assetState;
     address[] private _assetAddress;
-    mapping(address => uint256) private _assetIndex;
 
     enum Type {
         Swap,
@@ -123,10 +123,9 @@ contract Pool is LPToken {
             fromCanonical(balance_, decimals_)
         );
 
-        _assetIndex[payToken_] = _assetAddress.length;
-        _assetAddress.push(payToken_);
         _assetState[payToken_] = AssetState(
             payToken_,
+            _assetAddress.length,
             IERC20Metadata(payToken_).name(),
             IERC20Metadata(payToken_).symbol(),
             decimals_,
@@ -136,6 +135,7 @@ contract Pool is LPToken {
             balance_,
             assetScale_
         );
+        _assetAddress.push(payToken_);
     }
 
     function removeAsset(
@@ -187,10 +187,6 @@ contract Pool is LPToken {
     function asset(address token) public view returns (AssetState memory) {
         if (_assetState[token].token != token) revert AssetNotFound(token);
         return _assetState[token];
-    }
-
-    function index(address token) public view returns (uint256) {
-        return _assetIndex[token];
     }
 
     function balance() public view returns (uint256) {
@@ -249,10 +245,11 @@ contract Pool is LPToken {
                     t = Type.Unstake;
                     continue;
                 }
-                if (_assetState[token].token != token)
+                AssetState memory asset_ = _assetState[token];
+                if (asset_.token != token)
                     revert AssetNotFound(token);
-                if (check_[_assetIndex[token]]) revert DuplicateToken(token);
-                check_[_assetIndex[token]] = true;
+                if (check_[asset_.index]) revert DuplicateToken(token);
+                check_[asset_.index] = true;
             }
 
             isLP = false;
@@ -271,10 +268,11 @@ contract Pool is LPToken {
                     t = Type.Stake;
                     continue;
                 }
-                if (_assetState[token].token != token)
+                AssetState memory asset_ = _assetState[token];
+                if (asset_.token != token)
                     revert AssetNotFound(token);
-                if (check_[_assetIndex[token]]) revert DuplicateToken(token);
-                check_[_assetIndex[token]] = true;
+                if (check_[asset_.index]) revert DuplicateToken(token);
+                check_[asset_.index] = true;
             }
         }
         // Check allocations
