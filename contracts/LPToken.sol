@@ -15,7 +15,10 @@ struct UserState {
 contract LPToken is ERC20, ReentrancyGuard, Ownable {
     using FixedPointMathLib for uint256;
 
-    mapping(address => UserState) private _userState;
+    uint256 internal constant ONE = 1e18;
+
+    mapping(address => UserState) internal _userState;
+    address[] private _userAddress;
     mapping(address => uint256) private _userIndex;
 
     uint256 private _ratio; // virtual -> real
@@ -33,24 +36,27 @@ contract LPToken is ERC20, ReentrancyGuard, Ownable {
 
     error UserAlreadyAdded(address user);
 
+    error InvalidDiscount(uint256 discount);
+
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {
         _ratio = 1e18;
     }
 
-    function addUser(address user, uint256 discount) public onlyOwner {
+    function addUser(address user, uint256 discount) public nonReentrant onlyOwner {
         UserState memory state = _userState[user];
         if (state.user == user) revert UserAlreadyAdded(user);
+        _userIndex[user] = _userAddress.length;
+        _userAddress.push(user);
         _userState[user] = UserState(user, true, discount);
-        _userIndex[user] = totalSupply();
     }
 
-    function allowUser(address user) public onlyOwner {
+    function allowUser(address user) public nonReentrant onlyOwner {
         UserState memory state = _userState[user];
         if (state.user != user) revert UserNotFound(user);
         _userState[user].isAllowed = true;
     }
 
-    function disallowUser(address user) public onlyOwner {
+    function disallowUser(address user) public nonReentrant onlyOwner {
         UserState memory state = _userState[user];
         if (state.user != user) revert UserNotFound(user);
         _userState[user].isAllowed = false;
@@ -59,6 +65,35 @@ contract LPToken is ERC20, ReentrancyGuard, Ownable {
     function isAllowed(address user) public view returns (bool) {
         UserState memory state = _userState[user];
         return state.isAllowed;
+    }
+
+    function allUsers() public view onlyOwner returns (address[] memory) {
+        return _userAddress;
+    }
+
+    function allowedUsers() public view onlyOwner returns (address[] memory) {
+        uint256 n = 0;
+        for (uint256 i = 0; i < _userAddress.length; i++) {
+            address user = _userAddress[i];
+            if (_userState[user].isAllowed) n++;
+        }
+        address[] memory users = new address[](n);
+        uint256 j = 0;
+        for (uint256 i = 0; i < _userAddress.length; i++) {
+            address user = _userAddress[i];
+            if (_userState[user].isAllowed) {
+                users[j] = user;
+                j++;
+            }
+        }
+        return users;
+    }
+
+    function setDiscount(address user, uint256 discount) public nonReentrant onlyOwner {
+        UserState memory state = _userState[user];
+        if (state.user != user) revert UserNotFound(user);
+        if (discount > ONE) revert InvalidDiscount(discount);
+        _userState[user].discount = discount;
     }
 
     function totalSupply() public view override returns (uint256) {

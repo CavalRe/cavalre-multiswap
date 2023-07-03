@@ -33,8 +33,6 @@ contract Pool is LPToken {
     using FixedPointMathLib for uint256;
     using FixedPointMathLib for int256;
 
-    uint256 internal constant ONE = 1e18;
-
     int256 private _tau;
 
     uint256 private _isInitialized;
@@ -305,6 +303,9 @@ contract Pool is LPToken {
                     _assetState[receiveTokens[i]].fee
                 );
             }
+        }
+        if (fee > 0 && _userState[_msgSender()].discount > 0) {
+            fee = fee.mulWadUp(ONE - _userState[_msgSender()].discount);
         }
 
         // Compute scaledValueIn
