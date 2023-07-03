@@ -16,10 +16,14 @@ contract LPToken is ERC20, ReentrancyGuard, Ownable {
     using FixedPointMathLib for uint256;
 
     uint256 internal constant ONE = 1e18;
+    uint256 internal constant HALF = 5e17;
 
     mapping(address => UserState) internal _userState;
     address[] private _userAddress;
     mapping(address => uint256) private _userIndex;
+
+    uint256 private _protocolFee;
+    address private _protocolFeeRecipient;
 
     uint256 private _ratio; // virtual -> real
 
@@ -30,23 +34,54 @@ contract LPToken is ERC20, ReentrancyGuard, Ownable {
         _;
     }
 
-    error UserNotFound(address user);
+    error InvalidDiscount(uint256 discount);
 
-    error UserNotAllowed(address user);
+    error InvalidProtocolFee(uint256 fee);
+
+    error InvalidUser(address user);
 
     error UserAlreadyAdded(address user);
 
-    error InvalidDiscount(uint256 discount);
+    error UserNotAllowed(address user);
+
+    error UserNotFound(address user);
 
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {
         _ratio = 1e18;
+        _protocolFeeRecipient = _msgSender();
+        addUser(_msgSender(), 0);
     }
 
-    function addUser(address user, uint256 discount) public nonReentrant onlyOwner {
+    function protocolFee() public view returns (uint256) {
+        return _protocolFee;
+    }
+
+    function protocolFeeRecipient() public view returns (address) {
+        return _protocolFeeRecipient;
+    }
+
+    function setProtocolFee(uint256 fee) public nonReentrant onlyOwner {
+        if (fee > HALF) revert InvalidProtocolFee(fee);
+        _protocolFee = fee;
+    }
+
+    function setProtocolFeeRecipient(
+        address recipient
+    ) public nonReentrant onlyOwner {
+        _protocolFeeRecipient = recipient;
+        addUser(recipient, 0);
+    }
+
+    function addUser(
+        address user,
+        uint256 discount
+    ) public nonReentrant onlyOwner {
+        if (user == address(0)) revert InvalidUser(user);
         UserState memory state = _userState[user];
-        if (state.user == user) revert UserAlreadyAdded(user);
-        _userIndex[user] = _userAddress.length;
-        _userAddress.push(user);
+        if (state.user != user) {
+            _userIndex[user] = _userAddress.length;
+            _userAddress.push(user);
+        }
         _userState[user] = UserState(user, true, discount);
     }
 
@@ -67,11 +102,11 @@ contract LPToken is ERC20, ReentrancyGuard, Ownable {
         return state.isAllowed;
     }
 
-    function allUsers() public view onlyOwner returns (address[] memory) {
+    function allUsers() public view returns (address[] memory) {
         return _userAddress;
     }
 
-    function allowedUsers() public view onlyOwner returns (address[] memory) {
+    function allowedUsers() public view returns (address[] memory) {
         uint256 n = 0;
         for (uint256 i = 0; i < _userAddress.length; i++) {
             address user = _userAddress[i];
@@ -89,7 +124,10 @@ contract LPToken is ERC20, ReentrancyGuard, Ownable {
         return users;
     }
 
-    function setDiscount(address user, uint256 discount) public nonReentrant onlyOwner {
+    function setDiscount(
+        address user,
+        uint256 discount
+    ) public nonReentrant onlyOwner {
         UserState memory state = _userState[user];
         if (state.user != user) revert UserNotFound(user);
         if (discount > ONE) revert InvalidDiscount(discount);
@@ -156,7 +194,10 @@ contract LPToken is ERC20, ReentrancyGuard, Ownable {
     }
 
     function _distributeFee(uint256 amount) internal virtual {
-        _ratio = (totalSupply() + amount).divWadUp(super.totalSupply());
+        uint256 protocolAmount = amount.mulWadUp(_protocolFee);
+        uint256 userAmount = amount - protocolAmount;
+        _mint(_protocolFeeRecipient, protocolAmount);
+        _ratio = (totalSupply() + userAmount).divWadUp(super.totalSupply());
     }
 
     function _transfer(
