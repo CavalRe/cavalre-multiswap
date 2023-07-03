@@ -28,8 +28,7 @@ contract LPToken is ERC20, ReentrancyGuard, Ownable {
 
     modifier onlyAllowed() {
         address user = _msgSender();
-        UserState memory state = _userState[user];
-        if (!state.isAllowed) revert UserNotAllowed(user);
+        if (!_userState[user].isAllowed) revert UserNotAllowed(user);
         _;
     }
 
