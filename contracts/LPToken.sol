@@ -20,7 +20,6 @@ contract LPToken is ERC20, ReentrancyGuard, Ownable {
 
     mapping(address => UserState) internal _userState;
     address[] private _userAddress;
-    mapping(address => uint256) private _userIndex;
 
     uint256 private _protocolFee;
     address private _protocolFeeRecipient;
@@ -79,7 +78,6 @@ contract LPToken is ERC20, ReentrancyGuard, Ownable {
         if (user == address(0)) revert InvalidUser(user);
         UserState memory state = _userState[user];
         if (state.user != user) {
-            _userIndex[user] = _userAddress.length;
             _userAddress.push(user);
         }
         _userState[user] = UserState(user, true, discount);
