@@ -94,7 +94,7 @@ contract Pool is LPToken {
     function fromCanonical(
         uint256 amount,
         uint8 decimals
-    ) internal pure returns (uint256) {
+    ) private pure returns (uint256) {
         if (decimals == 18) return amount;
         if (decimals < 18) return amount / (10 ** (18 - decimals));
         return amount * (10 ** (decimals - 18));
