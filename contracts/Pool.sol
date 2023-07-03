@@ -143,11 +143,27 @@ contract Pool is LPToken {
     ) public nonReentrant onlyUninitialized onlyOwner {
         AssetState memory s = _assetState[token];
         if (address(s.token) != token) revert AssetNotFound(token);
+
+        uint256 assetScale_ = s.scale;
+
+        _poolState.balance -= assetScale_;
+        _poolState.scale -= assetScale_;
+        _poolState.meanBalance -= assetScale_;
+        _poolState.meanScale -= assetScale_;
+
         SafeERC20.safeTransfer(
             IERC20(token),
             owner(),
             fromCanonical(s.balance, s.decimals)
         );
+
+        delete _assetState[token];
+
+        _assetAddress[s.index] = _assetAddress[_assetAddress.length - 1];
+        _assetAddress.pop();
+        for (uint256 i; i < _assetAddress.length; i++) {
+            _assetState[_assetAddress[i]].index = i;
+        }
     }
 
     function initialize() public nonReentrant onlyUninitialized onlyOwner {
@@ -245,8 +261,7 @@ contract Pool is LPToken {
                     continue;
                 }
                 AssetState memory asset_ = _assetState[token];
-                if (asset_.token != token)
-                    revert AssetNotFound(token);
+                if (asset_.token != token) revert AssetNotFound(token);
                 if (check_[asset_.index]) revert DuplicateToken(token);
                 check_[asset_.index] = true;
             }
@@ -268,8 +283,7 @@ contract Pool is LPToken {
                     continue;
                 }
                 AssetState memory asset_ = _assetState[token];
-                if (asset_.token != token)
-                    revert AssetNotFound(token);
+                if (asset_.token != token) revert AssetNotFound(token);
                 if (check_[asset_.index]) revert DuplicateToken(token);
                 check_[asset_.index] = true;
             }
@@ -717,7 +731,7 @@ contract Pool is LPToken {
         _burn(_msgSender(), amount);
 
         _distributeFee(feeAmount);
-        
+
         receiveAmounts = new uint256[](_assetAddress.length);
         uint256 g = (_poolState.balance - delta).divWadUp(_poolState.balance);
         uint256 amountOut;
