@@ -42,6 +42,11 @@ contract Pool is LPToken {
         _;
     }
 
+    modifier onlyUninitialized() {
+        if (_isInitialized == 1) revert AlreadyInitialized();
+        _;
+    }
+
     PoolState private _poolState;
 
     mapping(address => AssetState) private _assetState;
@@ -54,23 +59,25 @@ contract Pool is LPToken {
         Unstake
     }
 
-    error NotInitialized();
+    error AlreadyInitialized();
 
-    error LengthMismatch(uint256 expected, uint256 actual);
-
-    error IncorrectAllocation(uint256 expected, uint256 actual);
+    error AssetNotFound(address asset);
 
     error DuplicateToken(address payToken);
 
-    error InvalidSwap(address payToken, address receiveToken);
+    error IncorrectAllocation(uint256 expected, uint256 actual);
 
     error InvalidStake(address payToken);
 
+    error InvalidSwap(address payToken, address receiveToken);
+
     error InvalidUnstake(address receiveToken);
 
-    error TooLarge(uint256 size);
+    error LengthMismatch(uint256 expected, uint256 actual);
 
-    error AssetNotFound(address asset);
+    error NotInitialized();
+
+    error TooLarge(uint256 size);
 
     constructor(
         string memory name,
@@ -98,7 +105,7 @@ contract Pool is LPToken {
         uint256 balance_,
         uint256 fee_,
         uint256 assetScale_
-    ) public nonReentrant onlyOwner {
+    ) public nonReentrant onlyUninitialized onlyOwner {
         if (_assetState[payToken_].token == payToken_)
             revert DuplicateToken(payToken_);
 
@@ -131,7 +138,9 @@ contract Pool is LPToken {
         );
     }
 
-    function uninitialize(address token) public nonReentrant onlyOwner {
+    function removeAsset(
+        address token
+    ) public nonReentrant onlyUninitialized onlyOwner {
         AssetState memory s = _assetState[token];
         IERC20Metadata m = IERC20Metadata(token);
         if (s.token != token) revert AssetNotFound(token);
@@ -142,12 +151,10 @@ contract Pool is LPToken {
         );
     }
 
-    function initialize() public nonReentrant onlyOwner {
+    function initialize() public nonReentrant onlyUninitialized onlyOwner {
         _isInitialized = 1;
 
         _mint(_msgSender(), _poolState.scale);
-
-        renounceOwnership();
     }
 
     function info() public view returns (PoolState memory) {
@@ -635,7 +642,7 @@ contract Pool is LPToken {
     function addLiquidity(
         address token,
         uint256 amount
-    ) public nonReentrant onlyAllowed returns (uint256) {
+    ) public nonReentrant onlyInitialized onlyAllowed returns (uint256) {
         AssetState storage assetIn;
         uint256 g;
         uint256 amountOut;
@@ -682,5 +689,58 @@ contract Pool is LPToken {
         _mint(_msgSender(), amountOut);
 
         return amountOut;
+    }
+
+    function removeLiquidity(
+        uint256 amount
+    )
+        public
+        nonReentrant
+        onlyInitialized
+        returns (uint256[] memory receiveAmounts)
+    {
+        AssetState storage assetOut;
+        uint256 fee;
+        for (uint256 i; i < _assetAddress.length; i++) {
+            fee += _assetState[_assetAddress[i]].fee;
+        }
+        uint256 feeAmount = amount
+            .mulWadUp(ONE - _userState[_msgSender()].discount)
+            .mulWadUp(fee);
+
+        uint256 delta = amount - feeAmount;
+
+        _poolState.balance -= delta;
+        _poolState.meanBalance = _poolState.meanBalance.mulWadUp(
+            uint256(
+                int256(_poolState.balance.divWadUp(_poolState.meanBalance))
+                    .powWad(_tau)
+            )
+        );
+        _burn(_msgSender(), amount);
+
+        _distributeFee(feeAmount);
+        
+        receiveAmounts = new uint256[](_assetAddress.length);
+        uint256 g = (_poolState.balance - delta).divWadUp(_poolState.balance);
+        uint256 amountOut;
+        for (uint256 i; i < _assetAddress.length; i++) {
+            assetOut = _assetState[_assetAddress[i]];
+            amountOut = assetOut.balance - assetOut.balance.mulWadUp(g);
+            assetOut.balance -= amountOut;
+            assetOut.meanBalance = assetOut.meanBalance.mulWadUp(
+                uint256(
+                    int256(assetOut.balance.divWadUp(assetOut.meanBalance))
+                        .powWad(_tau)
+                )
+            );
+            receiveAmounts[i] = amountOut;
+
+            SafeERC20.safeTransfer(
+                IERC20(assetOut.token),
+                _msgSender(),
+                fromCanonical(amount, IERC20Metadata(assetOut.token).decimals())
+            );
+        }
     }
 }

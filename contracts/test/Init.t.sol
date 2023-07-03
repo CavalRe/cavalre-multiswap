@@ -42,18 +42,19 @@ contract InitTest is Test {
 
         pool.initialize();
 
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.expectRevert(
+            abi.encodeWithSelector(Pool.AlreadyInitialized.selector)
+        );
         pool.addAsset(address(tokenB), amount, 1e18, 1e18);
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.expectRevert(
+            abi.encodeWithSelector(Pool.AlreadyInitialized.selector)
+        );
         pool.initialize();
 
         AssetState[] memory assets = pool.assets();
         for (uint256 i = 0; i < assets.length; i++) {
             address token = address(assets[i].token);
-            assertEq(
-                token,
-                address(assets[pool.index(token)].token)
-            );
+            assertEq(token, address(assets[pool.index(token)].token));
         }
 
         vm.stopPrank();
