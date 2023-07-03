@@ -142,12 +142,11 @@ contract Pool is LPToken {
         address token
     ) public nonReentrant onlyUninitialized onlyOwner {
         AssetState memory s = _assetState[token];
-        IERC20Metadata m = IERC20Metadata(token);
-        if (s.token != token) revert AssetNotFound(token);
+        if (address(s.token) != token) revert AssetNotFound(token);
         SafeERC20.safeTransfer(
             IERC20(token),
             owner(),
-            fromCanonical(s.balance, m.decimals())
+            fromCanonical(s.balance, s.decimals)
         );
     }
 
