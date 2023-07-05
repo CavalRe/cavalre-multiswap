@@ -11,9 +11,10 @@ struct PoolState {
     uint8 decimals;
     int256 tau;
     uint256 balance;
-    uint256 scale;
     uint256 meanBalance;
+    uint256 scale;
     uint256 meanScale;
+    uint256 lastUpdated;
 }
 
 struct AssetState {
@@ -24,15 +25,18 @@ struct AssetState {
     uint8 decimals;
     uint256 fee;
     uint256 balance;
-    uint256 scale;
     uint256 meanBalance;
+    uint256 scale;
     uint256 meanScale;
+    uint256 lastUpdated;
 }
 
 contract Pool is LPToken {
     using SafeERC20 for IERC20;
     using FixedPointMathLib for uint256;
     using FixedPointMathLib for int256;
+
+    uint256 private _txCount;
 
     int256 private _tau;
 
@@ -110,8 +114,8 @@ contract Pool is LPToken {
             revert DuplicateToken(payToken_);
 
         _poolState.balance += assetScale_;
-        _poolState.scale += assetScale_;
         _poolState.meanBalance += assetScale_;
+        _poolState.scale += assetScale_;
         _poolState.meanScale += assetScale_;
 
         uint8 decimals_ = IERC20Metadata(payToken_).decimals();
@@ -131,9 +135,10 @@ contract Pool is LPToken {
             decimals_,
             fee_,
             balance_,
-            assetScale_,
             balance_,
-            assetScale_
+            assetScale_,
+            assetScale_,
+            0
         );
         _assetAddress.push(payToken_);
     }
@@ -147,14 +152,15 @@ contract Pool is LPToken {
         uint256 assetScale_ = asset_.scale;
 
         _poolState.balance -= assetScale_;
-        _poolState.scale -= assetScale_;
         _poolState.meanBalance -= assetScale_;
+        _poolState.scale -= assetScale_;
         _poolState.meanScale -= assetScale_;
 
         asset_.balance = 0;
-        asset_.scale = 0;
         asset_.meanBalance = 0;
+        asset_.scale = 0;
         asset_.meanScale = 0;
+        asset_.lastUpdated = 0;
 
         SafeERC20.safeTransfer(
             IERC20(token),
@@ -186,9 +192,10 @@ contract Pool is LPToken {
                 poolMetadata.decimals(),
                 _tau,
                 _poolState.balance,
-                _poolState.scale,
                 _poolState.meanBalance,
-                _poolState.meanScale
+                _poolState.scale,
+                _poolState.meanScale,
+                _poolState.lastUpdated
             );
     }
 
@@ -215,11 +222,125 @@ contract Pool is LPToken {
         return _poolState.scale;
     }
 
+    function _geometricMean(
+        uint256 newValue,
+        uint256 lastValue,
+        uint256 lastMean,
+        uint256 lastUpdated
+    ) private view returns (uint256) {
+        int256 delta = int256(_txCount - lastUpdated);
+        if (delta == 0) return lastMean;
+        if (delta == 1) {
+            return
+                newValue.mulWadUp(
+                    uint256(int256(lastMean.divWadUp(newValue)).powWad(_tau))
+                );
+        } else {
+            int256 exp = _tau.powWad(delta);
+            return
+                newValue
+                    .mulWadUp(
+                        uint256(
+                            int256(lastMean.divWadUp(lastValue)).powWad(exp)
+                        )
+                    )
+                    .mulWadUp(
+                        uint256(
+                            int256(lastValue.divWadUp(newValue)).powWad(_tau)
+                        )
+                    );
+        }
+    }
+
+    function _geometricMean(
+        uint256 lastValue,
+        uint256 lastMean,
+        uint256 lastUpdated
+    ) private view returns (uint256) {
+        int256 delta = int256(_txCount - lastUpdated);
+        if (delta == 0) return lastMean;
+        if (delta == 1) {
+            return
+                lastValue.mulWadUp(
+                    uint256(int256(lastMean.divWadUp(lastValue)).powWad(_tau))
+                );
+        } else {
+            int256 exp = _tau.powWad(delta);
+            return
+                lastValue.mulWadUp(
+                    uint256(int256(lastMean.divWadUp(lastValue)).powWad(exp))
+                );
+        }
+    }
+
+    function _increaseBalance(address token, uint256 amount) private {
+        uint256 lastBalance;
+        if (token == address(this)) {
+            lastBalance = _poolState.balance;
+            _poolState.lastUpdated = _txCount;
+            _poolState.balance += amount;
+            _poolState.meanBalance = _geometricMean(
+                _poolState.balance,
+                lastBalance,
+                _poolState.meanBalance,
+                _poolState.lastUpdated
+            );
+        } else {
+            AssetState storage asset_ = _assetState[token];
+            if (asset_.token != token) revert AssetNotFound(token);
+            lastBalance = asset_.balance;
+            asset_.lastUpdated = _txCount;
+            asset_.balance += amount;
+            asset_.meanBalance = _geometricMean(
+                asset_.balance,
+                lastBalance,
+                asset_.meanBalance,
+                asset_.lastUpdated
+            );
+        }
+    }
+
+    function _decreaseBalance(address token, uint256 amount) private {
+        uint256 lastBalance;
+        if (token == address(this)) {
+            lastBalance = _poolState.balance;
+            _poolState.lastUpdated = _txCount;
+            _poolState.balance -= amount;
+            _poolState.meanBalance = _geometricMean(
+                _poolState.balance,
+                lastBalance,
+                _poolState.meanBalance,
+                _poolState.lastUpdated
+            );
+        } else {
+            AssetState storage asset_ = _assetState[token];
+            if (asset_.token != token) revert AssetNotFound(token);
+            lastBalance = asset_.balance;
+            asset_.lastUpdated = _txCount;
+            asset_.balance -= amount;
+            asset_.meanBalance = _geometricMean(
+                asset_.balance,
+                lastBalance,
+                asset_.meanBalance,
+                asset_.lastUpdated
+            );
+        }
+    }
+
     function meanPrice(address token) public view returns (uint256) {
         AssetState memory asset_ = _assetState[token];
         uint256 meanWeight = asset_.meanScale.divWadUp(_poolState.meanScale);
-        return
-            meanWeight.fullMulDiv(asset_.meanBalance, _poolState.meanBalance);
+        uint256 meanAssetBalance = _geometricMean(
+            asset_.balance,
+            asset_.meanBalance,
+            asset_.lastUpdated
+        );
+        uint256 meanPoolBalance = _geometricMean(
+            _poolState.balance,
+            _poolState.meanBalance,
+            _poolState.lastUpdated
+        );
+        return meanWeight.fullMulDiv(meanPoolBalance, meanAssetBalance);
     }
 
     function multiswap(
@@ -234,6 +355,8 @@ contract Pool is LPToken {
         onlyAllowed
         returns (uint256[] memory receiveAmounts)
     {
+        _txCount++;
+
         Type t = Type.Swap;
 
         // Check length mismatch
@@ -331,6 +454,7 @@ contract Pool is LPToken {
 
         // Compute scaledValueIn
         uint256 scaledValueIn;
+        uint256 lastPoolBalance = _poolState.balance;
         uint256 feeAmount;
         {
             // Contribution from assets only
@@ -350,7 +474,7 @@ contract Pool is LPToken {
             if (t == Type.Unstake) {
                 uint256 amountIn = amounts[0];
                 feeAmount =
-                    scaledFee.mulWadUp(_poolState.balance - amountIn) +
+                    scaledFee.mulWadUp(lastPoolBalance - amountIn) +
                     amountIn
                         .fullMulDiv(
                             _poolState.scale,
@@ -360,10 +484,10 @@ contract Pool is LPToken {
                 // Contribution from LP tokens
                 scaledValueIn += _poolState.scale.fullMulDiv(
                     amountIn,
-                    _poolState.balance + feeAmount - amountIn
+                    lastPoolBalance + feeAmount - amountIn
                 );
             } else {
-                feeAmount = _poolState.balance.fullMulDiv(
+                feeAmount = lastPoolBalance.fullMulDiv(
                     scaledFee,
                     _poolState.scale - scaledFee
                 );
@@ -382,7 +506,7 @@ contract Pool is LPToken {
                 allocation = allocations[i].mulWadUp(gamma);
                 scaledValueOut = scaledValueIn.mulWadUp(allocation);
                 if (receiveToken == address(this)) {
-                    receiveAmounts[i] = _poolState.balance.fullMulDiv(
+                    receiveAmounts[i] = lastPoolBalance.fullMulDiv(
                         scaledValueOut,
                         _poolState.scale - scaledValueOut
                     );
@@ -408,14 +532,7 @@ contract Pool is LPToken {
                 _poolState.balance -= amount;
                 _burn(_msgSender(), amount);
             } else {
-                AssetState storage assetIn = _assetState[payToken];
-                assetIn.balance += amount;
-                assetIn.meanBalance = assetIn.meanBalance.mulWadUp(
-                    uint256(
-                        int256(assetIn.balance.divWadUp(assetIn.meanBalance))
-                            .powWad(_tau)
-                    )
-                );
+                _increaseBalance(payToken, amount);
 
                 SafeERC20.safeTransferFrom(
                     IERC20(payToken),
@@ -430,20 +547,13 @@ contract Pool is LPToken {
         for (uint256 i; i < receiveTokens.length; i++) {
             address receiveToken = receiveTokens[i];
             uint256 amountOut = receiveAmounts[i];
-            AssetState storage assetOut;
             // Update _balance and asset balances.
             if (receiveToken == address(this)) {
                 _poolState.balance += amountOut;
                 _mint(_msgSender(), amountOut);
             } else {
-                assetOut = _assetState[receiveToken];
-                assetOut.balance -= amountOut;
-                assetOut.meanBalance = assetOut.meanBalance.mulWadUp(
-                    uint256(
-                        int256(assetOut.balance.divWadUp(assetOut.meanBalance))
-                            .powWad(_tau)
-                    )
-                );
+                _decreaseBalance(receiveToken, amountOut);
+
                 SafeERC20.safeTransfer(
                     IERC20(receiveToken),
                     _msgSender(),
@@ -455,11 +565,11 @@ contract Pool is LPToken {
             }
         }
 
-        _poolState.meanBalance = _poolState.meanBalance.mulWadUp(
-            uint256(
-                int256(_poolState.balance.divWadUp(_poolState.meanBalance))
-                    .powWad(_tau)
-            )
+        _poolState.meanBalance = _geometricMean(
+            _poolState.balance,
+            lastPoolBalance,
+            _poolState.meanBalance,
+            _poolState.lastUpdated
         );
     }
 
@@ -468,6 +578,8 @@ contract Pool is LPToken {
         address receiveToken,
         uint256 payAmount
     ) public nonReentrant onlyInitialized onlyAllowed returns (uint256) {
+        _txCount++;
+
         if (
             payToken == address(this) ||
             receiveToken == address(this) ||
@@ -482,13 +594,7 @@ contract Pool is LPToken {
         uint256 feeAmount;
         uint256 receiveAmount;
         {
-            assetIn.balance += payAmount;
-            assetIn.meanBalance = assetIn.meanBalance.mulWadUp(
-                uint256(
-                    int256(assetIn.balance.divWadUp(assetIn.meanBalance))
-                        .powWad(_tau)
-                )
-            );
+            _increaseBalance(payToken, payAmount);
 
             uint256 scaledValueIn = assetIn.scale.fullMulDiv(
                 payAmount,
@@ -510,22 +616,9 @@ contract Pool is LPToken {
             );
         }
 
-        _poolState.balance += feeAmount;
-        _poolState.meanBalance = _poolState.meanBalance.mulWadUp(
-            uint256(
-                int256(_poolState.balance.divWadUp(_poolState.meanBalance))
-                    .powWad(_tau)
-            )
-        );
+        _increaseBalance(address(this), feeAmount);
 
-        assetOut.balance -= receiveAmount;
-        assetOut.meanBalance = assetOut.meanBalance.mulWadUp(
-            uint256(
-                int256(assetOut.balance.divWadUp(assetOut.meanBalance)).powWad(
-                    _tau
-                )
-            )
-        );
+        _decreaseBalance(receiveToken, receiveAmount);
 
         _distributeFee(feeAmount);
 
@@ -552,20 +645,15 @@ contract Pool is LPToken {
         address payToken,
         uint256 payAmount
     ) public nonReentrant onlyInitialized onlyAllowed returns (uint256) {
+        _txCount++;
+
         if (payToken == address(this) || _assetState[payToken].scale == 0)
             revert InvalidStake(payToken);
         if (payAmount * 3 > _assetState[payToken].balance)
             revert TooLarge(payAmount);
         AssetState storage assetIn = _assetState[payToken];
 
-        assetIn.balance += payAmount;
-        assetIn.meanBalance = assetIn.meanBalance.mulWadUp(
-            uint256(
-                int256(assetIn.balance.divWadUp(assetIn.meanBalance)).powWad(
-                    _tau
-                )
-            )
-        );
+        _increaseBalance(payToken, payAmount);
 
         uint256 scaledValueIn = assetIn.scale.fullMulDiv(
             payAmount,
@@ -576,13 +664,7 @@ contract Pool is LPToken {
             _poolState.scale - scaledValueIn
         );
 
-        _poolState.balance += receiveAmount;
-        _poolState.meanBalance = _poolState.meanBalance.mulWadUp(
-            uint256(
-                int256(_poolState.balance.divWadUp(_poolState.meanBalance))
-                    .powWad(_tau)
-            )
-        );
+        _increaseBalance(address(this), receiveAmount);
 
         SafeERC20.safeTransferFrom(
             IERC20(payToken),
@@ -600,6 +682,8 @@ contract Pool is LPToken {
         address receiveToken,
         uint256 payAmount
     ) public nonReentrant onlyInitialized onlyAllowed returns (uint256) {
+        _txCount++;
+
         if (
             receiveToken == address(this) ||
             _assetState[receiveToken].scale == 0
@@ -622,25 +706,14 @@ contract Pool is LPToken {
             assetOut.scale + scaledValueOut
         );
 
-        _poolState.balance -= delta;
-        _poolState.meanBalance = _poolState.meanBalance.mulWadUp(
-            uint256(
-                int256(_poolState.balance.divWadUp(_poolState.meanBalance))
-                    .powWad(_tau)
-            )
-        );
+        _decreaseBalance(address(this), delta);
+
         _burn(_msgSender(), payAmount);
 
         _distributeFee(feeAmount);
 
-        assetOut.balance -= receiveAmount;
-        assetOut.meanBalance = assetOut.meanBalance.mulWadUp(
-            uint256(
-                int256(assetOut.balance.divWadUp(assetOut.meanBalance)).powWad(
-                    _tau
-                )
-            )
-        );
+        _decreaseBalance(receiveToken, receiveAmount);
+
         SafeERC20.safeTransfer(
             IERC20(receiveToken),
             _msgSender(),
@@ -657,6 +730,8 @@ contract Pool is LPToken {
         address token,
         uint256 amount
     ) public nonReentrant onlyInitialized onlyAllowed returns (uint256) {
+        _txCount++;
+
         AssetState storage assetIn;
         uint256 g;
         uint256 amountOut;
@@ -677,13 +752,7 @@ contract Pool is LPToken {
             } else {
                 amountIn = assetIn.balance.mulWadUp(g) - assetIn.balance;
             }
-            assetIn.balance += amount;
-            assetIn.meanBalance = assetIn.meanBalance.mulWadUp(
-                uint256(
-                    int256(assetIn.balance.divWadUp(assetIn.meanBalance))
-                        .powWad(_tau)
-                )
-            );
+            _increaseBalance(_assetAddress[i], amountIn);
 
             SafeERC20.safeTransferFrom(
                 IERC20(assetIn.token),
@@ -693,13 +762,8 @@ contract Pool is LPToken {
             );
         }
 
-        _poolState.balance += amountOut;
-        _poolState.meanBalance = _poolState.meanBalance.mulWadUp(
-            uint256(
-                int256(_poolState.balance.divWadUp(_poolState.meanBalance))
-                    .powWad(_tau)
-            )
-        );
+        _increaseBalance(address(this), amountOut);
+
         _mint(_msgSender(), amountOut);
 
         return amountOut;
@@ -713,6 +777,8 @@ contract Pool is LPToken {
         onlyInitialized
         returns (uint256[] memory receiveAmounts)
     {
+        _txCount++;
+
         AssetState storage assetOut;
         uint256 fee;
         for (uint256 i; i < _assetAddress.length; i++) {
@@ -724,13 +790,8 @@ contract Pool is LPToken {
 
         uint256 delta = amount - feeAmount;
 
-        _poolState.balance -= delta;
-        _poolState.meanBalance = _poolState.meanBalance.mulWadUp(
-            uint256(
-                int256(_poolState.balance.divWadUp(_poolState.meanBalance))
-                    .powWad(_tau)
-            )
-        );
+        _decreaseBalance(address(this), delta);
+
         _burn(_msgSender(), amount);
 
         _distributeFee(feeAmount);
@@ -741,13 +802,8 @@ contract Pool is LPToken {
         for (uint256 i; i < _assetAddress.length; i++) {
             assetOut = _assetState[_assetAddress[i]];
             amountOut = assetOut.balance - assetOut.balance.mulWadUp(g);
-            assetOut.balance -= amountOut;
-            assetOut.meanBalance = assetOut.meanBalance.mulWadUp(
-                uint256(
-                    int256(assetOut.balance.divWadUp(assetOut.meanBalance))
-                        .powWad(_tau)
-                )
-            );
+            _decreaseBalance(_assetAddress[i], amountOut);
+
             receiveAmounts[i] = amountOut;
 
             SafeERC20.safeTransfer(
