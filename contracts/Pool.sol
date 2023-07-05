@@ -73,8 +73,6 @@ contract Pool is LPToken {
 
     error InvalidStake(address payToken);
 
-    error InvalidSwap(address payToken, address receiveToken);
-
     error InvalidUnstake(address receiveToken);
 
     error LengthMismatch(uint256 expected, uint256 actual);
@@ -182,21 +180,7 @@ contract Pool is LPToken {
     }
 
     function info() public view returns (PoolState memory) {
-        address poolAddress = address(this);
-        IERC20Metadata poolMetadata = IERC20Metadata(poolAddress);
-        return
-            PoolState(
-                poolAddress,
-                poolMetadata.name(),
-                poolMetadata.symbol(),
-                poolMetadata.decimals(),
-                _tau,
-                _poolState.balance,
-                _poolState.meanBalance,
-                _poolState.scale,
-                _poolState.meanScale,
-                _poolState.lastUpdated
-            );
+        return _poolState;
     }
 
     function assets() public view returns (AssetState[] memory) {
@@ -580,15 +564,12 @@ contract Pool is LPToken {
     ) public nonReentrant onlyInitialized onlyAllowed returns (uint256) {
         _txCount++;
 
-        if (
-            payToken == address(this) ||
-            receiveToken == address(this) ||
-            _assetState[payToken].scale == 0 ||
-            _assetState[receiveToken].scale == 0 ||
-            payToken == receiveToken
-        ) revert InvalidSwap(payToken, receiveToken);
+        if (payToken == receiveToken) revert DuplicateToken(payToken);
         AssetState storage assetIn = _assetState[payToken];
+        if (assetIn.token != payToken) revert AssetNotFound(payToken);
         AssetState storage assetOut = _assetState[receiveToken];
+        if (assetOut.token != receiveToken) revert AssetNotFound(receiveToken);
+
         if (payAmount * 3 > assetIn.balance) revert TooLarge(payAmount);
 
         uint256 feeAmount;
@@ -647,11 +628,10 @@ contract Pool is LPToken {
     ) public nonReentrant onlyInitialized onlyAllowed returns (uint256) {
         _txCount++;
 
-        if (payToken == address(this) || _assetState[payToken].scale == 0)
-            revert InvalidStake(payToken);
-        if (payAmount * 3 > _assetState[payToken].balance)
-            revert TooLarge(payAmount);
+        if (payToken == address(this)) revert InvalidStake(payToken);
         AssetState storage assetIn = _assetState[payToken];
+        if (assetIn.token != payToken) revert AssetNotFound(payToken);
+        if (payAmount * 3 > assetIn.balance) revert TooLarge(payAmount);
 
         _increaseBalance(payToken, payAmount);
 
@@ -684,12 +664,10 @@ contract Pool is LPToken {
     ) public nonReentrant onlyInitialized onlyAllowed returns (uint256) {
         _txCount++;
 
-        if (
-            receiveToken == address(this) ||
-            _assetState[receiveToken].scale == 0
-        ) revert InvalidUnstake(receiveToken);
+        if (receiveToken == address(this)) revert InvalidUnstake(receiveToken);
         if (payAmount * 3 > _poolState.balance) revert TooLarge(payAmount);
         AssetState storage assetOut = _assetState[receiveToken];
+        if (assetOut.token != receiveToken) revert AssetNotFound(receiveToken);
 
         uint256 feeAmount = payAmount.mulWadUp(assetOut.fee);
         uint256 delta = payAmount - feeAmount;
