@@ -333,7 +333,6 @@ contract Pool is LPToken {
             AssetState storage asset_ = _assetState[token];
             if (asset_.token != token) revert AssetNotFound(token);
             lastBalance = asset_.balance;
-            asset_.lastUpdated = _txCount;
             asset_.balance += amount;
             asset_.meanBalance = _geometricMean(
                 asset_.balance,
@@ -341,6 +340,7 @@ contract Pool is LPToken {
                 asset_.meanBalance,
                 asset_.lastUpdated
             );
+            asset_.lastUpdated = _txCount;
         }
     }
 
@@ -361,7 +361,6 @@ contract Pool is LPToken {
             AssetState storage asset_ = _assetState[token];
             if (asset_.token != token) revert AssetNotFound(token);
             lastBalance = asset_.balance;
-            asset_.lastUpdated = _txCount;
             asset_.balance -= amount;
             asset_.meanBalance = _geometricMean(
                 asset_.balance,
@@ -369,6 +368,7 @@ contract Pool is LPToken {
                 asset_.meanBalance,
                 asset_.lastUpdated
             );
+            asset_.lastUpdated = _txCount;
         }
     }
 
