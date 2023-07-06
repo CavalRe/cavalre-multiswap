@@ -660,15 +660,17 @@ contract Pool is LPToken {
                 assetIn.balance
             );
 
-            uint256 scaledFee = assetOut.fee.mulWadUp(scaledValueIn);
+            uint256 fee = assetOut.fee;
+            if (fee > 0 && _userState[_msgSender()].discount > 0) {
+                fee = fee.mulWadUp(ONE - _userState[_msgSender()].discount);
+            }
+            uint256 scaledFee = fee.mulWadUp(scaledValueIn);
             feeAmount = _poolState.balance.fullMulDiv(
                 scaledFee,
                 _poolState.scale - scaledFee
             );
 
-            uint256 scaledValueOut = (ONE - assetOut.fee).mulWadUp(
-                scaledValueIn
-            );
+            uint256 scaledValueOut = (ONE - fee).mulWadUp(scaledValueIn);
             receiveAmount = assetOut.balance.fullMulDiv(
                 scaledValueOut,
                 assetOut.scale + scaledValueOut
@@ -760,7 +762,11 @@ contract Pool is LPToken {
         if (assetOut.token != receiveToken) revert AssetNotFound(receiveToken);
         if (payAmount * 3 > _poolState.balance) revert TooLarge(payAmount);
 
-        uint256 feeAmount = payAmount.mulWadUp(assetOut.fee);
+        uint256 fee = assetOut.fee;
+        if (fee > 0 && _userState[_msgSender()].discount > 0) {
+            fee = fee.mulWadUp(ONE - _userState[_msgSender()].discount);
+        }
+        uint256 feeAmount = payAmount.mulWadUp(fee);
         uint256 delta = payAmount - feeAmount;
 
         uint256 scaledValueIn = _poolState.scale.fullMulDiv(
@@ -768,7 +774,7 @@ contract Pool is LPToken {
             _poolState.balance - delta
         );
 
-        uint256 scaledValueOut = scaledValueIn.mulWadUp(ONE - assetOut.fee);
+        uint256 scaledValueOut = scaledValueIn.mulWadUp(ONE - fee);
 
         uint256 receiveAmount = assetOut.balance.fullMulDiv(
             scaledValueOut,
@@ -865,6 +871,9 @@ contract Pool is LPToken {
         uint256 fee;
         for (uint256 i; i < _assetAddress.length; i++) {
             fee += _assetState[_assetAddress[i]].fee;
+        }
+        if (fee > 0 && _userState[_msgSender()].discount > 0) {
+            fee = fee.mulWadUp(ONE - _userState[_msgSender()].discount);
         }
         uint256 feeAmount = amount
             .mulWadUp(ONE - _userState[_msgSender()].discount)
