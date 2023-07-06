@@ -54,14 +54,14 @@ contract TestRoot is Test, Context {
     function weight(address token) public view returns (uint256) {
         if (token == address(pool)) return ONE;
         AssetState memory asset_ = pool.asset(token);
-        return asset_.scale.divWadUp(pool.scale());
+        return asset_.scale.divWadUp(pool.info().scale);
     }
 
     function price(address token) public view returns (uint256) {
         if (token == address(pool)) return ONE;
         AssetState memory asset_ = pool.asset(token);
         uint256 weight_ = weight(token);
-        return weight_.fullMulDiv(pool.balance(), asset_.balance);
+        return weight_.fullMulDiv(pool.info().balance, asset_.balance);
     }
 
     function fee(address token) public view returns (uint256) {
@@ -132,7 +132,7 @@ contract TestRoot is Test, Context {
     function checkLP() public {
         assertApproxEqRel(
             pool.totalSupply(),
-            pool.balance(),
+            pool.info().balance,
             1e6,
             "Pool total supply is not approximately equal to pool balance: "
         );
@@ -141,7 +141,7 @@ contract TestRoot is Test, Context {
     function checkLP(uint256 amountIn, uint256 amountOut) public {
         assertApproxEqRel(
             pool.totalSupply(),
-            pool.balance(),
+            pool.info().balance,
             1e6,
             string(
                 abi.encodePacked(

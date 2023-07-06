@@ -255,13 +255,13 @@ contract Pool is LPToken {
         return _assetState[token];
     }
 
-    function balance() public view returns (uint256) {
-        return _poolState.balance;
-    }
+    // function balance() public view returns (uint256) {
+    //     return _poolState.balance;
+    // }
 
-    function scale() public view returns (uint256) {
-        return _poolState.scale;
-    }
+    // function scale() public view returns (uint256) {
+    //     return _poolState.scale;
+    // }
 
     function _geometricMean(
         uint256 newValue,
@@ -291,28 +291,6 @@ contract Pool is LPToken {
                             int256(lastValue.divWadUp(newValue)).powWad(tau)
                         )
                     );
-        }
-    }
-
-    function _geometricMean(
-        uint256 lastValue,
-        uint256 lastMean,
-        uint256 lastUpdated
-    ) private view returns (uint256) {
-        int256 delta = int256(_txCount - lastUpdated);
-        int256 tau = _poolState.tau;
-        if (delta == 0) return lastMean;
-        if (delta == 1) {
-            return
-                lastValue.mulWadUp(
-                    uint256(int256(lastMean.divWadUp(lastValue)).powWad(tau))
-                );
-        } else {
-            int256 exp = tau.powWad(delta);
-            return
-                lastValue.mulWadUp(
-                    uint256(int256(lastMean.divWadUp(lastValue)).powWad(exp))
-                );
         }
     }
 
@@ -370,44 +348,6 @@ contract Pool is LPToken {
             );
             asset_.lastUpdated = _txCount;
         }
-    }
-
-    function meanBalance(address token) public view returns (uint256) {
-        if (token == address(0)) revert ZeroAddress();
-        if (token == address(this)) {
-            return
-                _geometricMean(
-                    _poolState.balance,
-                    _poolState.meanBalance,
-                    _poolState.lastUpdated
-                );
-        }
-        AssetState memory asset_ = _assetState[token];
-        if (asset_.token != token) revert AssetNotFound(token);
-        return
-            _geometricMean(
-                asset_.balance,
-                asset_.meanBalance,
-                asset_.lastUpdated
-            );
-    }
-
-    function meanPrice(address token) public view returns (uint256) {
-        if (token == address(0)) revert ZeroAddress();
-        AssetState memory asset_ = _assetState[token];
-        if (asset_.token != token) revert AssetNotFound(token);
-        uint256 meanWeight = asset_.meanScale.divWadUp(_poolState.meanScale);
-        uint256 meanAssetBalance = _geometricMean(
-            asset_.balance,
-            asset_.meanBalance,
-            asset_.lastUpdated
-        );
-        uint256 meanPoolBalance = _geometricMean(
-            _poolState.balance,
-            _poolState.meanBalance,
-            _poolState.lastUpdated
-        );
-        return meanWeight.fullMulDiv(meanPoolBalance, meanAssetBalance);
     }
 
     function multiswap(
@@ -640,6 +580,7 @@ contract Pool is LPToken {
             _poolState.meanBalance,
             _poolState.lastUpdated
         );
+        _poolState.lastUpdated = _txCount;
 
         emit Multiswap(
             _msgSender(),

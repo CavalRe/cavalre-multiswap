@@ -24,7 +24,7 @@ contract InfoTest is TestRoot {
 
     /// @dev check that `balance` returns some balance
     function testBalance() public {
-        uint256 balance = pool.balance();
+        uint256 balance = pool.info().balance;
         assertGt(balance, 0);
     }
 

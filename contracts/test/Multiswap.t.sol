@@ -469,7 +469,7 @@ contract MultiswapTest is TestRoot {
 
         pool.approve(address(pool), pool.balanceOf(alice));
 
-        if (amounts[0] * 3 > pool.balance()) {
+        if (amounts[0] * 3 > pool.info().balance) {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amounts[0])
             );
