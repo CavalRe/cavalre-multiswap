@@ -127,6 +127,12 @@ contract Pool is LPToken {
 
     error TooLarge(uint256 size);
 
+    error ZeroAddress();
+
+    error ZeroBalance();
+
+    error ZeroScale();
+
     constructor(
         string memory name,
         string memory symbol,
@@ -154,8 +160,11 @@ contract Pool is LPToken {
         uint256 fee_,
         uint256 assetScale_
     ) public nonReentrant onlyUninitialized onlyOwner {
+        if (payToken_ == address(0)) revert ZeroAddress();
         if (_assetState[payToken_].token == payToken_)
             revert DuplicateToken(payToken_);
+        if (balance_ == 0) revert ZeroBalance();
+        if (assetScale_ == 0) revert ZeroScale();
 
         _poolState.balance += assetScale_;
         _poolState.meanBalance += assetScale_;
@@ -190,9 +199,9 @@ contract Pool is LPToken {
     function removeAsset(
         address token
     ) public nonReentrant onlyUninitialized onlyOwner {
+        if (token == address(0)) revert ZeroAddress();
         AssetState storage asset_ = _assetState[token];
-        if (token == address(0) || asset_.token != token)
-            revert AssetNotFound(token);
+        if (asset_.token != token) revert AssetNotFound(token);
 
         uint256 assetScale_ = asset_.scale;
 
@@ -241,8 +250,8 @@ contract Pool is LPToken {
     }
 
     function asset(address token) public view returns (AssetState memory) {
-        if (token == address(0) || _assetState[token].token != token)
-            revert AssetNotFound(token);
+        if (token == address(0)) revert ZeroAddress();
+        if (_assetState[token].token != token) revert AssetNotFound(token);
         return _assetState[token];
     }
 
@@ -320,9 +329,9 @@ contract Pool is LPToken {
                 _poolState.lastUpdated
             );
         } else {
+            if (token == address(0)) revert ZeroAddress();
             AssetState storage asset_ = _assetState[token];
-            if (token == address(0) || asset_.token != token)
-                revert AssetNotFound(token);
+            if (asset_.token != token) revert AssetNotFound(token);
             lastBalance = asset_.balance;
             asset_.lastUpdated = _txCount;
             asset_.balance += amount;
@@ -348,9 +357,9 @@ contract Pool is LPToken {
                 _poolState.lastUpdated
             );
         } else {
+            if (token == address(0)) revert ZeroAddress();
             AssetState storage asset_ = _assetState[token];
-            if (token == address(0) || asset_.token != token)
-                revert AssetNotFound(token);
+            if (asset_.token != token) revert AssetNotFound(token);
             lastBalance = asset_.balance;
             asset_.lastUpdated = _txCount;
             asset_.balance -= amount;
@@ -364,7 +373,9 @@ contract Pool is LPToken {
     }
 
     function meanPrice(address token) public view returns (uint256) {
+        if (token == address(0)) revert ZeroAddress();
         AssetState memory asset_ = _assetState[token];
+        if (asset_.token != token) revert AssetNotFound(token);
         uint256 meanWeight = asset_.meanScale.divWadUp(_poolState.meanScale);
         uint256 meanAssetBalance = _geometricMean(
             asset_.balance,
@@ -422,9 +433,9 @@ contract Pool is LPToken {
                     t = Type.Unstake;
                     continue;
                 }
+                if (token == address(0)) revert ZeroAddress();
                 AssetState memory asset_ = _assetState[token];
-                if (token == address(0) || asset_.token != token)
-                    revert AssetNotFound(token);
+                if (asset_.token != token) revert AssetNotFound(token);
                 if (check_[asset_.index]) revert DuplicateToken(token);
                 check_[asset_.index] = true;
             }
@@ -445,9 +456,9 @@ contract Pool is LPToken {
                     t = Type.Stake;
                     continue;
                 }
+                if (token == address(0)) revert ZeroAddress();
                 AssetState memory asset_ = _assetState[token];
-                if (token == address(0) || asset_.token != token)
-                    revert AssetNotFound(token);
+                if (asset_.token != token) revert AssetNotFound(token);
                 if (check_[asset_.index]) revert DuplicateToken(token);
                 check_[asset_.index] = true;
             }
@@ -627,15 +638,15 @@ contract Pool is LPToken {
     ) public nonReentrant onlyInitialized onlyAllowed returns (uint256) {
         _txCount++;
 
-        if (payToken == receiveToken) revert DuplicateToken(payToken);
-        AssetState storage assetIn = _assetState[payToken];
-        if (payToken == address(0) || assetIn.token != payToken)
-            revert AssetNotFound(payToken);
-        AssetState storage assetOut = _assetState[receiveToken];
-        if (receiveToken == address(0) || assetOut.token != receiveToken)
-            revert AssetNotFound(receiveToken);
+        if (payToken == address(0)) revert ZeroAddress();
+        if (receiveToken == address(0)) revert ZeroAddress();
         if (payToken == address(this)) revert InvalidSwap(payToken);
         if (receiveToken == address(this)) revert InvalidSwap(receiveToken);
+        if (payToken == receiveToken) revert DuplicateToken(payToken);
+        AssetState storage assetIn = _assetState[payToken];
+        if (assetIn.token != payToken) revert AssetNotFound(payToken);
+        AssetState storage assetOut = _assetState[receiveToken];
+        if (assetOut.token != receiveToken) revert AssetNotFound(receiveToken);
 
         if (payAmount * 3 > assetIn.balance) revert TooLarge(payAmount);
 
@@ -704,10 +715,10 @@ contract Pool is LPToken {
     ) public nonReentrant onlyInitialized onlyAllowed returns (uint256) {
         _txCount++;
 
+        if (payToken == address(0)) revert ZeroAddress();
         if (payToken == address(this)) revert InvalidStake(payToken);
         AssetState storage assetIn = _assetState[payToken];
-        if (payToken == address(0) || assetIn.token != payToken)
-            revert AssetNotFound(payToken);
+        if (assetIn.token != payToken) revert AssetNotFound(payToken);
         if (payAmount * 3 > assetIn.balance) revert TooLarge(payAmount);
 
         _increaseBalance(payToken, payAmount);
@@ -743,11 +754,11 @@ contract Pool is LPToken {
     ) public nonReentrant onlyInitialized onlyAllowed returns (uint256) {
         _txCount++;
 
+        if (receiveToken == address(0)) revert ZeroAddress();
         if (receiveToken == address(this)) revert InvalidUnstake(receiveToken);
-        if (payAmount * 3 > _poolState.balance) revert TooLarge(payAmount);
         AssetState storage assetOut = _assetState[receiveToken];
-        if (receiveToken == address(0) || assetOut.token != receiveToken)
-            revert AssetNotFound(receiveToken);
+        if (assetOut.token != receiveToken) revert AssetNotFound(receiveToken);
+        if (payAmount * 3 > _poolState.balance) revert TooLarge(payAmount);
 
         uint256 feeAmount = payAmount.mulWadUp(assetOut.fee);
         uint256 delta = payAmount - feeAmount;
@@ -806,9 +817,9 @@ contract Pool is LPToken {
             g = (_poolState.balance + amount).divWadUp(_poolState.balance);
             amountOut = amount;
         } else {
+            if (token == address(0)) revert ZeroAddress();
             assetIn = _assetState[token];
-            if (token == address(0) || assetIn.token != token)
-                revert AssetNotFound(token);
+            if (assetIn.token != token) revert AssetNotFound(token);
             g = (assetIn.balance + amount).divWadUp(assetIn.balance);
             amountOut = _poolState.balance.mulWadUp(g) - _poolState.balance;
         }
@@ -835,11 +846,7 @@ contract Pool is LPToken {
 
         _mint(_msgSender(), amountOut);
 
-        emit AddLiquidity(
-            _msgSender(),
-            payAmounts,
-            amountOut
-        );
+        emit AddLiquidity(_msgSender(), payAmounts, amountOut);
 
         return amountOut;
     }
@@ -888,11 +895,6 @@ contract Pool is LPToken {
             );
         }
 
-        emit RemoveLiquidity(
-            _msgSender(),
-            amount,
-            receiveAmounts,
-            feeAmount
-        );
+        emit RemoveLiquidity(_msgSender(), amount, receiveAmounts, feeAmount);
     }
 }

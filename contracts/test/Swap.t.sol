@@ -169,8 +169,7 @@ contract SwapTest is TestRoot {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Pool.AssetNotFound.selector,
-                address(0)
+                Pool.ZeroAddress.selector
             )
         );
         pool.swap(address(depositToken), address(0), amount);
