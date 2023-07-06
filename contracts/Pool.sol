@@ -98,14 +98,12 @@ contract Pool is LPToken {
 
     event AddLiquidity(
         address indexed user,
-        address[] payTokens,
         uint256[] payAmounts,
         uint256 receiveAmount
     );
 
     event RemoveLiquidity(
         address indexed user,
-        address[] receiveTokens,
         uint256 payAmount,
         uint256[] receiveAmounts,
         uint256 feeAmount
@@ -839,7 +837,6 @@ contract Pool is LPToken {
 
         emit AddLiquidity(
             _msgSender(),
-            _assetAddress,
             payAmounts,
             amountOut
         );
@@ -893,7 +890,6 @@ contract Pool is LPToken {
 
         emit RemoveLiquidity(
             _msgSender(),
-            _assetAddress,
             amount,
             receiveAmounts,
             feeAmount
