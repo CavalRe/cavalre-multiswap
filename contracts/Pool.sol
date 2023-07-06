@@ -372,6 +372,26 @@ contract Pool is LPToken {
         }
     }
 
+    function meanBalance(address token) public view returns (uint256) {
+        if (token == address(0)) revert ZeroAddress();
+        if (token == address(this)) {
+            return
+                _geometricMean(
+                    _poolState.balance,
+                    _poolState.meanBalance,
+                    _poolState.lastUpdated
+                );
+        }
+        AssetState memory asset_ = _assetState[token];
+        if (asset_.token != token) revert AssetNotFound(token);
+        return
+            _geometricMean(
+                asset_.balance,
+                asset_.meanBalance,
+                asset_.lastUpdated
+            );
+    }
+
     function meanPrice(address token) public view returns (uint256) {
         if (token == address(0)) revert ZeroAddress();
         AssetState memory asset_ = _assetState[token];
