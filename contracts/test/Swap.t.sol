@@ -103,16 +103,15 @@ contract SwapTest is TestRoot {
      * Input Checking (Negative)
      */
 
-    /// @dev `swap` should revert with `InvalidSwap` if the address is not a managed asset
+    /// @dev `swap` should revert with `AssetNotFound` if the address is not a managed asset
     function testBadDepositAddress() public {
         Token token = new Token("Foo", "FOO");
         address depositAddress = address(token);
         address withdrawAddress = address(tokens[0]);
         vm.expectRevert(
             abi.encodeWithSelector(
-                Pool.InvalidSwap.selector,
-                depositAddress,
-                withdrawAddress
+                Pool.AssetNotFound.selector,
+                depositAddress
             )
         );
         pool.swap(depositAddress, withdrawAddress, 1);
@@ -124,8 +123,7 @@ contract SwapTest is TestRoot {
         address withdrawAddress = address(token);
         vm.expectRevert(
             abi.encodeWithSelector(
-                Pool.InvalidSwap.selector,
-                depositAddress,
+                Pool.AssetNotFound.selector,
                 withdrawAddress
             )
         );
@@ -142,9 +140,8 @@ contract SwapTest is TestRoot {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Pool.InvalidSwap.selector,
-                address(depositToken),
-                address(withdrawToken)
+                Pool.DuplicateToken.selector,
+                address(depositToken)
             )
         );
         pool.swap(address(depositToken), address(withdrawToken), amount);
@@ -172,8 +169,7 @@ contract SwapTest is TestRoot {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Pool.InvalidSwap.selector,
-                address(depositToken),
+                Pool.AssetNotFound.selector,
                 address(0)
             )
         );
@@ -198,8 +194,7 @@ contract SwapTest is TestRoot {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Pool.InvalidSwap.selector,
-                address(depositToken),
+                Pool.AssetNotFound.selector,
                 address(outside)
             )
         );
@@ -215,9 +210,8 @@ contract SwapTest is TestRoot {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Pool.InvalidSwap.selector,
-                address(depositToken),
-                address(withdrawToken)
+                Pool.AssetNotFound.selector,
+                address(depositToken)
             )
         );
         pool.swap(address(depositToken), address(withdrawToken), amount);

@@ -104,12 +104,12 @@ contract StakeTest is TestRoot {
      * Input Checking (Negative)
      */
 
-    /// @dev `stake` should revert with `InvalidStake` if the address is not a managed asset
+    /// @dev `stake` should revert with `AssetNotFound` if the address is not a managed asset
     function testBadDepositAddress() public {
         Token token = new Token("Foo", "FOO");
         address depositAddress = address(token);
         vm.expectRevert(
-            abi.encodeWithSelector(Pool.InvalidStake.selector, depositAddress)
+            abi.encodeWithSelector(Pool.AssetNotFound.selector, depositAddress)
         );
         pool.stake(depositAddress, 0);
     }

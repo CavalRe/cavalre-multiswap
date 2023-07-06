@@ -63,6 +63,54 @@ contract Pool is LPToken {
         Unstake
     }
 
+    event Multiswap(
+        address indexed user,
+        address[] payTokens,
+        address[] receiveTokens,
+        uint256[] payAmounts,
+        uint256[] receiveAmounts,
+        uint256 feeAmount
+    );
+
+    event Swap(
+        address indexed user,
+        address payToken,
+        address receiveToken,
+        uint256 payAmount,
+        uint256 receiveAmount,
+        uint256 feeAmount
+    );
+
+    event Stake(
+        address indexed user,
+        address payToken,
+        uint256 payAmount,
+        uint256 receiveAmount
+    );
+
+    event Unstake(
+        address indexed user,
+        address receiveToken,
+        uint256 payAmount,
+        uint256 receiveAmount,
+        uint256 feeAmount
+    );
+
+    event AddLiquidity(
+        address indexed user,
+        address[] payTokens,
+        uint256[] payAmounts,
+        uint256 receiveAmount
+    );
+
+    event RemoveLiquidity(
+        address indexed user,
+        address[] receiveTokens,
+        uint256 payAmount,
+        uint256[] receiveAmounts,
+        uint256 feeAmount
+    );
+
     error AlreadyInitialized();
 
     error AssetNotFound(address asset);
@@ -72,6 +120,8 @@ contract Pool is LPToken {
     error IncorrectAllocation(uint256 expected, uint256 actual);
 
     error InvalidStake(address payToken);
+
+    error InvalidSwap(address token);
 
     error InvalidUnstake(address receiveToken);
 
@@ -145,7 +195,8 @@ contract Pool is LPToken {
         address token
     ) public nonReentrant onlyUninitialized onlyOwner {
         AssetState storage asset_ = _assetState[token];
-        if (asset_.token != token) revert AssetNotFound(token);
+        if (token == address(0) || asset_.token != token)
+            revert AssetNotFound(token);
 
         uint256 assetScale_ = asset_.scale;
 
@@ -194,7 +245,8 @@ contract Pool is LPToken {
     }
 
     function asset(address token) public view returns (AssetState memory) {
-        if (_assetState[token].token != token) revert AssetNotFound(token);
+        if (token == address(0) || _assetState[token].token != token)
+            revert AssetNotFound(token);
         return _assetState[token];
     }
 
@@ -271,7 +323,8 @@ contract Pool is LPToken {
             );
         } else {
             AssetState storage asset_ = _assetState[token];
-            if (asset_.token != token) revert AssetNotFound(token);
+            if (token == address(0) || asset_.token != token)
+                revert AssetNotFound(token);
             lastBalance = asset_.balance;
             asset_.lastUpdated = _txCount;
             asset_.balance += amount;
@@ -298,7 +351,8 @@ contract Pool is LPToken {
             );
         } else {
             AssetState storage asset_ = _assetState[token];
-            if (asset_.token != token) revert AssetNotFound(token);
+            if (token == address(0) || asset_.token != token)
+                revert AssetNotFound(token);
             lastBalance = asset_.balance;
             asset_.lastUpdated = _txCount;
             asset_.balance -= amount;
@@ -371,7 +425,8 @@ contract Pool is LPToken {
                     continue;
                 }
                 AssetState memory asset_ = _assetState[token];
-                if (asset_.token != token) revert AssetNotFound(token);
+                if (token == address(0) || asset_.token != token)
+                    revert AssetNotFound(token);
                 if (check_[asset_.index]) revert DuplicateToken(token);
                 check_[asset_.index] = true;
             }
@@ -393,7 +448,8 @@ contract Pool is LPToken {
                     continue;
                 }
                 AssetState memory asset_ = _assetState[token];
-                if (asset_.token != token) revert AssetNotFound(token);
+                if (token == address(0) || asset_.token != token)
+                    revert AssetNotFound(token);
                 if (check_[asset_.index]) revert DuplicateToken(token);
                 check_[asset_.index] = true;
             }
@@ -555,6 +611,15 @@ contract Pool is LPToken {
             _poolState.meanBalance,
             _poolState.lastUpdated
         );
+
+        emit Multiswap(
+            _msgSender(),
+            payTokens,
+            receiveTokens,
+            amounts,
+            receiveAmounts,
+            feeAmount
+        );
     }
 
     function swap(
@@ -566,9 +631,13 @@ contract Pool is LPToken {
 
         if (payToken == receiveToken) revert DuplicateToken(payToken);
         AssetState storage assetIn = _assetState[payToken];
-        if (assetIn.token != payToken) revert AssetNotFound(payToken);
+        if (payToken == address(0) || assetIn.token != payToken)
+            revert AssetNotFound(payToken);
         AssetState storage assetOut = _assetState[receiveToken];
-        if (assetOut.token != receiveToken) revert AssetNotFound(receiveToken);
+        if (receiveToken == address(0) || assetOut.token != receiveToken)
+            revert AssetNotFound(receiveToken);
+        if (payToken == address(this)) revert InvalidSwap(payToken);
+        if (receiveToken == address(this)) revert InvalidSwap(receiveToken);
 
         if (payAmount * 3 > assetIn.balance) revert TooLarge(payAmount);
 
@@ -619,6 +688,15 @@ contract Pool is LPToken {
             )
         );
 
+        emit Swap(
+            _msgSender(),
+            payToken,
+            receiveToken,
+            payAmount,
+            receiveAmount,
+            feeAmount
+        );
+
         return receiveAmount;
     }
 
@@ -630,7 +708,8 @@ contract Pool is LPToken {
 
         if (payToken == address(this)) revert InvalidStake(payToken);
         AssetState storage assetIn = _assetState[payToken];
-        if (assetIn.token != payToken) revert AssetNotFound(payToken);
+        if (payToken == address(0) || assetIn.token != payToken)
+            revert AssetNotFound(payToken);
         if (payAmount * 3 > assetIn.balance) revert TooLarge(payAmount);
 
         _increaseBalance(payToken, payAmount);
@@ -655,6 +734,8 @@ contract Pool is LPToken {
 
         _mint(_msgSender(), receiveAmount);
 
+        emit Stake(_msgSender(), payToken, payAmount, receiveAmount);
+
         return receiveAmount;
     }
 
@@ -667,7 +748,8 @@ contract Pool is LPToken {
         if (receiveToken == address(this)) revert InvalidUnstake(receiveToken);
         if (payAmount * 3 > _poolState.balance) revert TooLarge(payAmount);
         AssetState storage assetOut = _assetState[receiveToken];
-        if (assetOut.token != receiveToken) revert AssetNotFound(receiveToken);
+        if (receiveToken == address(0) || assetOut.token != receiveToken)
+            revert AssetNotFound(receiveToken);
 
         uint256 feeAmount = payAmount.mulWadUp(assetOut.fee);
         uint256 delta = payAmount - feeAmount;
@@ -701,6 +783,14 @@ contract Pool is LPToken {
             )
         );
 
+        emit Unstake(
+            _msgSender(),
+            receiveToken,
+            payAmount,
+            receiveAmount,
+            feeAmount
+        );
+
         return receiveAmount;
     }
 
@@ -713,12 +803,14 @@ contract Pool is LPToken {
         AssetState storage assetIn;
         uint256 g;
         uint256 amountOut;
+        uint256[] memory payAmounts = new uint256[](_assetAddress.length);
         if (token == address(this)) {
             g = (_poolState.balance + amount).divWadUp(_poolState.balance);
             amountOut = amount;
         } else {
             assetIn = _assetState[token];
-            if (assetIn.token != token) revert AssetNotFound(token);
+            if (token == address(0) || assetIn.token != token)
+                revert AssetNotFound(token);
             g = (assetIn.balance + amount).divWadUp(assetIn.balance);
             amountOut = _poolState.balance.mulWadUp(g) - _poolState.balance;
         }
@@ -730,6 +822,7 @@ contract Pool is LPToken {
             } else {
                 amountIn = assetIn.balance.mulWadUp(g) - assetIn.balance;
             }
+            payAmounts[i] = amountIn;
             _increaseBalance(_assetAddress[i], amountIn);
 
             SafeERC20.safeTransferFrom(
@@ -743,6 +836,13 @@ contract Pool is LPToken {
         _increaseBalance(address(this), amountOut);
 
         _mint(_msgSender(), amountOut);
+
+        emit AddLiquidity(
+            _msgSender(),
+            _assetAddress,
+            payAmounts,
+            amountOut
+        );
 
         return amountOut;
     }
@@ -790,5 +890,13 @@ contract Pool is LPToken {
                 fromCanonical(amount, IERC20Metadata(assetOut.token).decimals())
             );
         }
+
+        emit RemoveLiquidity(
+            _msgSender(),
+            _assetAddress,
+            amount,
+            receiveAmounts,
+            feeAmount
+        );
     }
 }
