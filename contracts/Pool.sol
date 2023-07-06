@@ -255,14 +255,6 @@ contract Pool is LPToken {
         return _assetState[token];
     }
 
-    // function balance() public view returns (uint256) {
-    //     return _poolState.balance;
-    // }
-
-    // function scale() public view returns (uint256) {
-    //     return _poolState.scale;
-    // }
-
     function _geometricMean(
         uint256 newValue,
         uint256 lastValue,
