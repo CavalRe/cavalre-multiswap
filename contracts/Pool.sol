@@ -157,8 +157,8 @@ contract Pool is LPToken {
         if (_assetState[payToken_].token == payToken_)
             revert DuplicateToken(payToken_);
 
-        _poolState.balance += assetScale_;
-        _poolState.meanBalance += assetScale_;
+        _poolState.balance += balance_;
+        _poolState.meanBalance += balance_;
         _poolState.scale += assetScale_;
         _poolState.meanScale += assetScale_;
 
