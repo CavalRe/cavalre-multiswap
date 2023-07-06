@@ -38,8 +38,6 @@ contract Pool is LPToken {
 
     uint256 private _txCount;
 
-    int256 private _tau;
-
     uint256 private _isInitialized;
 
     modifier onlyInitialized() {
@@ -263,14 +261,15 @@ contract Pool is LPToken {
         uint256 lastUpdated
     ) private view returns (uint256) {
         int256 delta = int256(_txCount - lastUpdated);
+        int256 tau = _poolState.tau;
         if (delta == 0) return lastMean;
         if (delta == 1) {
             return
                 newValue.mulWadUp(
-                    uint256(int256(lastMean.divWadUp(newValue)).powWad(_tau))
+                    uint256(int256(lastMean.divWadUp(newValue)).powWad(tau))
                 );
         } else {
-            int256 exp = _tau.powWad(delta);
+            int256 exp = tau.powWad(delta);
             return
                 newValue
                     .mulWadUp(
@@ -280,7 +279,7 @@ contract Pool is LPToken {
                     )
                     .mulWadUp(
                         uint256(
-                            int256(lastValue.divWadUp(newValue)).powWad(_tau)
+                            int256(lastValue.divWadUp(newValue)).powWad(tau)
                         )
                     );
         }
@@ -292,14 +291,15 @@ contract Pool is LPToken {
         uint256 lastUpdated
     ) private view returns (uint256) {
         int256 delta = int256(_txCount - lastUpdated);
+        int256 tau = _poolState.tau;
         if (delta == 0) return lastMean;
         if (delta == 1) {
             return
                 lastValue.mulWadUp(
-                    uint256(int256(lastMean.divWadUp(lastValue)).powWad(_tau))
+                    uint256(int256(lastMean.divWadUp(lastValue)).powWad(tau))
                 );
         } else {
-            int256 exp = _tau.powWad(delta);
+            int256 exp = tau.powWad(delta);
             return
                 lastValue.mulWadUp(
                     uint256(int256(lastMean.divWadUp(lastValue)).powWad(exp))
