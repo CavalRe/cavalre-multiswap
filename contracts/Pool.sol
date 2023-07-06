@@ -875,9 +875,7 @@ contract Pool is LPToken {
         if (fee > 0 && _userState[_msgSender()].discount > 0) {
             fee = fee.mulWadUp(ONE - _userState[_msgSender()].discount);
         }
-        uint256 feeAmount = amount
-            .mulWadUp(ONE - _userState[_msgSender()].discount)
-            .mulWadUp(fee);
+        uint256 feeAmount = amount.mulWadUp(fee);
 
         uint256 delta = amount - feeAmount;
 
