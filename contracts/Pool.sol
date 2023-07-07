@@ -55,12 +55,6 @@ contract Pool is LPToken {
     mapping(address => AssetState) private _assetState;
     address[] private _assetAddress;
 
-    enum Type {
-        Swap,
-        Stake,
-        Unstake
-    }
-
     event Multiswap(
         address indexed user,
         address[] payTokens,
@@ -117,7 +111,7 @@ contract Pool is LPToken {
 
     error InvalidStake(address payToken);
 
-    error InvalidSwap(address token);
+    error InvalidSwap(address payToken, address receiveToke);
 
     error InvalidUnstake(address receiveToken);
 
@@ -130,6 +124,8 @@ contract Pool is LPToken {
     error ZeroAddress();
 
     error ZeroBalance();
+
+    error ZeroLength();
 
     error ZeroScale();
 
@@ -356,10 +352,10 @@ contract Pool is LPToken {
     {
         _txCount++;
 
-        Type t = Type.Swap;
-
-        // Check length mismatch
+        // Check lengths
         {
+            if (payTokens.length == 0) revert ZeroLength();
+            if (receiveTokens.length == 0) revert ZeroLength();
             if (payTokens.length != amounts.length)
                 revert LengthMismatch(payTokens.length, amounts.length);
             if (receiveTokens.length != allocations.length)
@@ -372,6 +368,7 @@ contract Pool is LPToken {
             bool[] memory check_ = new bool[](_assetAddress.length);
             for (uint256 i; i < payTokens.length; i++) {
                 address token = payTokens[i];
+                if (token == address(0)) revert ZeroAddress();
                 if (address(this) == token) {
                     if (isLP) revert DuplicateToken(token);
                     isLP = true;
@@ -382,10 +379,8 @@ contract Pool is LPToken {
                         amounts[i] = amounts[0];
                         amounts[0] = temp;
                     }
-                    t = Type.Unstake;
                     continue;
                 }
-                if (token == address(0)) revert ZeroAddress();
                 AssetState memory asset_ = _assetState[token];
                 if (asset_.token != token) revert AssetNotFound(token);
                 if (check_[asset_.index]) revert DuplicateToken(token);
@@ -395,6 +390,7 @@ contract Pool is LPToken {
             isLP = false;
             for (uint256 i; i < receiveTokens.length; i++) {
                 address token = receiveTokens[i];
+                if (token == address(0)) revert ZeroAddress();
                 if (address(this) == token) {
                     if (isLP) revert DuplicateToken(token);
                     isLP = true;
@@ -405,10 +401,8 @@ contract Pool is LPToken {
                         allocations[i] = allocations[0];
                         allocations[0] = temp;
                     }
-                    t = Type.Stake;
                     continue;
                 }
-                if (token == address(0)) revert ZeroAddress();
                 AssetState memory asset_ = _assetState[token];
                 if (asset_.token != token) revert AssetNotFound(token);
                 if (check_[asset_.index]) revert DuplicateToken(token);
@@ -442,6 +436,7 @@ contract Pool is LPToken {
 
         // Compute fee
         uint256 fee;
+        uint256 gamma;
         {
             for (uint256 i; i < receiveTokens.length; i++) {
                 fee += allocations[i].mulWadUp(
@@ -452,6 +447,7 @@ contract Pool is LPToken {
         if (fee > 0 && _userState[_msgSender()].discount > 0) {
             fee = fee.mulWadUp(ONE - _userState[_msgSender()].discount);
         }
+        gamma = ONE - fee;
 
         // Compute scaledValueIn
         uint256 scaledValueIn;
@@ -472,7 +468,7 @@ contract Pool is LPToken {
             }
 
             uint256 scaledFee = scaledValueIn.mulWadUp(fee);
-            if (t == Type.Unstake) {
+            if (payTokens[0] == address(this)) {
                 uint256 amountIn = amounts[0];
                 feeAmount =
                     scaledFee.mulWadUp(lastPoolBalance - amountIn) +
@@ -498,7 +494,6 @@ contract Pool is LPToken {
         // Compute receiveAmounts
         {
             uint256 scaledValueOut;
-            uint256 gamma = ONE - fee;
 
             address receiveToken;
             uint256 allocation;
@@ -593,8 +588,8 @@ contract Pool is LPToken {
 
         if (payToken == address(0)) revert ZeroAddress();
         if (receiveToken == address(0)) revert ZeroAddress();
-        if (payToken == address(this)) revert InvalidSwap(payToken);
-        if (receiveToken == address(this)) revert InvalidSwap(receiveToken);
+        if (payToken == address(this)) revert InvalidSwap(payToken, receiveToken);
+        if (receiveToken == address(this)) revert InvalidSwap(payToken, receiveToken);
         if (payToken == receiveToken) revert DuplicateToken(payToken);
         AssetState storage assetIn = _assetState[payToken];
         if (assetIn.token != payToken) revert AssetNotFound(payToken);

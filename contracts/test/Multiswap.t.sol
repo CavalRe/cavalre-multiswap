@@ -209,7 +209,7 @@ contract MultiswapTest is TestRoot {
         pool.multiswap(deposits, amounts, withdrawals, allocations);
     }
 
-    function testFailMultiNoWithdrawal() public {
+    function testMultiNoWithdrawal() public {
         Token depositToken = tokens[0];
         uint256 amount = 1e27;
         depositToken.mint(amount);
@@ -221,6 +221,7 @@ contract MultiswapTest is TestRoot {
         amounts[0] = amount;
         address[] memory withdrawals = new address[](0);
         uint256[] memory allocations = new uint256[](0);
+        vm.expectRevert(abi.encodeWithSelector(Pool.ZeroLength.selector));
         pool.multiswap(deposits, amounts, withdrawals, allocations);
     }
 
@@ -237,6 +238,7 @@ contract MultiswapTest is TestRoot {
         withdrawals[0] = address(withdrawToken);
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 1e18;
+        vm.expectRevert(abi.encodeWithSelector(Pool.ZeroLength.selector));
         pool.multiswap(deposits, amounts, withdrawals, allocations);
     }
 
