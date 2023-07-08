@@ -11,9 +11,12 @@ import "@cavalre/Pool.sol";
 contract ContractTest is Context, Test {
     uint256 private constant NTOKENS = 2;
 
+    address alice = address(1);
+
     Token[] private tokens;
 
     Pool private pool;
+    Token private token;
 
     address private sender = address(this);
 
@@ -37,8 +40,6 @@ contract ContractTest is Context, Test {
     uint256 private feeAmount;
 
     function setUp() public {
-        address alice = address(1);
-
         vm.startPrank(alice);
 
         pool = new Pool("Pool", "P", int256(1e16), false);
@@ -59,18 +60,18 @@ contract ContractTest is Context, Test {
         string memory name;
         string memory symbol;
 
-        for (uint256 i = 0; i < NTOKENS; i++) {
+        for (uint256 i; i < NTOKENS; i++) {
             amount = (i + 1) * 1e27;
             balance = 100 * amount;
             scale = balance;
             name = string(abi.encodePacked("Token ", Strings.toString(i + 1)));
             symbol = string(abi.encodePacked("T", Strings.toString(i + 1)));
-            Token token = new Token(name, symbol);
+            token = new Token(name, symbol);
             token.mint(balance);
             token.approve(address(pool), balance);
-            tokens[i] = token;
-
             pool.addAsset(address(token), balance, fee, scale);
+
+            tokens[i] = token;
 
             addresses[i] = address(token);
             amounts[i] = amount;
@@ -80,8 +81,12 @@ contract ContractTest is Context, Test {
 
         pool.initialize();
 
-        tokens[0].mint(amounts[0]);
-        tokens[0].approve(address(pool), amounts[0]);
+        for (uint256 i; i < NTOKENS; i++) {
+            token = tokens[i];
+            balance = token.balanceOf(address(pool));
+            token.mint(balance);
+            token.approve(address(pool), balance);
+        }
 
         oneAsset[0] = addresses[0];
         anotherAsset[0] = addresses[1];
@@ -329,6 +334,49 @@ contract ContractTest is Context, Test {
         emit log_named_uint("amountOut", receiveAmounts[0]);
         emit log_named_uint("feeAmount", feeAmount);
         emit log("");
+        showPool(pool);
+        emit log("");
+    }
+
+    function test2_6_addLiquidity() public {
+        emit log("=============");
+        emit log("Initial state");
+        emit log("=============");
+        emit log("");
+        showPool(pool);
+        emit log("");
+        pool.addLiquidity(addresses[0], tokens[0].balanceOf(address(pool)) / 2);
+        emit log("===========");
+        emit log("Final state");
+        emit log("===========");
+        emit log("");
+        showPool(pool);
+        emit log("");
+    }
+
+    function test2_7_removeLiquidity() public {
+        emit log("");
+        emit log("=============");
+        emit log("Initial state");
+        emit log("=============");
+        emit log("");
+        showPool(pool);
+        emit log("");
+        uint256 amount_ = tokens[0].balanceOf(address(pool)) / 2;
+        amount_ = pool.addLiquidity(addresses[0], amount_);
+        emit log("======================");
+        emit log("After adding liquidity");
+        emit log("======================");
+        emit log("");
+        showPool(pool);
+        emit log("");
+        amount_ = pool.info().balance / 3;
+        (receiveAmounts, feeAmount) = pool.removeLiquidity(amount_);
+        emit log("========================");
+        emit log("After rmeoving liquidity");
+        emit log("========================");
+        emit log("");
+        emit log_named_uint("feeAmount", feeAmount);
         showPool(pool);
         emit log("");
     }

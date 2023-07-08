@@ -362,8 +362,11 @@ contract Pool is LPToken {
         {
             if (payTokens.length == 0) revert ZeroLength();
             if (receiveTokens.length == 0) revert ZeroLength();
-            if (_forceSpecialized && payTokens.length == 1 && receiveTokens.length == 1)
-                revert UseSpecializedFunction();
+            if (
+                _forceSpecialized &&
+                payTokens.length == 1 &&
+                receiveTokens.length == 1
+            ) revert UseSpecializedFunction();
             if (payTokens.length != amounts.length)
                 revert LengthMismatch(payTokens.length, amounts.length);
             if (receiveTokens.length != allocations.length)
@@ -831,21 +834,26 @@ contract Pool is LPToken {
         public
         nonReentrant
         onlyInitialized
-        returns (uint256[] memory receiveAmounts)
+        returns (uint256[] memory receiveAmounts, uint256 feeAmount)
     {
         _txCount++;
 
         AssetState storage assetOut;
         uint256 fee;
         for (uint256 i; i < _assetAddress.length; i++) {
-            fee += _assetState[_assetAddress[i]].fee;
+            fee += _assetState[_assetAddress[i]].fee.fullMulDiv(
+                _assetState[_assetAddress[i]].scale,
+                _poolState.scale
+            );
         }
         if (fee > 0 && _userState[_msgSender()].discount > 0) {
             fee = fee.mulWadUp(ONE - _userState[_msgSender()].discount);
         }
-        uint256 feeAmount = amount.mulWadUp(fee);
+        feeAmount = amount.mulWadUp(fee);
 
         uint256 delta = amount - feeAmount;
+
+        uint256 g = (_poolState.balance - delta).divWadUp(_poolState.balance);
 
         _decreaseBalance(address(this), delta);
 
@@ -854,7 +862,6 @@ contract Pool is LPToken {
         _distributeFee(feeAmount);
 
         receiveAmounts = new uint256[](_assetAddress.length);
-        uint256 g = (_poolState.balance - delta).divWadUp(_poolState.balance);
         uint256 amountOut;
         for (uint256 i; i < _assetAddress.length; i++) {
             assetOut = _assetState[_assetAddress[i]];
@@ -866,7 +873,10 @@ contract Pool is LPToken {
             SafeERC20.safeTransfer(
                 IERC20(assetOut.token),
                 _msgSender(),
-                fromCanonical(amount, IERC20Metadata(assetOut.token).decimals())
+                fromCanonical(
+                    amountOut,
+                    IERC20Metadata(assetOut.token).decimals()
+                )
             );
         }
 
