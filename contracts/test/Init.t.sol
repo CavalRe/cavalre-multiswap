@@ -10,7 +10,7 @@ contract InitTest is Test {
         address alice = address(1);
 
         vm.startPrank(alice);
-        Pool pool = new Pool("Pool", "P", int256(1e16));
+        Pool pool = new Pool("Pool", "P", int256(1e16), false);
 
         Token tokenA = new Token("Foo", "FOOA");
         Token tokenB = new Token("Foo", "FOOB");
@@ -65,7 +65,7 @@ contract InitTest is Test {
         address bob = address(2);
 
         vm.startPrank(alice);
-        Pool pool = new Pool("Pool", "P", int256(1e16));
+        Pool pool = new Pool("Pool", "P", int256(1e16), false);
         vm.stopPrank();
 
         vm.startPrank(bob);
@@ -78,7 +78,7 @@ contract InitTest is Test {
         address bob = address(2);
 
         vm.startPrank(alice);
-        Pool pool = new Pool("Pool", "P", int256(1e16));
+        Pool pool = new Pool("Pool", "P", int256(1e16), false);
         vm.stopPrank();
 
         vm.startPrank(bob);

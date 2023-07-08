@@ -26,7 +26,7 @@ contract TestRoot is Test, Context {
 
         vm.startPrank(alice);
 
-        pool = new Pool("Pool", "P", int256(1e16));
+        pool = new Pool("Pool", "P", int256(1e16), false);
         tokens = new Token[](NTOKENS);
         addresses = new address[](NTOKENS);
 

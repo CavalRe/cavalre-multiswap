@@ -40,6 +40,8 @@ contract Pool is LPToken {
 
     uint256 private _isInitialized;
 
+    bool private _forceSpecialized;
+
     modifier onlyInitialized() {
         if (_isInitialized == 0) revert NotInitialized();
         _;
@@ -121,6 +123,8 @@ contract Pool is LPToken {
 
     error TooLarge(uint256 size);
 
+    error UseSpecializedFunction();
+
     error ZeroAddress();
 
     error ZeroBalance();
@@ -132,13 +136,15 @@ contract Pool is LPToken {
     constructor(
         string memory name,
         string memory symbol,
-        int256 tau
+        int256 tau,
+        bool forceSpecialized
     ) LPToken(name, symbol) {
         _poolState.token = address(this);
         _poolState.name = name;
         _poolState.symbol = symbol;
         _poolState.decimals = 18;
         _poolState.tau = tau;
+        _forceSpecialized = forceSpecialized;
     }
 
     function fromCanonical(
@@ -356,6 +362,8 @@ contract Pool is LPToken {
         {
             if (payTokens.length == 0) revert ZeroLength();
             if (receiveTokens.length == 0) revert ZeroLength();
+            if (_forceSpecialized && payTokens.length == 1 && receiveTokens.length == 1)
+                revert UseSpecializedFunction();
             if (payTokens.length != amounts.length)
                 revert LengthMismatch(payTokens.length, amounts.length);
             if (receiveTokens.length != allocations.length)

@@ -41,7 +41,7 @@ contract ContractTest is Context, Test {
 
         vm.startPrank(alice);
 
-        pool = new Pool("Pool", "P", int256(1e16));
+        pool = new Pool("Pool", "P", int256(1e16), false);
         tokens = new Token[](NTOKENS);
 
         pool.addUser(alice, 0);
