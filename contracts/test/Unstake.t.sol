@@ -16,6 +16,10 @@ contract UnstakeTest is TestRoot {
         uint256 receiveBalance = receiveToken.balanceOf(alice);
         uint256 poolBalance = pool.balanceOf(alice);
 
+        uint256 receiveAmount;
+        uint256 amountOut;
+        uint256 feeAmount;
+
         uint256 amount = 1e27;
         receiveToken.mint(amount);
 
@@ -27,7 +31,7 @@ contract UnstakeTest is TestRoot {
 
         receiveToken.approve(address(pool), amount);
 
-        uint256 amountOut = pool.stake(address(receiveToken), amount);
+        amountOut = pool.stake(address(receiveToken), amount);
 
         assertEq(
             receiveToken.balanceOf(alice),
@@ -43,7 +47,10 @@ contract UnstakeTest is TestRoot {
 
         pool.approve(address(pool), amountOut);
 
-        uint256 receiveAmount = pool.unstake(address(receiveToken), amountOut);
+        (receiveAmount, feeAmount) = pool.unstake(
+            address(receiveToken),
+            amountOut
+        );
 
         assertEq(
             receiveToken.balanceOf(alice),
@@ -71,6 +78,9 @@ contract UnstakeTest is TestRoot {
         uint256 assetBalance = receiveToken.balanceOf(address(pool));
         uint256 receiveBalance = receiveToken.balanceOf(alice);
         uint256 poolBalance = pool.balanceOf(alice);
+
+        uint256 receiveAmount;
+        uint256 feeAmount;
 
         vm.assume(
             (amount > 1e17) && (amount < 1e50) && (3 * amount < assetBalance)
@@ -107,14 +117,10 @@ contract UnstakeTest is TestRoot {
             );
             pool.unstake(address(receiveToken), amountOut);
         } else {
-            uint256 receiveAmount = pool.unstake(
+            (receiveAmount, feeAmount) = pool.unstake(
                 address(receiveToken),
                 amountOut
             );
-
-            uint256 feeAmount = receiveAmount
-                .mulWadUp(price(address(receiveToken)))
-                .mulWadUp(fee(address(receiveToken)));
 
             assertEq(
                 receiveToken.balanceOf(alice),
@@ -208,7 +214,7 @@ contract UnstakeTest is TestRoot {
     // TODO is `_burn` as secure as `safeTransfer` ?
     function testUnstakeNoBalance() public {
         Token receiveToken = tokens[0];
-        uint256 amount = pool.balanceOf(address(alice))*2;
+        uint256 amount = pool.balanceOf(address(alice)) * 2;
 
         if (3 * amount > pool.info().balance) {
             vm.expectRevert(

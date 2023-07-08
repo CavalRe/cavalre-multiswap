@@ -13,6 +13,8 @@ contract StakeTest is TestRoot {
         uint256 payBalance = payToken.balanceOf(alice);
         uint256 poolBalance = pool.balanceOf(alice);
 
+        uint256 amountOut;
+
         uint256 amount = 1e27;
         payToken.mint(amount);
 
@@ -24,7 +26,7 @@ contract StakeTest is TestRoot {
 
         payToken.approve(address(pool), amount);
 
-        uint256 amountOut = pool.stake(address(payToken), amount);
+        amountOut = pool.stake(address(payToken), amount);
 
         assertEq(
             payToken.balanceOf(alice),
@@ -46,6 +48,8 @@ contract StakeTest is TestRoot {
         Token payToken = tokens[payIndex];
         AssetState memory payAsset = pool.asset(address(payToken));
 
+        uint256 amountOut;
+
         uint256 balance = payAsset.balance;
         amount = (amount % ((8 * balance) / 3));
         vm.assume(amount > 1e17);
@@ -58,7 +62,7 @@ contract StakeTest is TestRoot {
             );
             pool.stake(address(payToken), amount);
         } else {
-            uint256 amountOut = pool.stake(address(payToken), amount);
+            amountOut = pool.stake(address(payToken), amount);
 
             checkSF(address(payToken), address(pool), amount, amountOut);
 

@@ -16,6 +16,7 @@ contract TestRoot is Test, Context {
     uint256 internal constant NTOKENS = 100;
 
     Token[] internal tokens;
+    address[] internal addresses;
     Pool internal pool;
     address alice = address(1);
     address bob = address(2);
@@ -27,6 +28,7 @@ contract TestRoot is Test, Context {
 
         pool = new Pool("Pool", "P", int256(1e16));
         tokens = new Token[](NTOKENS);
+        addresses = new address[](NTOKENS);
 
         pool.addUser(alice, 0);
 
@@ -44,6 +46,7 @@ contract TestRoot is Test, Context {
             token.mint(balance);
             token.approve(address(pool), balance);
             tokens[i] = token;
+            addresses[i] = address(token);
 
             pool.addAsset(address(token), balance, fee_, scale_);
         }

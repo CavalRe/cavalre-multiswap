@@ -348,7 +348,7 @@ contract Pool is LPToken {
         nonReentrant
         onlyInitialized
         onlyAllowed
-        returns (uint256[] memory receiveAmounts)
+        returns (uint256[] memory receiveAmounts, uint256 feeAmount)
     {
         _txCount++;
 
@@ -452,7 +452,7 @@ contract Pool is LPToken {
         // Compute scaledValueIn
         uint256 scaledValueIn;
         uint256 lastPoolBalance = _poolState.balance;
-        uint256 feeAmount;
+        uint256 poolOut;
         {
             // Contribution from assets only
             for (uint256 i; i < payTokens.length; i++) {
@@ -467,27 +467,30 @@ contract Pool is LPToken {
                 }
             }
 
-            uint256 scaledFee = scaledValueIn.mulWadUp(fee);
+            uint256 poolAlloc = fee;
+            if (receiveTokens[0] == address(this)) {
+                poolAlloc += allocations[0].mulWadUp(gamma);
+            }
+            uint256 scaledPoolOut = scaledValueIn.mulWadUp(poolAlloc);
+            uint256 poolIn;
             if (payTokens[0] == address(this)) {
-                uint256 amountIn = amounts[0];
-                feeAmount =
-                    scaledFee.mulWadUp(lastPoolBalance - amountIn) +
-                    amountIn
-                        .fullMulDiv(
-                            _poolState.scale,
-                            _poolState.scale - scaledFee
-                        )
-                        .mulWadUp(fee);
-                // Contribution from LP tokens
+                poolIn = amounts[0];
+                poolOut = poolAlloc.fullMulDiv(
+                    scaledValueIn.mulWadUp(lastPoolBalance - poolIn) +
+                        _poolState.scale.mulWadUp(poolIn),
+                    _poolState.scale - scaledPoolOut
+                );
                 scaledValueIn += _poolState.scale.fullMulDiv(
-                    amountIn,
-                    lastPoolBalance + feeAmount - amountIn
+                    poolIn,
+                    lastPoolBalance + poolOut - poolIn
                 );
+                feeAmount = poolOut;
             } else {
-                feeAmount = lastPoolBalance.fullMulDiv(
-                    scaledFee,
-                    _poolState.scale - scaledFee
+                poolOut = lastPoolBalance.fullMulDiv(
+                    scaledPoolOut,
+                    _poolState.scale - scaledPoolOut
                 );
+                feeAmount = poolOut.fullMulDiv(fee, poolAlloc);
             }
         }
 
@@ -502,10 +505,7 @@ contract Pool is LPToken {
                 allocation = allocations[i].mulWadUp(gamma);
                 scaledValueOut = scaledValueIn.mulWadUp(allocation);
                 if (receiveToken == address(this)) {
-                    receiveAmounts[i] = lastPoolBalance.fullMulDiv(
-                        scaledValueOut,
-                        _poolState.scale - scaledValueOut
-                    );
+                    receiveAmounts[i] = poolOut - feeAmount;
                 } else {
                     AssetState storage assetOut = _assetState[receiveToken];
                     receiveAmounts[i] = assetOut.balance.fullMulDiv(
@@ -583,13 +583,21 @@ contract Pool is LPToken {
         address payToken,
         address receiveToken,
         uint256 payAmount
-    ) public nonReentrant onlyInitialized onlyAllowed returns (uint256) {
+    )
+        public
+        nonReentrant
+        onlyInitialized
+        onlyAllowed
+        returns (uint256 receiveAmount, uint256 feeAmount)
+    {
         _txCount++;
 
         if (payToken == address(0)) revert ZeroAddress();
         if (receiveToken == address(0)) revert ZeroAddress();
-        if (payToken == address(this)) revert InvalidSwap(payToken, receiveToken);
-        if (receiveToken == address(this)) revert InvalidSwap(payToken, receiveToken);
+        if (payToken == address(this))
+            revert InvalidSwap(payToken, receiveToken);
+        if (receiveToken == address(this))
+            revert InvalidSwap(payToken, receiveToken);
         if (payToken == receiveToken) revert DuplicateToken(payToken);
         AssetState storage assetIn = _assetState[payToken];
         if (assetIn.token != payToken) revert AssetNotFound(payToken);
@@ -598,8 +606,6 @@ contract Pool is LPToken {
 
         if (payAmount * 3 > assetIn.balance) revert TooLarge(payAmount);
 
-        uint256 feeAmount;
-        uint256 receiveAmount;
         {
             _increaseBalance(payToken, payAmount);
 
@@ -655,14 +661,18 @@ contract Pool is LPToken {
             receiveAmount,
             feeAmount
         );
-
-        return receiveAmount;
     }
 
     function stake(
         address payToken,
         uint256 payAmount
-    ) public nonReentrant onlyInitialized onlyAllowed returns (uint256) {
+    )
+        public
+        nonReentrant
+        onlyInitialized
+        onlyAllowed
+        returns (uint256 receiveAmount)
+    {
         _txCount++;
 
         if (payToken == address(0)) revert ZeroAddress();
@@ -677,7 +687,7 @@ contract Pool is LPToken {
             payAmount,
             assetIn.balance
         );
-        uint256 receiveAmount = _poolState.balance.fullMulDiv(
+        receiveAmount = _poolState.balance.fullMulDiv(
             scaledValueIn,
             _poolState.scale - scaledValueIn
         );
@@ -694,14 +704,18 @@ contract Pool is LPToken {
         _mint(_msgSender(), receiveAmount);
 
         emit Stake(_msgSender(), payToken, payAmount, receiveAmount);
-
-        return receiveAmount;
     }
 
     function unstake(
         address receiveToken,
         uint256 payAmount
-    ) public nonReentrant onlyInitialized onlyAllowed returns (uint256) {
+    )
+        public
+        nonReentrant
+        onlyInitialized
+        onlyAllowed
+        returns (uint256 receiveAmount, uint256 feeAmount)
+    {
         _txCount++;
 
         if (receiveToken == address(0)) revert ZeroAddress();
@@ -714,7 +728,7 @@ contract Pool is LPToken {
         if (fee > 0 && _userState[_msgSender()].discount > 0) {
             fee = fee.mulWadUp(ONE - _userState[_msgSender()].discount);
         }
-        uint256 feeAmount = payAmount.mulWadUp(fee);
+        feeAmount = payAmount.mulWadUp(fee);
         uint256 delta = payAmount - feeAmount;
 
         uint256 scaledValueIn = _poolState.scale.fullMulDiv(
@@ -724,7 +738,7 @@ contract Pool is LPToken {
 
         uint256 scaledValueOut = scaledValueIn.mulWadUp(ONE - fee);
 
-        uint256 receiveAmount = assetOut.balance.fullMulDiv(
+        receiveAmount = assetOut.balance.fullMulDiv(
             scaledValueOut,
             assetOut.scale + scaledValueOut
         );
@@ -753,8 +767,6 @@ contract Pool is LPToken {
             receiveAmount,
             feeAmount
         );
-
-        return receiveAmount;
     }
 
     function addLiquidity(

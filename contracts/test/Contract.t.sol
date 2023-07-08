@@ -22,21 +22,19 @@ contract ContractTest is Context, Test {
     uint256[] private scales;
     uint256[] private amounts;
 
-    address private pay1Asset;
-    address private receive1Asset;
-    address private poolAddress;
+    address[] private oneAsset = new address[](1);
+    address[] private anotherAsset = new address[](1);
+    address[] private onePool = new address[](1);
+    uint256[] private oneAmount = new uint256[](1);
+    uint256[] private oneAllocation = new uint256[](1);
 
-    uint256 private pay1Amount;
-    uint256[] private assetIndices1 = new uint256[](1);
-    uint256[] private assetIndices2 = new uint256[](1);
-    address[] private pay1Assets = new address[](1);
-    address[] private pay1Pools = new address[](1);
-    uint256[] private pay1Amounts = new uint256[](1);
-    address[] private receive1Assets = new address[](1);
-    address[] private receive1Pools = new address[](1);
-    uint256[] private allocations1 = new uint256[](1);
+    address[] private twoTokens = new address[](2);
+    uint256[] private twoAmounts = new uint256[](2);
+    uint256[] private twoAllocations = new uint256[](2);
 
-    uint256 amountOut;
+    uint256 private amountOut;
+    uint256[] private receiveAmounts;
+    uint256 private feeAmount;
 
     function setUp() public {
         address alice = address(1);
@@ -82,31 +80,23 @@ contract ContractTest is Context, Test {
 
         pool.initialize();
 
-        pay1Asset = addresses[0];
-        receive1Asset = addresses[1];
-        poolAddress = address(pool);
-        pay1Amount = amounts[0];
+        tokens[0].mint(amounts[0]);
+        tokens[0].approve(address(pool), amounts[0]);
 
-        pay1Assets[0] = addresses[0];
-        assetIndices1[0] = 1;
-        assetIndices2[0] = 2;
-        pay1Pools[0] = address(pool);
-        pay1Amounts[0] = amounts[0];
-
-        receive1Assets[0] = addresses[1];
-        receive1Pools[0] = address(pool);
-        allocations1[0] = 1e18;
-
-        tokens[0].mint(pay1Amounts[0]);
-        tokens[0].approve(address(pool), pay1Amounts[0]);
+        oneAsset[0] = addresses[0];
+        anotherAsset[0] = addresses[1];
+        onePool[0] = address(pool);
+        oneAmount[0] = amounts[0];
+        oneAllocation[0] = 1e18;
     }
 
     function showAsset(AssetState memory _asset) internal {
         emit log_named_string("name", _asset.name);
         // emit log_named_string("symbol", _asset.symbol);
-        // emit log_named_uint("balanceOf", _asset.token.balanceOf(poolAddress));
+        // emit log_named_uint("balanceOf", _asset.token.balanceOf(address(pool)));
         emit log_named_uint("balance", _asset.balance);
-        // emit log_named_uint("scale", _asset.scale);
+        emit log_named_uint("scale", _asset.scale);
+        emit log_named_uint("fee", _asset.fee);
         console.log("-------");
     }
 
@@ -120,7 +110,7 @@ contract ContractTest is Context, Test {
         // emit log_named_uint("Decimals", poolDecimals);
         // emit log_named_uint("totalSupply", pool.totalSupply());
         emit log_named_uint("balance", pool_.balance);
-        // emit log_named_uint("scale", pool_.scale);
+        emit log_named_uint("scale", pool_.scale);
         console.log("");
         console.log("Assets:");
         console.log("-------");
@@ -129,43 +119,28 @@ contract ContractTest is Context, Test {
         }
     }
 
-    // function test1_0_SFMM() public {
-    //     assertEq(pool.totalSupply(), 1e23);
-    //     for (uint256 i = 0; i < NTOKENS; i++) {
-    //         Token token = tokens[i];
-    //         uint256 supply = (i+1)*1e22;
-    //         uint256 amount = supply / 10;
-    //         assertEq(token.totalSupply(), supply);
-    //         assertEq(pool.amount(address(token)), amount);
-    //         assertEq(token.balanceOf(address(this)), supply - amount);
-    //     }
-    //     vm.expectRevert(abi.encodeWithSelector(Pool.AlreadyInitialized.selector));
-    //     pool.initialize();
-    //     pool.pool();
-    // }
-
     function test1_1_Multiswap() public {
-        pool.multiswap(pay1Assets, pay1Amounts, receive1Assets, allocations1);
+        pool.multiswap(oneAsset, oneAmount, anotherAsset, oneAllocation);
     }
 
     function test1_2_Swap() public {
-        pool.swap(pay1Asset, receive1Asset, pay1Amount);
+        pool.swap(oneAsset[0], anotherAsset[0], oneAmount[0]);
     }
 
     function test1_3_Multistake() public {
-        pool.multiswap(pay1Assets, pay1Amounts, receive1Pools, allocations1);
+        pool.multiswap(oneAsset, oneAmount, onePool, oneAllocation);
     }
 
     function test1_4_Stake() public {
-        pool.stake(pay1Asset, amounts[0]);
+        pool.stake(oneAsset[0], oneAmount[0]);
     }
 
     function test1_5_Multiunstake() public {
-        pool.multiswap(pay1Pools, pay1Amounts, pay1Assets, allocations1);
+        pool.multiswap(oneAsset, oneAmount, onePool, oneAllocation);
     }
 
     function test1_6_Unstake() public {
-        pool.unstake(pay1Asset, pay1Amount);
+        pool.unstake(oneAsset[0], oneAmount[0]);
     }
 
     function test2_1_Swapping() public {
@@ -173,70 +148,71 @@ contract ContractTest is Context, Test {
         emit log("");
         showPool(pool);
         emit log("");
-        amountOut = pool.multiswap(
-            pay1Assets,
-            pay1Amounts,
-            receive1Assets,
-            allocations1
-        )[0];
+        (receiveAmounts, feeAmount) = pool.multiswap(
+            oneAsset,
+            oneAmount,
+            anotherAsset,
+            oneAllocation
+        );
         emit log("State after multiswap");
         emit log("");
-        emit log_named_uint("amountIn", pay1Amounts[0]);
-        emit log_named_uint("amountOut", amountOut);
+        emit log_named_uint("amountIn", oneAmount[0]);
+        emit log_named_uint("amountOut", receiveAmounts[0]);
+        emit log_named_uint("feeAmount", feeAmount);
         emit log("");
         showPool(pool);
         emit log("");
-
-        // vm.expectRevert("ERC20: insufficient allowance");
-        // pool.multiswap(pay1Assets, pay1Amounts, receive1Assets, allocations1);
 
         setUp();
-        amountOut = pool.swap(pay1Asset, receive1Asset, pay1Amount);
+        (amountOut, feeAmount) = pool.swap(
+            oneAsset[0],
+            anotherAsset[0],
+            oneAmount[0]
+        );
         emit log("State after swap");
         emit log("");
-        emit log_named_uint("amountIn", pay1Amounts[0]);
+        emit log_named_uint("amountIn", oneAmount[0]);
         emit log_named_uint("amountOut", amountOut);
+        emit log_named_uint("feeAmount", feeAmount);
         emit log("");
         showPool(pool);
         emit log("");
 
-        // vm.expectRevert("ERC20: insufficient allowance");
-        // pool.swap(pay1Asset, receive1Asset, pay1Amount);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Pool.InvalidSwap.selector,
+                address(pool),
+                anotherAsset[0]
+            )
+        );
+        pool.swap(address(pool), anotherAsset[0], oneAmount[0]);
 
         vm.expectRevert(
             abi.encodeWithSelector(
                 Pool.InvalidSwap.selector,
-                poolAddress,
-                receive1Asset
+                oneAsset[0],
+                address(pool)
             )
         );
-        pool.swap(poolAddress, receive1Asset, pay1Amount);
-
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Pool.InvalidSwap.selector,
-                pay1Asset,
-                poolAddress
-            )
-        );
-        pool.swap(pay1Asset, poolAddress, pay1Amount);
+        pool.swap(oneAsset[0], address(pool), oneAmount[0]);
     }
 
     function test2_2_Staking() public {
-        amountOut = pool.multiswap(
-            pay1Assets,
-            pay1Amounts,
-            receive1Pools,
-            allocations1
-        )[0];
+        (receiveAmounts, feeAmount) = pool.multiswap(
+            oneAsset,
+            oneAmount,
+            onePool,
+            oneAllocation
+        );
+        amountOut = receiveAmounts[0];
         emit log("Multiswap:");
         emit log("");
-        emit log_named_uint("amountIn", pay1Amounts[0]);
+        emit log_named_uint("amountIn", oneAmount[0]);
         emit log_named_uint("amountOut", amountOut);
         emit log("");
 
         setUp();
-        amountOut = pool.stake(pay1Asset, amounts[0]);
+        amountOut = pool.stake(oneAsset[0], amounts[0]);
 
         emit log("Stake:");
         emit log("");
@@ -244,9 +220,9 @@ contract ContractTest is Context, Test {
         emit log_named_uint("amountOut", amountOut);
 
         vm.expectRevert(
-            abi.encodeWithSelector(Pool.InvalidStake.selector, poolAddress)
+            abi.encodeWithSelector(Pool.InvalidStake.selector, address(pool))
         );
-        pool.stake(poolAddress, amounts[0]);
+        pool.stake(address(pool), amounts[0]);
     }
 
     function test2_3_Unstaking() public {
@@ -254,35 +230,106 @@ contract ContractTest is Context, Test {
         emit log("");
         showPool(pool);
         emit log("");
-        amountOut = pool.multiswap(
-            pay1Pools,
-            pay1Amounts,
-            receive1Assets,
-            allocations1
-        )[0];
+        (receiveAmounts, feeAmount) = pool.multiswap(
+            onePool,
+            oneAmount,
+            anotherAsset,
+            oneAllocation
+        );
+        amountOut = receiveAmounts[0];
         emit log("State after multiswap");
         emit log("");
         emit log_named_string("Pay token:", pool.info().name);
-        emit log_named_string("Receive token:", pool.asset(receive1Assets[0]).name);
-        emit log_named_uint("amountIn", pay1Amounts[0]);
+        emit log_named_string(
+            "Receive token:",
+            pool.asset(anotherAsset[0]).name
+        );
+        emit log_named_uint("amountIn", oneAmount[0]);
         emit log_named_uint("amountOut", amountOut);
+        emit log_named_uint("feeAmount", feeAmount);
         emit log("");
         showPool(pool);
         emit log("");
 
         setUp();
-        amountOut = pool.unstake(receive1Asset, pay1Amount);
+        (amountOut, feeAmount) = pool.unstake(anotherAsset[0], oneAmount[0]);
         emit log("State after unstake");
         emit log("");
-        emit log_named_uint("amountIn", pay1Amount);
+        emit log_named_uint("amountIn", oneAmount[0]);
         emit log_named_uint("amountOut", amountOut);
+        emit log_named_uint("feeAmount", feeAmount);
         emit log("");
         showPool(pool);
         emit log("");
 
         vm.expectRevert(
-            abi.encodeWithSelector(Pool.InvalidUnstake.selector, poolAddress)
+            abi.encodeWithSelector(Pool.InvalidUnstake.selector, address(pool))
         );
-        pool.unstake(poolAddress, amounts[0]);
+        pool.unstake(address(pool), amounts[0]);
+    }
+
+    function test2_4_MixedStaking() public {
+        twoTokens[0] = address(pool);
+        twoTokens[1] = anotherAsset[0];
+        twoAmounts[0] = 5e17;
+        twoAmounts[1] = 5e17;
+        emit log("Initial state");
+        emit log("");
+        showPool(pool);
+        emit log("");
+        (receiveAmounts, feeAmount) = pool.multiswap(
+            oneAsset,
+            oneAmount,
+            twoTokens,
+            twoAmounts
+        );
+        emit log("State after mixed stake");
+        emit log("");
+        emit log_named_string("Pay token:", pool.info().name);
+        emit log_named_string("Receive token 1:", pool.info().name);
+        emit log_named_string(
+            "Receive token 2:",
+            pool.asset(anotherAsset[0]).name
+        );
+        emit log_named_uint("amountIn", oneAmount[0]);
+        emit log_named_uint("amountOut 1", receiveAmounts[0]);
+        emit log_named_uint("amountOut 2", receiveAmounts[1]);
+        emit log_named_uint("feeAmount", feeAmount);
+        emit log_named_uint("poolOut", receiveAmounts[0] + feeAmount);
+        emit log("");
+        showPool(pool);
+        emit log("");
+    }
+
+    function test2_5_MixedUnstaking() public {
+        twoTokens[0] = address(pool);
+        twoTokens[1] = oneAsset[0];
+        twoAmounts[0] = oneAmount[0];
+        twoAmounts[1] = oneAmount[0];
+        emit log("Initial state");
+        emit log("");
+        showPool(pool);
+        emit log("");
+        (receiveAmounts, feeAmount) = pool.multiswap(
+            twoTokens,
+            twoAmounts,
+            anotherAsset,
+            oneAllocation
+        );
+        emit log("State after mixed unstake");
+        emit log("");
+        emit log_named_string("Pay token 1:", pool.info().name);
+        emit log_named_string("Pay token 2:", pool.asset(oneAsset[0]).name);
+        emit log_named_string(
+            "Receive token:",
+            pool.asset(anotherAsset[0]).name
+        );
+        emit log_named_uint("amountIn 1", twoAmounts[0]);
+        emit log_named_uint("amountIn 2", twoAmounts[1]);
+        emit log_named_uint("amountOut", receiveAmounts[0]);
+        emit log_named_uint("feeAmount", feeAmount);
+        emit log("");
+        showPool(pool);
+        emit log("");
     }
 }

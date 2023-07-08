@@ -13,8 +13,10 @@ contract SwapTest is TestRoot {
         Token withdrawToken = tokens[1];
         uint256 depositBalance = depositToken.balanceOf(alice);
         uint256 withdrawBalance = withdrawToken.balanceOf(alice);
-        // uint256 amount = 1e17; 
+        // uint256 amount = 1e17;
         uint256 amount = 100000000000100001; // This value was failing the fuzz test before
+        uint256 amountOut;
+        uint256 feeAmount;
         depositToken.mint(amount);
 
         assertEq(
@@ -25,7 +27,11 @@ contract SwapTest is TestRoot {
 
         depositToken.approve(address(pool), amount);
 
-        uint256 amountOut = pool.swap(address(depositToken), address(withdrawToken), amount);
+        (amountOut, feeAmount) = pool.swap(
+            address(depositToken),
+            address(withdrawToken),
+            amount
+        );
 
         assertEq(
             depositToken.balanceOf(alice),
@@ -75,13 +81,16 @@ contract SwapTest is TestRoot {
         depositToken.mint(amount);
         depositToken.approve(address(pool), amount);
 
+        uint256 amountOut;
+        uint256 feeAmount;
+
         if (amount * 3 > balance) {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amount)
             );
             pool.swap(address(depositToken), address(withdrawToken), amount);
         } else {
-            uint256 amountOut = pool.swap(
+            (amountOut, feeAmount) = pool.swap(
                 address(depositToken),
                 address(withdrawToken),
                 amount
@@ -109,10 +118,7 @@ contract SwapTest is TestRoot {
         address depositAddress = address(token);
         address withdrawAddress = address(tokens[0]);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                Pool.AssetNotFound.selector,
-                depositAddress
-            )
+            abi.encodeWithSelector(Pool.AssetNotFound.selector, depositAddress)
         );
         pool.swap(depositAddress, withdrawAddress, 1);
     }
@@ -122,10 +128,7 @@ contract SwapTest is TestRoot {
         address depositAddress = address(tokens[0]);
         address withdrawAddress = address(token);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                Pool.AssetNotFound.selector,
-                withdrawAddress
-            )
+            abi.encodeWithSelector(Pool.AssetNotFound.selector, withdrawAddress)
         );
         pool.swap(depositAddress, withdrawAddress, 1);
     }
@@ -167,11 +170,7 @@ contract SwapTest is TestRoot {
         depositToken.mint(amount);
         depositToken.approve(address(pool), amount);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Pool.ZeroAddress.selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Pool.ZeroAddress.selector));
         pool.swap(address(depositToken), address(0), amount);
     }
 
@@ -233,6 +232,9 @@ contract SwapTest is TestRoot {
         depositTokenA.mint(amountA);
         depositTokenA.approve(address(pool), amountA);
 
+        uint256 poolAmount;
+        uint256 feeAmount;
+
         assertEq(depositTokenA.balanceOf(alice) > 0, true);
         assertEq(pool.balanceOf(alice), 0);
 
@@ -243,7 +245,7 @@ contract SwapTest is TestRoot {
                 address(pool)
             )
         );
-        uint256 poolAmount = pool.swap(
+        (poolAmount, feeAmount) = pool.swap(
             address(depositTokenA),
             address(pool),
             amountA
