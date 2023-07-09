@@ -113,7 +113,7 @@ contract Pool is LPToken {
 
     error InvalidStake(address payToken);
 
-    error InvalidSwap(address payToken, address receiveToke);
+    error InvalidSwap(address payToken, address receiveToken);
 
     error InvalidUnstake(address receiveToken);
 
