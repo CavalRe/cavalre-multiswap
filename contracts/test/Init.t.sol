@@ -40,6 +40,25 @@ contract InitTest is Test {
         );
         pool.addAsset(address(tokenB), amount, 1e18, 1e18);
 
+        pool.removeAsset(address(tokenA));
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Pool.AssetNotFound.selector,
+                address(tokenA)
+            )
+        );
+        pool.removeAsset(address(tokenA));
+
+        pool.removeAsset(address(tokenB));
+
+        tokenA.mint(amount);
+        tokenA.approve(address(pool), amount);
+        pool.addAsset(address(tokenA), amount, 1e18, 1e18);
+        tokenB.mint(amount);
+        tokenB.approve(address(pool), amount);
+        pool.addAsset(address(tokenB), amount, 1e18, 1e18);
+
         pool.initialize();
 
         vm.expectRevert(

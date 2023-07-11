@@ -212,6 +212,12 @@ contract Pool is LPToken {
         _poolState.scale -= assetScale_;
         _poolState.meanScale -= assetScale_;
 
+        asset_.token = address(0);
+        asset_.index = 0;
+        asset_.name = "";
+        asset_.symbol = "";
+        asset_.decimals = 0;
+        asset_.fee = 0;
         asset_.balance = 0;
         asset_.meanBalance = 0;
         asset_.scale = 0;
