@@ -398,7 +398,6 @@ contract Pool is LPToken {
                 check_[asset_.index] = true;
             }
 
-            isLP = false;
             for (uint256 i; i < receiveTokens.length; i++) {
                 address token = receiveTokens[i];
                 if (token == address(0)) revert ZeroAddress();
