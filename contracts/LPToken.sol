@@ -131,6 +131,10 @@ contract LPToken is ERC20, ReentrancyGuard, Ownable {
         _userState[user].discount = discount;
     }
 
+    function ratio() internal view returns (uint256) {
+        return _ratio;
+    }
+
     function totalSupply() public view override returns (uint256) {
         return super.totalSupply().mulWadUp(_ratio);
     }
@@ -195,42 +199,5 @@ contract LPToken is ERC20, ReentrancyGuard, Ownable {
         uint256 userAmount = amount - protocolAmount;
         _mint(_protocolFeeRecipient, protocolAmount);
         _ratio = (totalSupply() + userAmount).divWadUp(super.totalSupply());
-    }
-
-    function _transfer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal override {
-        amount = amount.divWadUp(_ratio);
-        super._transfer(from, to, amount);
-    }
-
-    function _mint(address to, uint256 amount) internal override onlyAllowed {
-        amount = amount.divWadUp(_ratio);
-        super._mint(to, amount);
-    }
-
-    function _burn(address from, uint256 amount) internal override onlyAllowed {
-        amount = amount.divWadUp(_ratio);
-        super._burn(from, amount);
-    }
-
-    function _approve(
-        address owner,
-        address spender,
-        uint256 amount
-    ) internal override {
-        amount = amount.divWadUp(_ratio);
-        super._approve(owner, spender, amount);
-    }
-
-    function _spendAllowance(
-        address owner,
-        address spender,
-        uint256 amount
-    ) internal override {
-        amount = amount.divWadUp(_ratio);
-        super._spendAllowance(owner, spender, amount);
     }
 }

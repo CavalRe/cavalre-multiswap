@@ -5,6 +5,8 @@ import "@cavalre/LPToken.sol";
 import "forge-std/Test.sol";
 
 contract LPMintable is LPToken {
+    using FixedPointMathLib for uint256;
+
     constructor(
         string memory name_,
         string memory symbol_
@@ -14,12 +16,14 @@ contract LPMintable is LPToken {
         _distributeFee(amount);
     }
 
-    function mint(uint256 amount) public {
-        _mint(msg.sender, amount);
+    function mint(uint256 amount) public onlyAllowed {
+        amount = amount.divWadUp(ratio());
+        super._mint(_msgSender(), amount);
     }
 
-    function burn(uint256 amount) public {
-        _burn(msg.sender, amount);
+    function burn(uint256 amount) public onlyAllowed {
+        amount = amount.divWadUp(ratio());
+        super._burn(_msgSender(), amount);
     }
 }
 
