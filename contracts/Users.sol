@@ -102,8 +102,8 @@ contract Users is Ownable {
         _userList[_userIndex[user_] - 1].discount = discount_;
     }
 
-    function associates(address user) public view (address[] memory) {
+    function associates(address user_) public view returns (address[] memory) {
         if (_userIndex[user_] == 0) revert UserNotFound(user_);
-        return _userList[_userIndex[user]-1].associates;
+        return _userList[_userIndex[user_]-1].associates;
     }
 }
