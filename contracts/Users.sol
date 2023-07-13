@@ -55,6 +55,7 @@ contract Users is Ownable {
     function addUser(address user_, uint256 discount_) public onlyOwner {
         if (user_ == address(0)) revert ZeroAddress();
         if (_userIndex[user_] > 0) revert UserAlreadyAdded(user_);
+        if (discount_ > ONE) revert InvalidDiscount(discount_);
 
         _userList.push();
 
