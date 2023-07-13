@@ -53,7 +53,7 @@ contract LPTokenTest is Test {
         vm.startPrank(bob);
 
         vm.expectRevert(
-            abi.encodeWithSelector(Users.UserNotAllowed.selector, bob)
+            abi.encodeWithSelector(LPToken.UserNotAllowed.selector, bob)
         );
         lpToken.mint(amount);
     }
@@ -80,7 +80,7 @@ contract LPTokenTest is Test {
         vm.startPrank(bob);
 
         vm.expectRevert(
-            abi.encodeWithSelector(Users.UserNotAllowed.selector, bob)
+            abi.encodeWithSelector(LPToken.UserNotAllowed.selector, bob)
         );
         lpToken.burn(burnAmount);
 
@@ -102,7 +102,7 @@ contract LPTokenTest is Test {
         assertEq(lpToken.totalSupply(), amount, "Total supply after minting.");
 
         vm.expectRevert(
-            abi.encodeWithSelector(Users.UserNotAllowed.selector, bob)
+            abi.encodeWithSelector(LPToken.UserNotAllowed.selector, bob)
         );
         lpToken.transfer(bob, amount);
 
@@ -139,7 +139,7 @@ contract LPTokenTest is Test {
         vm.startPrank(bob);
 
         vm.expectRevert(
-            abi.encodeWithSelector(Users.UserNotAllowed.selector, carol)
+            abi.encodeWithSelector(LPToken.UserNotAllowed.selector, carol)
         );
         lpToken.transferFrom(alice, carol, amount);
 
@@ -153,12 +153,12 @@ contract LPTokenTest is Test {
 
         vm.stopPrank();
 
-        lpToken.disallowUser(alice);
+        lpToken.setAllowed(alice, false);
 
         vm.startPrank(bob);
 
         vm.expectRevert(
-            abi.encodeWithSelector(Users.UserNotAllowed.selector, alice)
+            abi.encodeWithSelector(LPToken.UserNotAllowed.selector, alice)
         );
         lpToken.transferFrom(alice, carol, amount);
 

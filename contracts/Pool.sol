@@ -457,7 +457,7 @@ contract Pool is LPToken {
                     _assetState[receiveTokens[i]].fee
                 );
             }
-            uint256 discount_ = discount(_msgSender());
+            uint256 discount_ = user(_msgSender()).discount;
             if (fee > 0 && discount_ > 0) {
                 fee = fee.mulWadUp(ONE - discount_);
             }
@@ -631,7 +631,7 @@ contract Pool is LPToken {
 
             uint256 fee = assetOut.fee;
             {
-                uint256 discount_ = discount(_msgSender());
+                uint256 discount_ = user(_msgSender()).discount;
                 if (fee > 0 && discount_ > 0) {
                     fee = fee.mulWadUp(ONE - discount_);
                 }
@@ -744,7 +744,7 @@ contract Pool is LPToken {
 
         uint256 fee = assetOut.fee;
         {
-            uint256 discount_ = discount(_msgSender());
+            uint256 discount_ = user(_msgSender()).discount;
             if (fee > 0 && discount_ > 0) {
                 fee = fee.mulWadUp(ONE - discount_);
             }
@@ -857,7 +857,7 @@ contract Pool is LPToken {
                     _poolState.scale
                 );
             }
-            uint256 discount_ = discount(_msgSender());
+            uint256 discount_ = user(_msgSender()).discount;
             if (fee > 0 && discount_ > 0) {
                 fee = fee.mulWadUp(ONE - discount_);
             }

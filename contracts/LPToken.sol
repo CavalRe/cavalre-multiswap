@@ -17,6 +17,17 @@ contract LPToken is ERC20, ReentrancyGuard, Ownable, Users {
 
     error InvalidProtocolFee(uint256 fee);
 
+    error UserNotAllowed(address user_);
+
+    modifier onlyAllowed() {
+        address user_ = _msgSender();
+        if (
+            _userIndex[user_] == 0 ||
+            !_userList[_userIndex[user_] - 1].isAllowed
+        ) revert UserNotAllowed(user_);
+        _;
+    }
+
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {
         _ratio = 1e18;
         _protocolFeeRecipient = _msgSender();
@@ -58,7 +69,7 @@ contract LPToken is ERC20, ReentrancyGuard, Ownable, Users {
         address to,
         uint256 amount
     ) public override onlyAllowed returns (bool) {
-        if (!isAllowed(to)) revert UserNotAllowed(to);
+        if (!user(to).isAllowed) revert UserNotAllowed(to);
         amount = amount.divWadUp(_ratio);
         return super.transfer(to, amount);
     }
@@ -83,8 +94,8 @@ contract LPToken is ERC20, ReentrancyGuard, Ownable, Users {
         address to,
         uint256 amount
     ) public override returns (bool) {
-        if (!isAllowed(from)) revert UserNotAllowed(from);
-        if (!isAllowed(to)) revert UserNotAllowed(to);
+        if (!user(from).isAllowed) revert UserNotAllowed(from);
+        if (!user(to).isAllowed) revert UserNotAllowed(to);
         amount = amount.divWadUp(_ratio);
         return super.transferFrom(from, to, amount);
     }

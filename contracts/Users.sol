@@ -17,10 +17,8 @@ contract Users is Ownable {
     uint256 internal constant ONE = 1e18;
     uint256 internal constant HALF = 5e17;
 
-    UserState[] private _userList;
+    UserState[] internal _userList;
     mapping(address => uint256) internal _userIndex;
-
-    error DuplicateUser(address user_);
 
     error InvalidDiscount(uint256 discount_);
 
@@ -30,20 +28,9 @@ contract Users is Ownable {
 
     error UserAlreadyAdded(address user_);
 
-    error UserNotAllowed(address user_);
-
     error UserNotFound(address user_);
 
     error ZeroAddress();
-
-    modifier onlyAllowed() {
-        address user_ = _msgSender();
-        if (
-            _userIndex[user_] == 0 ||
-            !_userList[_userIndex[user_] - 1].isAllowed
-        ) revert UserNotAllowed(user_);
-        _;
-    }
 
     // modifier onlyOnce() {
     //     address user_ = _msgSender();
@@ -58,13 +45,16 @@ contract Users is Ownable {
     }
 
     function user(address user_) public view returns (UserState memory) {
-        if (_userIndex[user_] == 0) revert UserNotFound(user_);
+        if (_userIndex[user_] == 0) {
+            UserState memory userState_;
+            return userState_;
+        }
         return _userList[_userIndex[user_] - 1];
     }
 
     function addUser(address user_, uint256 discount_) public onlyOwner {
         if (user_ == address(0)) revert ZeroAddress();
-        if (_userIndex[user_] > 0) revert DuplicateUser(user_);
+        if (_userIndex[user_] > 0) revert UserAlreadyAdded(user_);
 
         _userList.push();
 
@@ -76,24 +66,24 @@ contract Users is Ownable {
         _userIndex[user_] = _userList.length;
     }
 
-    function allowUser(address user_) public onlyOwner {
+    function removeUser(address user_) public onlyOwner {
         if (_userIndex[user_] == 0) revert UserNotFound(user_);
-        _userList[_userIndex[user_] - 1].isAllowed = true;
+
+        uint256 index_ = _userIndex[user_] - 1;
+        uint256 lastIndex_ = _userList.length - 1;
+
+        if (index_ != lastIndex_) {
+            _userList[index_] = _userList[lastIndex_];
+            _userIndex[_userList[lastIndex_].associates[0]] = index_ + 1;
+        }
+        _userList.pop();
+
+        delete _userIndex[user_];
     }
 
-    function disallowUser(address user_) public onlyOwner {
+    function setAllowed(address user_, bool isAllowed_) public onlyOwner {
         if (_userIndex[user_] == 0) revert UserNotFound(user_);
-        _userList[_userIndex[user_] - 1].isAllowed = false;
-    }
-
-    function isAllowed(address user_) public view returns (bool) {
-        if (_userIndex[user_] == 0) return false;
-        return _userList[_userIndex[user_] - 1].isAllowed;
-    }
-
-    function discount(address user_) public view returns (uint256) {
-        if (_userIndex[user_] == 0) revert UserNotFound(user_);
-        return _userList[_userIndex[user_] - 1].discount;
+        _userList[_userIndex[user_] - 1].isAllowed = isAllowed_;
     }
 
     function setDiscount(address user_, uint256 discount_) public onlyOwner {
@@ -102,8 +92,37 @@ contract Users is Ownable {
         _userList[_userIndex[user_] - 1].discount = discount_;
     }
 
-    function associates(address user_) public view returns (address[] memory) {
+    function addAssociate(address user_, address associate_) public onlyOwner {
         if (_userIndex[user_] == 0) revert UserNotFound(user_);
-        return _userList[_userIndex[user_]-1].associates;
+        if (_userIndex[user_] == _userIndex[associate_])
+            revert UserAlreadyAdded(associate_);
+
+        _userIndex[associate_] = _userIndex[user_];
+        _userList[_userIndex[user_] - 1].associates.push(associate_);
+    }
+
+    function removeAssociate(
+        address user_,
+        address associate_
+    ) public onlyOwner {
+        if (_userIndex[user_] == 0) revert UserNotFound(user_);
+        if (_userIndex[associate_] == 0) revert UserNotFound(associate_);
+        if (_userIndex[user_] != _userIndex[associate_])
+            revert InvalidUser(associate_);
+
+        uint256 index_ = _userIndex[user_] - 1;
+        uint256 lastIndex_ = _userList[index_].associates.length - 1;
+
+        if (index_ != lastIndex_) {
+            for (uint256 i = 0; i < _userList[index_].associates.length; i++) {
+                if (_userList[index_].associates[i] == associate_) {
+                    _userList[index_].associates[i] = _userList[index_]
+                        .associates[lastIndex_];
+                    break;
+                }
+            }
+        }
+        _userList[index_].associates.pop();
+        _userIndex[associate_] = 0;
     }
 }
