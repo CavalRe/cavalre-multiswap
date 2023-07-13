@@ -53,6 +53,10 @@ contract Users is Ownable {
     //     _;
     // }
 
+    function users() public view returns (UserState[] memory) {
+        return _userList;
+    }
+
     function user(address user_) public view returns (UserState memory) {
         if (_userIndex[user_] == 0) revert UserNotFound(user_);
         return _userList[_userIndex[user_] - 1];
@@ -98,25 +102,8 @@ contract Users is Ownable {
         _userList[_userIndex[user_] - 1].discount = discount_;
     }
 
-    // function allUsers() public view returns (address[] memory) {
-    //     return _userAddress;
-    // }
-
-    // function allowedUsers() public view returns (address[] memory) {
-    //     uint256 n = 0;
-    //     for (uint256 i = 0; i < _userAddress.length; i++) {
-    //         address user_ = _userAddress[i];
-    //         if (_userList[_userIndex[user_]].isAllowed) n++;
-    //     }
-    //     address[] memory users = new address[](n);
-    //     uint256 j = 0;
-    //     for (uint256 i = 0; i < _userAddress.length; i++) {
-    //         address user_ = _userAddress[i];
-    //         if (_userList[_userIndex[user_]].isAllowed) {
-    //             users[j] = user_;
-    //             j++;
-    //         }
-    //     }
-    //     return users;
-    // }
+    function associates(address user) public view (address[] memory) {
+        if (_userIndex[user_] == 0) revert UserNotFound(user_);
+        return _userList[_userIndex[user]-1].associates;
+    }
 }
