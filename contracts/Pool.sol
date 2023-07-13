@@ -218,11 +218,14 @@ contract Pool is LPToken {
             fromCanonical(asset_.balance, asset_.decimals)
         );
 
-        _assetAddress[asset_.index] = _assetAddress[_assetAddress.length - 1];
-        _assetAddress.pop();
-        for (uint256 i; i < _assetAddress.length; i++) {
-            _assetState[_assetAddress[i]].index = i;
+        uint256 index_ = asset_.index;
+        uint256 lastIndex_ = _assetAddress.length - 1;
+
+        if (index_ != lastIndex_) {
+            _assetAddress[index_] = _assetAddress[lastIndex_];
+            _assetState[_assetAddress[index_]].index = index_;
         }
+        _assetAddress.pop();
     }
 
     function initialize() public nonReentrant onlyUninitialized onlyOwner {
