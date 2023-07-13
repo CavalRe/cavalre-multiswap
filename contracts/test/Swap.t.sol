@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 import "@cavalre/test/TestRoot.t.sol";
 import "@cavalre/Pool.sol";
+import "@cavalre/Users.sol";
 
 contract SwapTest is TestRoot {
     /*
@@ -170,7 +171,7 @@ contract SwapTest is TestRoot {
         depositToken.mint(amount);
         depositToken.approve(address(pool), amount);
 
-        vm.expectRevert(abi.encodeWithSelector(Pool.ZeroAddress.selector));
+        vm.expectRevert(abi.encodeWithSelector(Users.ZeroAddress.selector));
         pool.swap(address(depositToken), address(0), amount);
     }
 

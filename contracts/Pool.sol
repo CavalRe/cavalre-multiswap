@@ -125,8 +125,6 @@ contract Pool is LPToken {
 
     error UseSpecializedFunction();
 
-    error ZeroAddress();
-
     error ZeroBalance();
 
     error ZeroLength();
@@ -459,9 +457,10 @@ contract Pool is LPToken {
                     _assetState[receiveTokens[i]].fee
                 );
             }
-        }
-        if (fee > 0 && _userState[_msgSender()].discount > 0) {
-            fee = fee.mulWadUp(ONE - _userState[_msgSender()].discount);
+            uint256 discount_ = discount(_msgSender());
+            if (fee > 0 && discount_ > 0) {
+                fee = fee.mulWadUp(ONE - discount_);
+            }
         }
         gamma = ONE - fee;
 
@@ -631,8 +630,11 @@ contract Pool is LPToken {
             );
 
             uint256 fee = assetOut.fee;
-            if (fee > 0 && _userState[_msgSender()].discount > 0) {
-                fee = fee.mulWadUp(ONE - _userState[_msgSender()].discount);
+            {
+                uint256 discount_ = discount(_msgSender());
+                if (fee > 0 && discount_ > 0) {
+                    fee = fee.mulWadUp(ONE - discount_);
+                }
             }
             uint256 scaledFee = fee.mulWadUp(scaledValueIn);
             feeAmount = _poolState.balance.fullMulDiv(
@@ -741,8 +743,11 @@ contract Pool is LPToken {
         if (payAmount * 3 > _poolState.balance) revert TooLarge(payAmount);
 
         uint256 fee = assetOut.fee;
-        if (fee > 0 && _userState[_msgSender()].discount > 0) {
-            fee = fee.mulWadUp(ONE - _userState[_msgSender()].discount);
+        {
+            uint256 discount_ = discount(_msgSender());
+            if (fee > 0 && discount_ > 0) {
+                fee = fee.mulWadUp(ONE - discount_);
+            }
         }
         feeAmount = payAmount.mulWadUp(fee);
         uint256 delta = payAmount - feeAmount;
@@ -845,15 +850,19 @@ contract Pool is LPToken {
 
         AssetState storage assetOut;
         uint256 fee;
-        for (uint256 i; i < _assetAddress.length; i++) {
-            fee += _assetState[_assetAddress[i]].fee.fullMulDiv(
-                _assetState[_assetAddress[i]].scale,
-                _poolState.scale
-            );
+        {
+            for (uint256 i; i < _assetAddress.length; i++) {
+                fee += _assetState[_assetAddress[i]].fee.fullMulDiv(
+                    _assetState[_assetAddress[i]].scale,
+                    _poolState.scale
+                );
+            }
+            uint256 discount_ = discount(_msgSender());
+            if (fee > 0 && discount_ > 0) {
+                fee = fee.mulWadUp(ONE - discount_);
+            }
         }
-        if (fee > 0 && _userState[_msgSender()].discount > 0) {
-            fee = fee.mulWadUp(ONE - _userState[_msgSender()].discount);
-        }
+
         feeAmount = amount.mulWadUp(fee);
 
         uint256 delta = amount - feeAmount;

@@ -1,53 +1,25 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
+import {Users} from "@cavalre/Users.sol";
 import {ERC20, IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {FixedPointMathLib} from "solady/utils/FixedPointMathLib.sol";
 
-struct UserState {
-    address user;
-    bool isAllowed;
-    uint256 discount;
-}
-
-contract LPToken is ERC20, ReentrancyGuard, Ownable {
+contract LPToken is ERC20, ReentrancyGuard, Ownable, Users {
     using FixedPointMathLib for uint256;
-
-    uint256 internal constant ONE = 1e18;
-    uint256 internal constant HALF = 5e17;
-
-    mapping(address => UserState) internal _userState;
-    address[] private _userAddress;
 
     uint256 private _protocolFee;
     address private _protocolFeeRecipient;
 
     uint256 private _ratio; // virtual -> real
 
-    modifier onlyAllowed() {
-        address user = _msgSender();
-        if (!_userState[user].isAllowed) revert UserNotAllowed(user);
-        _;
-    }
-
-    error InvalidDiscount(uint256 discount);
-
     error InvalidProtocolFee(uint256 fee);
-
-    error InvalidUser(address user);
-
-    error UserAlreadyAdded(address user);
-
-    error UserNotAllowed(address user);
-
-    error UserNotFound(address user);
 
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {
         _ratio = 1e18;
         _protocolFeeRecipient = _msgSender();
-        addUser(_msgSender(), 0);
     }
 
     function protocolFee() public view returns (uint256) {
@@ -68,67 +40,6 @@ contract LPToken is ERC20, ReentrancyGuard, Ownable {
     ) public nonReentrant onlyOwner {
         _protocolFeeRecipient = recipient;
         addUser(recipient, 0);
-    }
-
-    function addUser(
-        address user,
-        uint256 discount
-    ) public nonReentrant onlyOwner {
-        if (user == address(0)) revert InvalidUser(user);
-        UserState memory state = _userState[user];
-        if (state.user != user) {
-            _userAddress.push(user);
-        }
-        _userState[user] = UserState(user, true, discount);
-    }
-
-    function allowUser(address user) public nonReentrant onlyOwner {
-        UserState memory state = _userState[user];
-        if (state.user != user) revert UserNotFound(user);
-        _userState[user].isAllowed = true;
-    }
-
-    function disallowUser(address user) public nonReentrant onlyOwner {
-        UserState memory state = _userState[user];
-        if (state.user != user) revert UserNotFound(user);
-        _userState[user].isAllowed = false;
-    }
-
-    function isAllowed(address user) public view returns (bool) {
-        UserState memory state = _userState[user];
-        return state.isAllowed;
-    }
-
-    function allUsers() public view returns (address[] memory) {
-        return _userAddress;
-    }
-
-    function allowedUsers() public view returns (address[] memory) {
-        uint256 n = 0;
-        for (uint256 i = 0; i < _userAddress.length; i++) {
-            address user = _userAddress[i];
-            if (_userState[user].isAllowed) n++;
-        }
-        address[] memory users = new address[](n);
-        uint256 j = 0;
-        for (uint256 i = 0; i < _userAddress.length; i++) {
-            address user = _userAddress[i];
-            if (_userState[user].isAllowed) {
-                users[j] = user;
-                j++;
-            }
-        }
-        return users;
-    }
-
-    function setDiscount(
-        address user,
-        uint256 discount
-    ) public nonReentrant onlyOwner {
-        UserState memory state = _userState[user];
-        if (state.user != user) revert UserNotFound(user);
-        if (discount > ONE) revert InvalidDiscount(discount);
-        _userState[user].discount = discount;
     }
 
     function ratio() internal view returns (uint256) {
