@@ -9,9 +9,11 @@ import "@cavalre/test/Token.t.sol";
 import "@cavalre/Pool.sol";
 
 contract ContractTest is Context, Test {
-    uint256 private constant NTOKENS = 2;
+    using FixedPointMathLib for uint256;
 
-    address alice = address(1);
+    uint256 private constant NTOKENS = 10;
+
+    address private alice = address(1);
 
     Token[] private tokens;
 
@@ -146,6 +148,10 @@ contract ContractTest is Context, Test {
 
     function test1_Unstake() public {
         pool.unstake(oneAsset[0], oneAmount[0]);
+    }
+
+    function test1_RemoveLiquidity() public {
+        pool.removeLiquidity(oneAmount[0]);
     }
 
     function test2_Swapping() public {
@@ -338,7 +344,25 @@ contract ContractTest is Context, Test {
         emit log("");
     }
 
+    function weight(address token_) public view returns (uint256) {
+        if (token_ == address(pool)) return 1e18;
+        AssetState memory asset_ = pool.asset(token_);
+        return asset_.scale.divWadUp(pool.info().scale);
+    }
+
+    function price(address token_) public view returns (uint256) {
+        if (token_ == address(pool)) return 1e18;
+        AssetState memory asset_ = pool.asset(token_);
+        uint256 weight_ = weight(token_);
+        return weight_.fullMulDiv(pool.info().balance, asset_.balance);
+    }
+
     function test2_addLiquidity() public {
+        uint256[] memory preTradePrices = new uint256[](addresses.length);
+        uint256[] memory postTradePrices = new uint256[](addresses.length);
+        for (uint256 i; i < addresses.length; i++) {
+            preTradePrices[i] = price(addresses[i]);
+        }
         emit log("=============");
         emit log("Initial state");
         emit log("=============");
@@ -346,6 +370,14 @@ contract ContractTest is Context, Test {
         showPool(pool);
         emit log("");
         pool.addLiquidity(addresses[0], tokens[0].balanceOf(address(pool)) / 2);
+        emit log("======================");
+        for (uint256 i; i < addresses.length; i++) {
+            postTradePrices[i] = price(addresses[i]);
+            emit log_named_uint("Pre-Trade Price", preTradePrices[i]);
+            emit log_named_uint("Post-Trade Price", postTradePrices[i]);
+            emit log("");
+        }
+        emit log("======================");
         emit log("===========");
         emit log("Final state");
         emit log("===========");
@@ -355,6 +387,12 @@ contract ContractTest is Context, Test {
     }
 
     function test2_removeLiquidity() public {
+        uint256[] memory preTradePrices = new uint256[](addresses.length);
+        uint256[] memory midTradePrices = new uint256[](addresses.length);
+        uint256[] memory postTradePrices = new uint256[](addresses.length);
+        for (uint256 i; i < addresses.length; i++) {
+            preTradePrices[i] = price(addresses[i]);
+        }
         emit log("");
         emit log("=============");
         emit log("Initial state");
@@ -364,6 +402,9 @@ contract ContractTest is Context, Test {
         emit log("");
         uint256 amount_ = tokens[0].balanceOf(address(pool)) / 2;
         amount_ = pool.addLiquidity(addresses[0], amount_);
+        for (uint256 i; i < addresses.length; i++) {
+            midTradePrices[i] = price(addresses[i]);
+        }
         emit log("======================");
         emit log("After adding liquidity");
         emit log("======================");
@@ -372,6 +413,15 @@ contract ContractTest is Context, Test {
         emit log("");
         amount_ = pool.info().balance / 3;
         (receiveAmounts, feeAmount) = pool.removeLiquidity(amount_);
+        emit log("======================");
+        for (uint256 i; i < addresses.length; i++) {
+            postTradePrices[i] = price(addresses[i]);
+            emit log_named_uint("Pre-Trade Price", preTradePrices[i]);
+            emit log_named_uint("Mid-Trade Price", midTradePrices[i]);
+            emit log_named_uint("Post-Trade Price", postTradePrices[i]);
+            emit log("");
+        }
+        emit log("======================");
         emit log("========================");
         emit log("After rmeoving liquidity");
         emit log("========================");

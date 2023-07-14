@@ -743,54 +743,33 @@ contract Pool is LPToken {
         onlyInitialized
         returns (uint256[] memory receiveAmounts, uint256 feeAmount)
     {
-        _txCount++;
+        uint256 n = _assetAddress.length;
+        address[] memory payTokens = new address[](1);
+        uint256[] memory amounts = new uint256[](1);
+        address[] memory receiveTokens = new address[](n);
+        uint256[] memory allocations = new uint256[](n);
+        receiveAmounts = new uint256[](n);
 
-        AssetState storage assetOut;
-        uint256 fee;
-        {
-            for (uint256 i; i < _assetAddress.length; i++) {
-                fee += _assetState[_assetAddress[i]].fee.fullMulDiv(
-                    _assetState[_assetAddress[i]].scale,
-                    _poolState.scale
-                );
-            }
-            uint256 discount_ = user(_msgSender()).discount;
-            if (fee > 0 && discount_ > 0) {
-                fee = fee.mulWadUp(ONE - discount_);
-            }
-        }
-
-        feeAmount = amount.mulWadUp(fee);
-
-        uint256 delta = amount - feeAmount;
-
-        uint256 g = (_poolState.balance - delta).divWadUp(_poolState.balance);
-
-        burn(_msgSender(), amount);
-
-        distributeFee(feeAmount);
-
-        _updatePoolBalance();
-
-        receiveAmounts = new uint256[](_assetAddress.length);
-        uint256 amountOut;
-        for (uint256 i; i < _assetAddress.length; i++) {
-            assetOut = _assetState[_assetAddress[i]];
-            amountOut = assetOut.balance - assetOut.balance.mulWadUp(g);
-            _updateAssetBalance(_assetAddress[i], 0, amountOut);
-
-            receiveAmounts[i] = amountOut;
-
-            SafeERC20.safeTransfer(
-                IERC20(assetOut.token),
-                _msgSender(),
-                fromCanonical(
-                    amountOut,
-                    IERC20Metadata(assetOut.token).decimals()
-                )
+        payTokens[0] = address(this);
+        amounts[0] = amount;
+        receiveTokens = _assetAddress;
+        uint256 allocation;
+        uint256 totalAllocation;
+        for (uint256 i; i < n - 1; i++) {
+            allocation = _assetState[_assetAddress[i]].scale.divWadUp(
+                _poolState.scale
             );
+            allocations[i] = allocation;
+            totalAllocation += allocation;
         }
+        allocations[n - 1] = 1e18 - totalAllocation;
 
+        (receiveAmounts, feeAmount) = _multiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations
+        );
         emit RemoveLiquidity(_msgSender(), amount, receiveAmounts, feeAmount);
     }
 }
