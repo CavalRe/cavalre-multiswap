@@ -31,7 +31,7 @@ contract UnstakeTest is TestRoot {
 
         receiveToken.approve(address(pool), amount);
 
-        amountOut = pool.stake(address(receiveToken), amount);
+        (amountOut, ) = pool.stake(address(receiveToken), amount);
 
         assertEq(
             receiveToken.balanceOf(alice),
@@ -95,7 +95,8 @@ contract UnstakeTest is TestRoot {
 
         receiveToken.approve(address(pool), amount);
 
-        uint256 amountOut = pool.stake(address(receiveToken), amount);
+        uint256 amountOut;
+        (amountOut, ) = pool.stake(address(receiveToken), amount);
 
         assertEq(
             receiveToken.balanceOf(alice),

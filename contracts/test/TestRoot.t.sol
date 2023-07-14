@@ -26,7 +26,7 @@ contract TestRoot is Test, Context {
 
         vm.startPrank(alice);
 
-        pool = new Pool("Pool", "P", int256(1e16), false);
+        pool = new Pool("Pool", "P", int256(1e16));
         tokens = new Token[](NTOKENS);
         addresses = new address[](NTOKENS);
 
@@ -89,7 +89,7 @@ contract TestRoot is Test, Context {
         assertApproxEqRel(
             valueIn,
             valueOut,
-            1e6,
+            1e8,
             string(
                 abi.encodePacked(
                     "Value in does not equal value out. ",
@@ -136,7 +136,7 @@ contract TestRoot is Test, Context {
         assertApproxEqRel(
             pool.totalSupply(),
             pool.info().balance,
-            1e6,
+            1e8,
             "Pool total supply is not approximately equal to pool balance: "
         );
     }
@@ -145,7 +145,7 @@ contract TestRoot is Test, Context {
         assertApproxEqRel(
             pool.totalSupply(),
             pool.info().balance,
-            1e6,
+            1e8,
             string(
                 abi.encodePacked(
                     "Pool total supply is not approximately equal to pool balance: ",

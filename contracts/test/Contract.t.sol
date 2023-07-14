@@ -42,7 +42,7 @@ contract ContractTest is Context, Test {
     function setUp() public {
         vm.startPrank(alice);
 
-        pool = new Pool("Pool", "P", int256(1e16), false);
+        pool = new Pool("Pool", "P", int256(1e16));
         tokens = new Token[](NTOKENS);
 
         pool.addUser(alice, 0);
@@ -124,31 +124,31 @@ contract ContractTest is Context, Test {
         }
     }
 
-    function test1_1_Multiswap() public {
+    function test1_Multiswap() public {
         pool.multiswap(oneAsset, oneAmount, anotherAsset, oneAllocation);
     }
 
-    function test1_2_Swap() public {
+    function test1_Swap() public {
         pool.swap(oneAsset[0], anotherAsset[0], oneAmount[0]);
     }
 
-    function test1_3_Multistake() public {
+    function test1_Multistake() public {
         pool.multiswap(oneAsset, oneAmount, onePool, oneAllocation);
     }
 
-    function test1_4_Stake() public {
+    function test1_Stake() public {
         pool.stake(oneAsset[0], oneAmount[0]);
     }
 
-    function test1_5_Multiunstake() public {
+    function test1_Multiunstake() public {
         pool.multiswap(oneAsset, oneAmount, onePool, oneAllocation);
     }
 
-    function test1_6_Unstake() public {
+    function test1_Unstake() public {
         pool.unstake(oneAsset[0], oneAmount[0]);
     }
 
-    function test2_1_Swapping() public {
+    function test2_Swapping() public {
         emit log("Initial state");
         emit log("");
         showPool(pool);
@@ -202,7 +202,7 @@ contract ContractTest is Context, Test {
         pool.swap(oneAsset[0], address(pool), oneAmount[0]);
     }
 
-    function test2_2_Staking() public {
+    function test2_Staking() public {
         (receiveAmounts, feeAmount) = pool.multiswap(
             oneAsset,
             oneAmount,
@@ -217,7 +217,7 @@ contract ContractTest is Context, Test {
         emit log("");
 
         setUp();
-        amountOut = pool.stake(oneAsset[0], amounts[0]);
+        (amountOut, ) = pool.stake(oneAsset[0], amounts[0]);
 
         emit log("Stake:");
         emit log("");
@@ -230,7 +230,7 @@ contract ContractTest is Context, Test {
         pool.stake(address(pool), amounts[0]);
     }
 
-    function test2_3_Unstaking() public {
+    function test2_Unstaking() public {
         emit log("Initial state");
         emit log("");
         showPool(pool);
@@ -273,7 +273,7 @@ contract ContractTest is Context, Test {
         pool.unstake(address(pool), amounts[0]);
     }
 
-    function test2_4_MixedStaking() public {
+    function test2_MixedStaking() public {
         twoTokens[0] = address(pool);
         twoTokens[1] = anotherAsset[0];
         twoAmounts[0] = 5e17;
@@ -306,7 +306,7 @@ contract ContractTest is Context, Test {
         emit log("");
     }
 
-    function test2_5_MixedUnstaking() public {
+    function test2_MixedUnstaking() public {
         twoTokens[0] = address(pool);
         twoTokens[1] = oneAsset[0];
         twoAmounts[0] = oneAmount[0];
@@ -338,7 +338,7 @@ contract ContractTest is Context, Test {
         emit log("");
     }
 
-    function test2_6_addLiquidity() public {
+    function test2_addLiquidity() public {
         emit log("=============");
         emit log("Initial state");
         emit log("=============");
@@ -354,7 +354,7 @@ contract ContractTest is Context, Test {
         emit log("");
     }
 
-    function test2_7_removeLiquidity() public {
+    function test2_removeLiquidity() public {
         emit log("");
         emit log("=============");
         emit log("Initial state");

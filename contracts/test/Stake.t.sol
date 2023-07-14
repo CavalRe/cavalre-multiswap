@@ -26,7 +26,7 @@ contract StakeTest is TestRoot {
 
         payToken.approve(address(pool), amount);
 
-        amountOut = pool.stake(address(payToken), amount);
+        (amountOut, ) = pool.stake(address(payToken), amount);
 
         assertEq(
             payToken.balanceOf(alice),
@@ -62,7 +62,7 @@ contract StakeTest is TestRoot {
             );
             pool.stake(address(payToken), amount);
         } else {
-            amountOut = pool.stake(address(payToken), amount);
+            (amountOut, ) = pool.stake(address(payToken), amount);
 
             checkSF(address(payToken), address(pool), amount, amountOut);
 

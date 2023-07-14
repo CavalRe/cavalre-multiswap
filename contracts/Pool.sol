@@ -40,8 +40,6 @@ contract Pool is LPToken {
 
     uint256 private _isInitialized;
 
-    bool private _forceSpecialized;
-
     modifier onlyInitialized() {
         if (_isInitialized == 0) revert NotInitialized();
         _;
@@ -123,8 +121,6 @@ contract Pool is LPToken {
 
     error TooLarge(uint256 size);
 
-    error UseSpecializedFunction();
-
     error ZeroBalance();
 
     error ZeroLength();
@@ -134,15 +130,13 @@ contract Pool is LPToken {
     constructor(
         string memory name,
         string memory symbol,
-        int256 tau,
-        bool forceSpecialized
+        int256 tau
     ) LPToken(name, symbol) {
         _poolState.token = address(this);
         _poolState.name = name;
         _poolState.symbol = symbol;
         _poolState.decimals = 18;
         _poolState.tau = tau;
-        _forceSpecialized = forceSpecialized;
     }
 
     function fromCanonical(
@@ -159,7 +153,7 @@ contract Pool is LPToken {
         uint256 balance_,
         uint256 fee_,
         uint256 assetScale_
-    ) public nonReentrant onlyUninitialized onlyOwner {
+    ) public onlyUninitialized onlyOwner {
         if (payToken_ == address(0)) revert ZeroAddress();
         if (_assetState[payToken_].token == payToken_)
             revert DuplicateToken(payToken_);
@@ -196,9 +190,7 @@ contract Pool is LPToken {
         _assetAddress.push(payToken_);
     }
 
-    function removeAsset(
-        address token
-    ) public nonReentrant onlyUninitialized onlyOwner {
+    function removeAsset(address token) public onlyUninitialized onlyOwner {
         if (token == address(0)) revert ZeroAddress();
         AssetState storage asset_ = _assetState[token];
         if (asset_.token != token) revert AssetNotFound(token);
@@ -228,10 +220,10 @@ contract Pool is LPToken {
         _assetAddress.pop();
     }
 
-    function initialize() public nonReentrant onlyUninitialized onlyOwner {
+    function initialize() public onlyUninitialized onlyOwner {
         _isInitialized = 1;
 
-        _mint(_msgSender(), _poolState.scale);
+        mint(_msgSender(), _poolState.scale);
     }
 
     function info() public view returns (PoolState memory) {
@@ -285,60 +277,171 @@ contract Pool is LPToken {
         }
     }
 
-    function _increaseBalance(address token, uint256 amount) private {
-        uint256 lastBalance;
-        if (token == address(this)) {
-            lastBalance = _poolState.balance;
-            _poolState.balance += amount;
-            _poolState.meanBalance = _geometricMean(
-                _poolState.balance,
-                lastBalance,
-                _poolState.meanBalance,
-                _poolState.lastUpdated
-            );
-            _poolState.lastUpdated = _txCount;
-        } else {
-            if (token == address(0)) revert ZeroAddress();
-            AssetState storage asset_ = _assetState[token];
-            if (asset_.token != token) revert AssetNotFound(token);
-            lastBalance = asset_.balance;
-            asset_.balance += amount;
-            asset_.meanBalance = _geometricMean(
-                asset_.balance,
-                lastBalance,
-                asset_.meanBalance,
-                asset_.lastUpdated
-            );
-            asset_.lastUpdated = _txCount;
-        }
+    function _updateAssetBalance(
+        address token,
+        uint256 increaseAmount,
+        uint256 decreaseAmount
+    ) private {
+        if (token == address(0)) revert ZeroAddress();
+        AssetState storage asset_ = _assetState[token];
+        if (asset_.token != token) revert AssetNotFound(token);
+        uint256 lastBalance = asset_.balance;
+        asset_.balance += increaseAmount;
+        asset_.balance -= decreaseAmount;
+        asset_.meanBalance = _geometricMean(
+            asset_.balance,
+            lastBalance,
+            asset_.meanBalance,
+            asset_.lastUpdated
+        );
+        asset_.lastUpdated = _txCount;
     }
 
-    function _decreaseBalance(address token, uint256 amount) private {
-        uint256 lastBalance;
-        if (token == address(this)) {
-            lastBalance = _poolState.balance;
-            _poolState.balance -= amount;
-            _poolState.meanBalance = _geometricMean(
-                _poolState.balance,
-                lastBalance,
-                _poolState.meanBalance,
-                _poolState.lastUpdated
-            );
-            _poolState.lastUpdated = _txCount;
-        } else {
-            if (token == address(0)) revert ZeroAddress();
-            AssetState storage asset_ = _assetState[token];
-            if (asset_.token != token) revert AssetNotFound(token);
-            lastBalance = asset_.balance;
-            asset_.balance -= amount;
-            asset_.meanBalance = _geometricMean(
-                asset_.balance,
-                lastBalance,
-                asset_.meanBalance,
-                asset_.lastUpdated
-            );
-            asset_.lastUpdated = _txCount;
+    function _updatePoolBalance() private {
+        uint256 lastPoolBalance = _poolState.balance;
+        _poolState.balance = totalSupply();
+        _poolState.meanBalance = _geometricMean(
+            _poolState.balance,
+            lastPoolBalance,
+            _poolState.meanBalance,
+            _poolState.lastUpdated
+        );
+        _poolState.lastUpdated = _txCount;
+    }
+
+    function _multiswap(
+        address[] memory payTokens,
+        uint256[] memory amounts,
+        address[] memory receiveTokens,
+        uint256[] memory allocations
+    ) private returns (uint256[] memory receiveAmounts, uint256 feeAmount) {
+        _txCount++;
+
+        receiveAmounts = new uint256[](receiveTokens.length);
+
+        // Compute fee
+        uint256 fee;
+        {
+            for (uint256 i; i < receiveTokens.length; i++) {
+                fee += allocations[i].mulWadUp(
+                    _assetState[receiveTokens[i]].fee
+                );
+            }
+            uint256 discount_ = user(_msgSender()).discount;
+            if (fee > 0 && discount_ > 0) {
+                fee = fee.mulWadUp(ONE - discount_);
+            }
         }
+        uint256 gamma = ONE - fee;
+
+        // Compute scaledValueIn
+        uint256 scaledValueIn;
+        uint256 poolOut;
+        {
+            // Contribution from assets only
+            for (uint256 i; i < payTokens.length; i++) {
+                address token_ = payTokens[i];
+                uint256 amount_ = amounts[i];
+                if (token_ != address(this)) {
+                    AssetState storage assetIn = _assetState[token_];
+                    scaledValueIn += assetIn.scale.fullMulDiv(
+                        amount_,
+                        assetIn.balance + amount_
+                    );
+                }
+            }
+
+            uint256 poolAlloc = fee;
+            if (receiveTokens[0] == address(this)) {
+                poolAlloc += allocations[0].mulWadUp(gamma);
+            }
+            uint256 lastPoolBalance = _poolState.balance;
+            uint256 scaledPoolOut = scaledValueIn.mulWadUp(poolAlloc);
+            if (payTokens[0] == address(this)) {
+                uint256 poolIn = amounts[0];
+                poolOut = poolAlloc.fullMulDiv(
+                    scaledValueIn.mulWadUp(lastPoolBalance - poolIn) +
+                        _poolState.scale.mulWadUp(poolIn),
+                    _poolState.scale - scaledPoolOut
+                );
+                scaledValueIn += _poolState.scale.fullMulDiv(
+                    poolIn,
+                    lastPoolBalance + poolOut - poolIn
+                );
+                feeAmount = poolOut;
+            } else {
+                poolOut = lastPoolBalance.fullMulDiv(
+                    scaledPoolOut,
+                    _poolState.scale - scaledPoolOut
+                );
+                feeAmount = poolOut.fullMulDiv(fee, poolAlloc);
+            }
+        }
+
+        // Compute receiveAmounts
+        {
+            uint256 scaledValueOut;
+
+            address receiveToken;
+            uint256 allocation;
+            for (uint256 i; i < receiveTokens.length; i++) {
+                receiveToken = receiveTokens[i];
+                allocation = allocations[i].mulWadUp(gamma);
+                scaledValueOut = scaledValueIn.mulWadUp(allocation);
+                if (receiveToken == address(this)) {
+                    receiveAmounts[i] = poolOut - feeAmount;
+                } else {
+                    AssetState storage assetOut = _assetState[receiveToken];
+                    receiveAmounts[i] = assetOut.balance.fullMulDiv(
+                        scaledValueOut,
+                        assetOut.scale + scaledValueOut
+                    );
+                }
+            }
+        }
+
+        // Distribute fee
+        distributeFee(feeAmount);
+
+        // Transfer tokens to the pool
+        for (uint256 i; i < payTokens.length; i++) {
+            address payToken = payTokens[i];
+            uint256 amount = amounts[i];
+            if (payToken == address(this)) {
+                burn(_msgSender(), amount);
+            } else {
+                _updateAssetBalance(payToken, amount, 0);
+
+                SafeERC20.safeTransferFrom(
+                    IERC20(payToken),
+                    _msgSender(),
+                    address(this),
+                    fromCanonical(amount, IERC20Metadata(payToken).decimals())
+                );
+            }
+        }
+
+        // Transfer tokens to the receiving address
+        for (uint256 i; i < receiveTokens.length; i++) {
+            address receiveToken = receiveTokens[i];
+            uint256 amountOut = receiveAmounts[i];
+            // Update _balance and asset balances.
+            if (receiveToken == address(this)) {
+                mint(_msgSender(), amountOut);
+            } else {
+                _updateAssetBalance(receiveToken, 0, amountOut);
+
+                SafeERC20.safeTransfer(
+                    IERC20(receiveToken),
+                    _msgSender(),
+                    fromCanonical(
+                        amountOut,
+                        IERC20Metadata(receiveToken).decimals()
+                    )
+                );
+            }
+        }
+        _updatePoolBalance();
     }
 
     function multiswap(
@@ -348,22 +451,14 @@ contract Pool is LPToken {
         uint256[] memory allocations
     )
         public
-        nonReentrant
         onlyInitialized
         onlyAllowed
         returns (uint256[] memory receiveAmounts, uint256 feeAmount)
     {
-        _txCount++;
-
         // Check lengths
         {
             if (payTokens.length == 0) revert ZeroLength();
             if (receiveTokens.length == 0) revert ZeroLength();
-            if (
-                _forceSpecialized &&
-                payTokens.length == 1 &&
-                receiveTokens.length == 1
-            ) revert UseSpecializedFunction();
             if (payTokens.length != amounts.length)
                 revert LengthMismatch(payTokens.length, amounts.length);
             if (receiveTokens.length != allocations.length)
@@ -431,7 +526,7 @@ contract Pool is LPToken {
                 address payToken = payTokens[i];
                 uint256 balance_;
                 if (payToken == address(this)) {
-                    balance_ = _poolState.balance;
+                    balance_ = totalSupply();
                 } else {
                     balance_ = _assetState[payToken].balance;
                 }
@@ -439,143 +534,12 @@ contract Pool is LPToken {
             }
         }
 
-        receiveAmounts = new uint256[](receiveTokens.length);
-
-        // Compute fee
-        uint256 fee;
-        uint256 gamma;
-        {
-            for (uint256 i; i < receiveTokens.length; i++) {
-                fee += allocations[i].mulWadUp(
-                    _assetState[receiveTokens[i]].fee
-                );
-            }
-            uint256 discount_ = user(_msgSender()).discount;
-            if (fee > 0 && discount_ > 0) {
-                fee = fee.mulWadUp(ONE - discount_);
-            }
-        }
-        gamma = ONE - fee;
-
-        // Compute scaledValueIn
-        uint256 scaledValueIn;
-        uint256 lastPoolBalance = _poolState.balance;
-        uint256 poolOut;
-        {
-            // Contribution from assets only
-            for (uint256 i; i < payTokens.length; i++) {
-                address token_ = payTokens[i];
-                uint256 amount_ = amounts[i];
-                if (token_ != address(this)) {
-                    AssetState storage assetIn = _assetState[token_];
-                    scaledValueIn += assetIn.scale.fullMulDiv(
-                        amount_,
-                        assetIn.balance + amount_
-                    );
-                }
-            }
-
-            uint256 poolAlloc = fee;
-            if (receiveTokens[0] == address(this)) {
-                poolAlloc += allocations[0].mulWadUp(gamma);
-            }
-            uint256 scaledPoolOut = scaledValueIn.mulWadUp(poolAlloc);
-            uint256 poolIn;
-            if (payTokens[0] == address(this)) {
-                poolIn = amounts[0];
-                poolOut = poolAlloc.fullMulDiv(
-                    scaledValueIn.mulWadUp(lastPoolBalance - poolIn) +
-                        _poolState.scale.mulWadUp(poolIn),
-                    _poolState.scale - scaledPoolOut
-                );
-                scaledValueIn += _poolState.scale.fullMulDiv(
-                    poolIn,
-                    lastPoolBalance + poolOut - poolIn
-                );
-                feeAmount = poolOut;
-            } else {
-                poolOut = lastPoolBalance.fullMulDiv(
-                    scaledPoolOut,
-                    _poolState.scale - scaledPoolOut
-                );
-                feeAmount = poolOut.fullMulDiv(fee, poolAlloc);
-            }
-        }
-
-        // Compute receiveAmounts
-        {
-            uint256 scaledValueOut;
-
-            address receiveToken;
-            uint256 allocation;
-            for (uint256 i; i < receiveTokens.length; i++) {
-                receiveToken = receiveTokens[i];
-                allocation = allocations[i].mulWadUp(gamma);
-                scaledValueOut = scaledValueIn.mulWadUp(allocation);
-                if (receiveToken == address(this)) {
-                    receiveAmounts[i] = poolOut - feeAmount;
-                } else {
-                    AssetState storage assetOut = _assetState[receiveToken];
-                    receiveAmounts[i] = assetOut.balance.fullMulDiv(
-                        scaledValueOut,
-                        assetOut.scale + scaledValueOut
-                    );
-                }
-            }
-        }
-
-        // Distribute fee
-        _poolState.balance += feeAmount;
-        _distributeFee(feeAmount);
-
-        // Transfer tokens to the pool
-        for (uint256 i; i < payTokens.length; i++) {
-            address payToken = payTokens[i];
-            uint256 amount = amounts[i];
-            if (payToken == address(this)) {
-                _poolState.balance -= amount;
-                _burn(_msgSender(), amount);
-            } else {
-                _increaseBalance(payToken, amount);
-
-                SafeERC20.safeTransferFrom(
-                    IERC20(payToken),
-                    _msgSender(),
-                    address(this),
-                    fromCanonical(amount, IERC20Metadata(payToken).decimals())
-                );
-            }
-        }
-
-        // Transfer tokens to the receiving address
-        for (uint256 i; i < receiveTokens.length; i++) {
-            address receiveToken = receiveTokens[i];
-            uint256 amountOut = receiveAmounts[i];
-            // Update _balance and asset balances.
-            if (receiveToken == address(this)) {
-                _poolState.balance += amountOut;
-                _mint(_msgSender(), amountOut);
-            } else {
-                _decreaseBalance(receiveToken, amountOut);
-
-                SafeERC20.safeTransfer(
-                    IERC20(receiveToken),
-                    _msgSender(),
-                    fromCanonical(
-                        amountOut,
-                        IERC20Metadata(receiveToken).decimals()
-                    )
-                );
-            }
-        }
-
-        _poolState.meanBalance = _geometricMean(
-            _poolState.balance,
-            lastPoolBalance,
-            _poolState.meanBalance,
-            _poolState.lastUpdated
+        (receiveAmounts, feeAmount) = _multiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations
         );
-        _poolState.lastUpdated = _txCount;
 
         emit Multiswap(
             _msgSender(),
@@ -593,13 +557,10 @@ contract Pool is LPToken {
         uint256 payAmount
     )
         public
-        nonReentrant
         onlyInitialized
         onlyAllowed
         returns (uint256 receiveAmount, uint256 feeAmount)
     {
-        _txCount++;
-
         if (payToken == address(0)) revert ZeroAddress();
         if (receiveToken == address(0)) revert ZeroAddress();
         if (payToken == address(this))
@@ -607,62 +568,33 @@ contract Pool is LPToken {
         if (receiveToken == address(this))
             revert InvalidSwap(payToken, receiveToken);
         if (payToken == receiveToken) revert DuplicateToken(payToken);
-        AssetState storage assetIn = _assetState[payToken];
-        if (assetIn.token != payToken) revert AssetNotFound(payToken);
-        AssetState storage assetOut = _assetState[receiveToken];
-        if (assetOut.token != receiveToken) revert AssetNotFound(receiveToken);
+        if (_assetState[payToken].token != payToken)
+            revert AssetNotFound(payToken);
+        if (_assetState[receiveToken].token != receiveToken)
+            revert AssetNotFound(receiveToken);
 
-        if (payAmount * 3 > assetIn.balance) revert TooLarge(payAmount);
+        if (payAmount * 3 > _assetState[payToken].balance)
+            revert TooLarge(payAmount);
 
-        {
-            _increaseBalance(payToken, payAmount);
+        address[] memory payTokens = new address[](1);
+        uint256[] memory amounts = new uint256[](1);
+        address[] memory receiveTokens = new address[](1);
+        uint256[] memory allocations = new uint256[](1);
+        uint256[] memory receiveAmounts = new uint256[](1);
 
-            uint256 scaledValueIn = assetIn.scale.fullMulDiv(
-                payAmount,
-                assetIn.balance
-            );
+        payTokens[0] = payToken;
+        amounts[0] = payAmount;
+        receiveTokens[0] = receiveToken;
+        allocations[0] = 1e18;
 
-            uint256 fee = assetOut.fee;
-            {
-                uint256 discount_ = user(_msgSender()).discount;
-                if (fee > 0 && discount_ > 0) {
-                    fee = fee.mulWadUp(ONE - discount_);
-                }
-            }
-            uint256 scaledFee = fee.mulWadUp(scaledValueIn);
-            feeAmount = _poolState.balance.fullMulDiv(
-                scaledFee,
-                _poolState.scale - scaledFee
-            );
-
-            uint256 scaledValueOut = (ONE - fee).mulWadUp(scaledValueIn);
-            receiveAmount = assetOut.balance.fullMulDiv(
-                scaledValueOut,
-                assetOut.scale + scaledValueOut
-            );
-        }
-
-        _increaseBalance(address(this), feeAmount);
-
-        _decreaseBalance(receiveToken, receiveAmount);
-
-        _distributeFee(feeAmount);
-
-        SafeERC20.safeTransferFrom(
-            IERC20(payToken),
-            _msgSender(),
-            address(this),
-            fromCanonical(payAmount, IERC20Metadata(payToken).decimals())
+        (receiveAmounts, feeAmount) = _multiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations
         );
 
-        SafeERC20.safeTransfer(
-            IERC20(receiveToken),
-            _msgSender(),
-            fromCanonical(
-                receiveAmount,
-                IERC20Metadata(receiveToken).decimals()
-            )
-        );
+        receiveAmount = receiveAmounts[0];
 
         emit Swap(
             _msgSender(),
@@ -679,40 +611,36 @@ contract Pool is LPToken {
         uint256 payAmount
     )
         public
-        nonReentrant
         onlyInitialized
         onlyAllowed
-        returns (uint256 receiveAmount)
+        returns (uint256 receiveAmount, uint256 feeAmount)
     {
-        _txCount++;
-
         if (payToken == address(0)) revert ZeroAddress();
         if (payToken == address(this)) revert InvalidStake(payToken);
-        AssetState storage assetIn = _assetState[payToken];
-        if (assetIn.token != payToken) revert AssetNotFound(payToken);
-        if (payAmount * 3 > assetIn.balance) revert TooLarge(payAmount);
+        if (_assetState[payToken].token != payToken)
+            revert AssetNotFound(payToken);
+        if (payAmount * 3 > _assetState[payToken].balance)
+            revert TooLarge(payAmount);
 
-        _increaseBalance(payToken, payAmount);
+        address[] memory payTokens = new address[](1);
+        uint256[] memory amounts = new uint256[](1);
+        address[] memory receiveTokens = new address[](1);
+        uint256[] memory allocations = new uint256[](1);
+        uint256[] memory receiveAmounts = new uint256[](1);
 
-        uint256 scaledValueIn = assetIn.scale.fullMulDiv(
-            payAmount,
-            assetIn.balance
+        payTokens[0] = payToken;
+        amounts[0] = payAmount;
+        receiveTokens[0] = address(this);
+        allocations[0] = 1e18;
+
+        (receiveAmounts, feeAmount) = _multiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations
         );
-        receiveAmount = _poolState.balance.fullMulDiv(
-            scaledValueIn,
-            _poolState.scale - scaledValueIn
-        );
 
-        _increaseBalance(address(this), receiveAmount);
-
-        SafeERC20.safeTransferFrom(
-            IERC20(payToken),
-            _msgSender(),
-            address(this),
-            fromCanonical(payAmount, IERC20Metadata(payToken).decimals())
-        );
-
-        _mint(_msgSender(), receiveAmount);
+        receiveAmount = receiveAmounts[0];
 
         emit Stake(_msgSender(), payToken, payAmount, receiveAmount);
     }
@@ -722,57 +650,35 @@ contract Pool is LPToken {
         uint256 payAmount
     )
         public
-        nonReentrant
         onlyInitialized
         onlyAllowed
         returns (uint256 receiveAmount, uint256 feeAmount)
     {
-        _txCount++;
-
         if (receiveToken == address(0)) revert ZeroAddress();
         if (receiveToken == address(this)) revert InvalidUnstake(receiveToken);
-        AssetState storage assetOut = _assetState[receiveToken];
-        if (assetOut.token != receiveToken) revert AssetNotFound(receiveToken);
+        if (_assetState[receiveToken].token != receiveToken)
+            revert AssetNotFound(receiveToken);
         if (payAmount * 3 > _poolState.balance) revert TooLarge(payAmount);
 
-        uint256 fee = assetOut.fee;
-        {
-            uint256 discount_ = user(_msgSender()).discount;
-            if (fee > 0 && discount_ > 0) {
-                fee = fee.mulWadUp(ONE - discount_);
-            }
-        }
-        feeAmount = payAmount.mulWadUp(fee);
-        uint256 delta = payAmount - feeAmount;
+        address[] memory payTokens = new address[](1);
+        uint256[] memory amounts = new uint256[](1);
+        address[] memory receiveTokens = new address[](1);
+        uint256[] memory allocations = new uint256[](1);
+        uint256[] memory receiveAmounts = new uint256[](1);
 
-        uint256 scaledValueIn = _poolState.scale.fullMulDiv(
-            payAmount,
-            _poolState.balance - delta
+        payTokens[0] = address(this);
+        amounts[0] = payAmount;
+        receiveTokens[0] = receiveToken;
+        allocations[0] = 1e18;
+
+        (receiveAmounts, feeAmount) = _multiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations
         );
 
-        uint256 scaledValueOut = scaledValueIn.mulWadUp(ONE - fee);
-
-        receiveAmount = assetOut.balance.fullMulDiv(
-            scaledValueOut,
-            assetOut.scale + scaledValueOut
-        );
-
-        _decreaseBalance(address(this), delta);
-
-        _burn(_msgSender(), payAmount);
-
-        _distributeFee(feeAmount);
-
-        _decreaseBalance(receiveToken, receiveAmount);
-
-        SafeERC20.safeTransfer(
-            IERC20(receiveToken),
-            _msgSender(),
-            fromCanonical(
-                receiveAmount,
-                IERC20Metadata(receiveToken).decimals()
-            )
-        );
+        receiveAmount = receiveAmounts[0];
 
         emit Unstake(
             _msgSender(),
@@ -786,7 +692,7 @@ contract Pool is LPToken {
     function addLiquidity(
         address token,
         uint256 amount
-    ) public nonReentrant onlyInitialized onlyAllowed returns (uint256) {
+    ) public onlyInitialized onlyAllowed returns (uint256) {
         _txCount++;
 
         AssetState storage assetIn;
@@ -812,7 +718,7 @@ contract Pool is LPToken {
                 amountIn = assetIn.balance.mulWadUp(g) - assetIn.balance;
             }
             payAmounts[i] = amountIn;
-            _increaseBalance(_assetAddress[i], amountIn);
+            _updateAssetBalance(_assetAddress[i], amountIn, 0);
 
             SafeERC20.safeTransferFrom(
                 IERC20(assetIn.token),
@@ -822,9 +728,8 @@ contract Pool is LPToken {
             );
         }
 
-        _increaseBalance(address(this), amountOut);
-
-        _mint(_msgSender(), amountOut);
+        mint(_msgSender(), amountOut);
+        _updatePoolBalance();
 
         emit AddLiquidity(_msgSender(), payAmounts, amountOut);
 
@@ -835,7 +740,6 @@ contract Pool is LPToken {
         uint256 amount
     )
         public
-        nonReentrant
         onlyInitialized
         returns (uint256[] memory receiveAmounts, uint256 feeAmount)
     {
@@ -862,18 +766,18 @@ contract Pool is LPToken {
 
         uint256 g = (_poolState.balance - delta).divWadUp(_poolState.balance);
 
-        _decreaseBalance(address(this), delta);
+        burn(_msgSender(), amount);
 
-        _burn(_msgSender(), amount);
+        distributeFee(feeAmount);
 
-        _distributeFee(feeAmount);
+        _updatePoolBalance();
 
         receiveAmounts = new uint256[](_assetAddress.length);
         uint256 amountOut;
         for (uint256 i; i < _assetAddress.length; i++) {
             assetOut = _assetState[_assetAddress[i]];
             amountOut = assetOut.balance - assetOut.balance.mulWadUp(g);
-            _decreaseBalance(_assetAddress[i], amountOut);
+            _updateAssetBalance(_assetAddress[i], 0, amountOut);
 
             receiveAmounts[i] = amountOut;
 

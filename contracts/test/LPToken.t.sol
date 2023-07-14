@@ -12,23 +12,21 @@ contract LPMintable is LPToken {
         string memory symbol_
     ) LPToken(name_, symbol_) {}
 
-    function distributeFee(uint256 amount) public {
-        _distributeFee(amount);
+    function distributeFee_(uint256 amount) public {
+        super.distributeFee(amount);
     }
 
-    function mint(uint256 amount) public onlyAllowed {
-        amount = amount.divWadUp(ratio());
-        super._mint(_msgSender(), amount);
+    function mint_(uint256 amount) public onlyAllowed {
+        super.mint(_msgSender(), amount);
     }
 
-    function burn(uint256 amount) public onlyAllowed {
-        amount = amount.divWadUp(ratio());
-        super._burn(_msgSender(), amount);
+    function burn_(uint256 amount) public onlyAllowed {
+        super.burn(_msgSender(), amount);
     }
 }
 
 contract LPTokenTest is Test {
-    LPMintable lpToken;
+    LPMintable private lpToken;
 
     function setUp() public {
         lpToken = new LPMintable("LP", "LP");
@@ -44,7 +42,7 @@ contract LPTokenTest is Test {
 
         vm.startPrank(alice);
 
-        lpToken.mint(amount);
+        lpToken.mint_(amount);
         assertEq(lpToken.balanceOf(alice), amount, "Balance of alice after minting.");
         assertEq(lpToken.totalSupply(), amount, "Total supply after minting.");
 
@@ -55,7 +53,7 @@ contract LPTokenTest is Test {
         vm.expectRevert(
             abi.encodeWithSelector(LPToken.UserNotAllowed.selector, bob)
         );
-        lpToken.mint(amount);
+        lpToken.mint_(amount);
     }
 
     function testLPToken_burn(uint256 amount) public {
@@ -70,8 +68,8 @@ contract LPTokenTest is Test {
 
         uint256 burnAmount = amount / 2;
 
-        lpToken.mint(amount);
-        lpToken.burn(burnAmount);
+        lpToken.mint_(amount);
+        lpToken.burn_(burnAmount);
         assertEq(lpToken.balanceOf(alice), amount - burnAmount, "Balance of alice after burning.");
         assertEq(lpToken.totalSupply(), amount - burnAmount, "Total supply after burning.");
 
@@ -82,7 +80,7 @@ contract LPTokenTest is Test {
         vm.expectRevert(
             abi.encodeWithSelector(LPToken.UserNotAllowed.selector, bob)
         );
-        lpToken.burn(burnAmount);
+        lpToken.burn_(burnAmount);
 
         vm.stopPrank();
     }
@@ -97,7 +95,7 @@ contract LPTokenTest is Test {
 
         vm.startPrank(alice);
 
-        lpToken.mint(amount);
+        lpToken.mint_(amount);
         assertEq(lpToken.balanceOf(alice), amount, "Balance of alice after minting.");
         assertEq(lpToken.totalSupply(), amount, "Total supply after minting.");
 
@@ -130,7 +128,7 @@ contract LPTokenTest is Test {
 
         lpToken.increaseAllowance(bob, amount);
 
-        lpToken.mint(amount);
+        lpToken.mint_(amount);
         assertEq(lpToken.balanceOf(alice), amount, "Balance of alice after minting.");
         assertEq(lpToken.totalSupply(), amount, "Total supply after minting.");
 
@@ -174,7 +172,7 @@ contract LPTokenTest is Test {
 
         vm.startPrank(alice);
 
-        lpToken.mint(amount);
+        lpToken.mint_(amount);
         assertEq(lpToken.balanceOf(alice), amount, "Balance of alice after minting.");
         assertEq(lpToken.totalSupply(), amount, "Total supply after minting.");
 
@@ -186,13 +184,13 @@ contract LPTokenTest is Test {
 
         vm.startPrank(bob);
 
-        lpToken.mint(amount);
+        lpToken.mint_(amount);
         assertEq(lpToken.balanceOf(bob), amount, "Balance of bob after minting.");
         assertEq(lpToken.totalSupply(), 2 * amount, "Total supply after second minting.");
 
         vm.stopPrank();
 
-        lpToken.distributeFee(2 * amount);
+        lpToken.distributeFee_(2 * amount);
 
         assertEq(lpToken.balanceOf(alice), 2 * amount, "Balance of alice after fee distribution.");
         assertEq(lpToken.balanceOf(bob), 2 * amount, "Balance of bob after fee distribution.");

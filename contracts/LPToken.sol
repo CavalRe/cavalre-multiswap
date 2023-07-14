@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import {Users} from "@cavalre/Users.sol";
+import {Users, FixedPointMathLib} from "@cavalre/Users.sol";
 import {ERC20, IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {FixedPointMathLib} from "solady/utils/FixedPointMathLib.sol";
 
-contract LPToken is ERC20, ReentrancyGuard, Ownable, Users {
+contract LPToken is ERC20, Ownable, Users {
     using FixedPointMathLib for uint256;
 
     uint256 private _protocolFee;
     address private _protocolFeeRecipient;
 
+    uint256 private _totalSupply;
     uint256 private _ratio; // virtual -> real
 
     error InvalidProtocolFee(uint256 fee);
@@ -41,16 +40,17 @@ contract LPToken is ERC20, ReentrancyGuard, Ownable, Users {
         return _protocolFeeRecipient;
     }
 
-    function setProtocolFee(uint256 fee) public nonReentrant onlyOwner {
+    function setProtocolFee(uint256 fee) public onlyOwner {
         if (fee > HALF) revert InvalidProtocolFee(fee);
         _protocolFee = fee;
     }
 
-    function setProtocolFeeRecipient(
-        address recipient
-    ) public nonReentrant onlyOwner {
+    function setProtocolFeeRecipient(address recipient) public onlyOwner {
         _protocolFeeRecipient = recipient;
-        addUser(recipient, 0);
+        if (_userIndex[recipient] == 0) {
+            addUser(recipient, 0);
+        }
+        _userList[_userIndex[recipient] - 1].isAllowed = true;
     }
 
     function ratio() internal view returns (uint256) {
@@ -58,7 +58,7 @@ contract LPToken is ERC20, ReentrancyGuard, Ownable, Users {
     }
 
     function totalSupply() public view override returns (uint256) {
-        return super.totalSupply().mulWadUp(_ratio);
+        return _totalSupply;
     }
 
     function balanceOf(address account) public view override returns (uint256) {
@@ -116,10 +116,23 @@ contract LPToken is ERC20, ReentrancyGuard, Ownable, Users {
         return super.decreaseAllowance(spender, subtractedValue);
     }
 
-    function _distributeFee(uint256 amount) internal virtual {
+    function mint(address to, uint256 amount) internal {
+        _totalSupply += amount;
+        amount = amount.divWadUp(_ratio);
+        super._mint(to, amount);
+    }
+
+    function burn(address from, uint256 amount) internal {
+        _totalSupply -= amount;
+        amount = amount.divWadUp(_ratio);
+        super._burn(from, amount);
+    }
+
+    function distributeFee(uint256 amount) internal {
         uint256 protocolAmount = amount.mulWadUp(_protocolFee);
         uint256 userAmount = amount - protocolAmount;
         _mint(_protocolFeeRecipient, protocolAmount);
-        _ratio = (totalSupply() + userAmount).divWadUp(super.totalSupply());
+        _totalSupply += userAmount;
+        _ratio = _totalSupply.divWadUp(super.totalSupply());
     }
 }
