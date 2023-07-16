@@ -32,13 +32,14 @@ contract Users is Ownable {
 
     error ZeroAddress();
 
-    // modifier onlyOnce() {
-    //     address user_ = _msgSender();
-    //     if (block.number == _userList[_userIndex[user_]].lastBlock)
-    //         revert OnlyOneTransaction(user_);
-    //     _userList[_userIndex[user_]].lastBlock = block.number;
-    //     _;
-    // }
+    modifier onlyOnce() {
+        address userAddress_ = _msgSender();
+        UserState storage user_ = _userList[_userIndex[userAddress_] - 1];
+        if (block.number == user_.lastBlock)
+            revert OnlyOneTransaction(userAddress_);
+        user_.lastBlock = block.number;
+        _;
+    }
 
     function users() public view returns (UserState[] memory) {
         return _userList;

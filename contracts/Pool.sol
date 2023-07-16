@@ -314,7 +314,11 @@ contract Pool is LPToken {
         uint256[] memory amounts,
         address[] memory receiveTokens,
         uint256[] memory allocations
-    ) private returns (uint256[] memory receiveAmounts, uint256 feeAmount) {
+    )
+        private
+        onlyOnce
+        returns (uint256[] memory receiveAmounts, uint256 feeAmount)
+    {
         _txCount++;
 
         receiveAmounts = new uint256[](receiveTokens.length);
@@ -444,6 +448,36 @@ contract Pool is LPToken {
         _updatePoolBalance();
     }
 
+    function checkDuplicateTokens(
+        address[] memory tokens,
+        uint256[] memory tokenValues,
+        bool[] memory check_,
+        bool isLP
+    ) private view returns (bool) {
+        uint256 temp;
+        for (uint256 i = 0; i < tokens.length; i++) {
+            address token = tokens[i];
+            if (token == address(0)) revert ZeroAddress();
+            if (address(this) == token) {
+                if (isLP) revert DuplicateToken(token);
+                isLP = true;
+                if (i != 0) {
+                    tokens[i] = tokens[0];
+                    tokens[0] = address(this);
+                    temp = tokenValues[i];
+                    tokenValues[i] = tokenValues[0];
+                    tokenValues[0] = temp;
+                }
+                continue;
+            }
+            AssetState memory asset_ = _assetState[token];
+            if (asset_.token != token) revert AssetNotFound(token);
+            if (check_[asset_.index]) revert DuplicateToken(token);
+            check_[asset_.index] = true;
+        }
+        return isLP;
+    }
+
     function multiswap(
         address[] memory payTokens,
         uint256[] memory amounts,
@@ -467,49 +501,14 @@ contract Pool is LPToken {
         // Check duplicates
         {
             bool isLP;
-            uint256 temp;
             bool[] memory check_ = new bool[](_assetAddress.length);
-            for (uint256 i; i < payTokens.length; i++) {
-                address token = payTokens[i];
-                if (token == address(0)) revert ZeroAddress();
-                if (address(this) == token) {
-                    if (isLP) revert DuplicateToken(token);
-                    isLP = true;
-                    if (i != 0) {
-                        payTokens[i] = payTokens[0];
-                        payTokens[0] = address(this);
-                        temp = amounts[i];
-                        amounts[i] = amounts[0];
-                        amounts[0] = temp;
-                    }
-                    continue;
-                }
-                AssetState memory asset_ = _assetState[token];
-                if (asset_.token != token) revert AssetNotFound(token);
-                if (check_[asset_.index]) revert DuplicateToken(token);
-                check_[asset_.index] = true;
-            }
-
-            for (uint256 i; i < receiveTokens.length; i++) {
-                address token = receiveTokens[i];
-                if (token == address(0)) revert ZeroAddress();
-                if (address(this) == token) {
-                    if (isLP) revert DuplicateToken(token);
-                    isLP = true;
-                    if (i != 0) {
-                        receiveTokens[i] = receiveTokens[0];
-                        receiveTokens[0] = address(this);
-                        temp = allocations[i];
-                        allocations[i] = allocations[0];
-                        allocations[0] = temp;
-                    }
-                    continue;
-                }
-                AssetState memory asset_ = _assetState[token];
-                if (asset_.token != token) revert AssetNotFound(token);
-                if (check_[asset_.index]) revert DuplicateToken(token);
-                check_[asset_.index] = true;
-            }
+            isLP = checkDuplicateTokens(payTokens, amounts, check_, isLP);
+            isLP = checkDuplicateTokens(
+                receiveTokens,
+                allocations,
+                check_,
+                isLP
+            );
         }
         // Check allocations
         {
@@ -526,7 +525,7 @@ contract Pool is LPToken {
                 address payToken = payTokens[i];
                 uint256 balance_;
                 if (payToken == address(this)) {
-                    balance_ = totalSupply();
+                    balance_ = _poolState.balance;
                 } else {
                     balance_ = _assetState[payToken].balance;
                 }
@@ -692,7 +691,7 @@ contract Pool is LPToken {
     function addLiquidity(
         address token,
         uint256 amount
-    ) public onlyInitialized onlyAllowed returns (uint256) {
+    ) public onlyInitialized onlyAllowed onlyOnce returns (uint256) {
         _txCount++;
 
         AssetState storage assetIn;

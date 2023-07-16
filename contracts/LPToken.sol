@@ -20,10 +20,11 @@ contract LPToken is ERC20, Ownable, Users {
 
     modifier onlyAllowed() {
         address user_ = _msgSender();
-        if (
-            _userIndex[user_] == 0 ||
-            !_userList[_userIndex[user_] - 1].isAllowed
-        ) revert UserNotAllowed(user_);
+        if (_userList.length > 0) {
+            if (_userIndex[user_] == 0) revert UserNotFound(user_);
+            if (!_userList[_userIndex[user_] - 1].isAllowed)
+                revert UserNotAllowed(user_);
+        }
         _;
     }
 

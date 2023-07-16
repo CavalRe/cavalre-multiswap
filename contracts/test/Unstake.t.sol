@@ -47,6 +47,8 @@ contract UnstakeTest is TestRoot {
 
         pool.approve(address(pool), amountOut);
 
+        vm.roll(block.number+1);
+
         (receiveAmount, feeAmount) = pool.unstake(
             address(receiveToken),
             amountOut
@@ -111,6 +113,8 @@ contract UnstakeTest is TestRoot {
         );
 
         pool.approve(address(pool), amountOut);
+
+        vm.roll(block.number+1);
 
         if (amountOut * 3 > pool.info().balance) {
             vm.expectRevert(
