@@ -412,6 +412,7 @@ contract ContractTest is Context, Test {
         emit log("");
         showPool(pool);
         emit log("");
+        vm.roll(block.number+1);
         amount_ = pool.info().balance / 3;
         (receiveAmounts, feeAmount) = pool.removeLiquidity(amount_);
         emit log("======================");

@@ -51,7 +51,7 @@ contract LPTokenTest is Test {
         vm.startPrank(bob);
 
         vm.expectRevert(
-            abi.encodeWithSelector(LPToken.UserNotAllowed.selector, bob)
+            abi.encodeWithSelector(Users.UserNotFound.selector, bob)
         );
         lpToken.mint_(amount);
     }
@@ -78,7 +78,7 @@ contract LPTokenTest is Test {
         vm.startPrank(bob);
 
         vm.expectRevert(
-            abi.encodeWithSelector(LPToken.UserNotAllowed.selector, bob)
+            abi.encodeWithSelector(Users.UserNotFound.selector, bob)
         );
         lpToken.burn_(burnAmount);
 
