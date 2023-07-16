@@ -16,18 +16,6 @@ contract LPToken is ERC20, Ownable, Users {
 
     error InvalidProtocolFee(uint256 fee);
 
-    error UserNotAllowed(address user_);
-
-    modifier onlyAllowed() {
-        address user_ = _msgSender();
-        if (_userList.length > 0) {
-            if (_userIndex[user_] == 0) revert UserNotFound(user_);
-            if (!_userList[_userIndex[user_] - 1].isAllowed)
-                revert UserNotAllowed(user_);
-        }
-        _;
-    }
-
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {
         _ratio = 1e18;
         _protocolFeeRecipient = _msgSender();
@@ -69,8 +57,9 @@ contract LPToken is ERC20, Ownable, Users {
     function transfer(
         address to,
         uint256 amount
-    ) public override onlyAllowed returns (bool) {
-        if (!user(to).isAllowed) revert UserNotAllowed(to);
+    ) public override onlyUnrestricted returns (bool) {
+        if (_userIndex[to] == 0) revert UserNotFound(to);
+        if (!_userList[_userIndex[to] - 1].isAllowed) revert UserNotAllowed(to);
         amount = amount.divWadUp(_ratio);
         return super.transfer(to, amount);
     }
@@ -95,8 +84,10 @@ contract LPToken is ERC20, Ownable, Users {
         address to,
         uint256 amount
     ) public override returns (bool) {
-        if (!user(from).isAllowed) revert UserNotAllowed(from);
-        if (!user(to).isAllowed) revert UserNotAllowed(to);
+        if (_userIndex[from] == 0) revert UserNotFound(from);
+        if (!_userList[_userIndex[from] - 1].isAllowed) revert UserNotAllowed(from);
+        if (_userIndex[to] == 0) revert UserNotFound(to);
+        if (!_userList[_userIndex[to] - 1].isAllowed) revert UserNotAllowed(to);
         amount = amount.divWadUp(_ratio);
         return super.transferFrom(from, to, amount);
     }

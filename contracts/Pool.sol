@@ -486,7 +486,7 @@ contract Pool is LPToken {
     )
         public
         onlyInitialized
-        onlyAllowed
+        onlyUnrestricted
         returns (uint256[] memory receiveAmounts, uint256 feeAmount)
     {
         // Check lengths
@@ -557,7 +557,7 @@ contract Pool is LPToken {
     )
         public
         onlyInitialized
-        onlyAllowed
+        onlyUnrestricted
         returns (uint256 receiveAmount, uint256 feeAmount)
     {
         if (payToken == address(0)) revert ZeroAddress();
@@ -611,7 +611,7 @@ contract Pool is LPToken {
     )
         public
         onlyInitialized
-        onlyAllowed
+        onlyUnrestricted
         returns (uint256 receiveAmount, uint256 feeAmount)
     {
         if (payToken == address(0)) revert ZeroAddress();
@@ -650,7 +650,7 @@ contract Pool is LPToken {
     )
         public
         onlyInitialized
-        onlyAllowed
+        onlyUnrestricted
         returns (uint256 receiveAmount, uint256 feeAmount)
     {
         if (receiveToken == address(0)) revert ZeroAddress();
@@ -691,7 +691,7 @@ contract Pool is LPToken {
     function addLiquidity(
         address token,
         uint256 amount
-    ) public onlyInitialized onlyAllowed onlyOnce returns (uint256) {
+    ) public onlyInitialized onlyUnrestricted onlyOnce returns (uint256) {
         _txCount++;
 
         AssetState storage assetIn;

@@ -16,11 +16,11 @@ contract LPMintable is LPToken {
         super.distributeFee(amount);
     }
 
-    function mint_(uint256 amount) public onlyAllowed {
+    function mint_(uint256 amount) public onlyUnrestricted {
         super.mint(_msgSender(), amount);
     }
 
-    function burn_(uint256 amount) public onlyAllowed {
+    function burn_(uint256 amount) public onlyUnrestricted {
         super.burn(_msgSender(), amount);
     }
 }
@@ -100,7 +100,7 @@ contract LPTokenTest is Test {
         assertEq(lpToken.totalSupply(), amount, "Total supply after minting.");
 
         vm.expectRevert(
-            abi.encodeWithSelector(LPToken.UserNotAllowed.selector, bob)
+            abi.encodeWithSelector(Users.UserNotFound.selector, bob)
         );
         lpToken.transfer(bob, amount);
 
@@ -137,7 +137,7 @@ contract LPTokenTest is Test {
         vm.startPrank(bob);
 
         vm.expectRevert(
-            abi.encodeWithSelector(LPToken.UserNotAllowed.selector, carol)
+            abi.encodeWithSelector(Users.UserNotFound.selector, carol)
         );
         lpToken.transferFrom(alice, carol, amount);
 
@@ -156,7 +156,7 @@ contract LPTokenTest is Test {
         vm.startPrank(bob);
 
         vm.expectRevert(
-            abi.encodeWithSelector(LPToken.UserNotAllowed.selector, alice)
+            abi.encodeWithSelector(Users.UserNotAllowed.selector, alice)
         );
         lpToken.transferFrom(alice, carol, amount);
 

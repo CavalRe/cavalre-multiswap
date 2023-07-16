@@ -28,6 +28,8 @@ contract Users is Ownable {
 
     error UserAlreadyAdded(address user_);
 
+    error UserNotAllowed(address user_);
+
     error UserNotFound(address user_);
 
     error ZeroAddress();
@@ -41,15 +43,33 @@ contract Users is Ownable {
         _;
     }
 
+    modifier onlyNotDenied() {
+        address user_ = _msgSender();
+        if (_userList.length > 0) {
+            if (
+                _userIndex[user_] > 0 &&
+                !_userList[_userIndex[user_] - 1].isAllowed
+            ) revert UserNotAllowed(user_);
+        }
+        _;
+    }
+
+    modifier onlyUnrestricted() {
+        address user_ = _msgSender();
+        if (_userList.length > 0) {
+            if (_userIndex[user_] == 0) revert UserNotFound(user_);
+            if (!_userList[_userIndex[user_] - 1].isAllowed)
+                revert UserNotAllowed(user_);
+        }
+        _;
+    }
+
     function users() public view returns (UserState[] memory) {
         return _userList;
     }
 
     function user(address user_) public view returns (UserState memory) {
-        if (_userIndex[user_] == 0) {
-            UserState memory userState_;
-            return userState_;
-        }
+        if (_userIndex[user_] == 0) revert UserNotFound(user_);
         return _userList[_userIndex[user_] - 1];
     }
 

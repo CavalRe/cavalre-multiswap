@@ -21,8 +21,6 @@ contract UsersTest is Test {
 
         assertTrue(users.user(alice).isAllowed, "Alice is allowed after being added as a user.");
 
-        assertFalse(users.user(bob).isAllowed, "Bob is not allowed after Alice is added as a user.");
-
         vm.expectRevert(
             abi.encodeWithSelector(Users.UserAlreadyAdded.selector, alice)
         );
@@ -31,6 +29,11 @@ contract UsersTest is Test {
         users.setAllowed(alice, false);
 
         assertFalse(users.user(alice).isAllowed, "Alice is not allowed after being disappowed.");
+
+        vm.expectRevert(
+            abi.encodeWithSelector(Users.UserNotFound.selector, bob)
+        );
+        users.user(bob);
 
         users.addUser(bob, 0);
 
@@ -47,11 +50,5 @@ contract UsersTest is Test {
         assertEq(users.users()[1].associates[0], bob, "Bob is an associate of the second user.");
 
         assertEq(users.user(bob).associates[0], bob, "Bob is the first associate of Bob.");
-
-        setUp();
-
-        assertFalse(users.user(alice).isAllowed, "Alice is not allowed after resetting users.");
-
-        assertFalse(users.user(bob).isAllowed, "Bob is not allowed after resetting users.");
     }
 }
