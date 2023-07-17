@@ -117,6 +117,8 @@ contract Pool is LPToken {
 
     error LengthMismatch(uint256 expected, uint256 actual);
 
+    error LPTokenFirst();
+
     error NotInitialized();
 
     error TooLarge(uint256 size);
@@ -309,6 +311,28 @@ contract Pool is LPToken {
         _poolState.lastUpdated = _txCount;
     }
 
+    function _checkDuplicateTokens(
+        address[] memory tokens,
+        bool[] memory check_,
+        bool isLP
+    ) private view returns (bool) {
+        for (uint256 i = 0; i < tokens.length; i++) {
+            address token = tokens[i];
+            if (token == address(0)) revert ZeroAddress();
+            if (address(this) == token) {
+                if (isLP) revert DuplicateToken(token);
+                if (i != 0) revert LPTokenFirst();
+                isLP = true;
+                continue;
+            }
+            AssetState memory asset_ = _assetState[token];
+            if (asset_.token != token) revert AssetNotFound(token);
+            if (check_[asset_.index]) revert DuplicateToken(token);
+            check_[asset_.index] = true;
+        }
+        return isLP;
+    }
+
     function _multiswap(
         address[] memory payTokens,
         uint256[] memory amounts,
@@ -448,36 +472,6 @@ contract Pool is LPToken {
         _updatePoolBalance();
     }
 
-    function checkDuplicateTokens(
-        address[] memory tokens,
-        uint256[] memory tokenValues,
-        bool[] memory check_,
-        bool isLP
-    ) private view returns (bool) {
-        uint256 temp;
-        for (uint256 i = 0; i < tokens.length; i++) {
-            address token = tokens[i];
-            if (token == address(0)) revert ZeroAddress();
-            if (address(this) == token) {
-                if (isLP) revert DuplicateToken(token);
-                isLP = true;
-                if (i != 0) {
-                    tokens[i] = tokens[0];
-                    tokens[0] = address(this);
-                    temp = tokenValues[i];
-                    tokenValues[i] = tokenValues[0];
-                    tokenValues[0] = temp;
-                }
-                continue;
-            }
-            AssetState memory asset_ = _assetState[token];
-            if (asset_.token != token) revert AssetNotFound(token);
-            if (check_[asset_.index]) revert DuplicateToken(token);
-            check_[asset_.index] = true;
-        }
-        return isLP;
-    }
-
     function multiswap(
         address[] memory payTokens,
         uint256[] memory amounts,
@@ -502,13 +496,8 @@ contract Pool is LPToken {
         {
             bool isLP;
             bool[] memory check_ = new bool[](_assetAddress.length);
-            isLP = checkDuplicateTokens(payTokens, amounts, check_, isLP);
-            isLP = checkDuplicateTokens(
-                receiveTokens,
-                allocations,
-                check_,
-                isLP
-            );
+            isLP = _checkDuplicateTokens(payTokens, check_, isLP);
+            isLP = _checkDuplicateTokens(receiveTokens, check_, isLP);
         }
         // Check allocations
         {

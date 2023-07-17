@@ -280,10 +280,14 @@ contract MultiswapTest is TestRoot {
         address[] memory differentTokens = new address[](2);
         differentTokens[0] = addresses[1];
         differentTokens[1] = addresses[2];
-        
+
         address[] memory duplicatePool = new address[](2);
         duplicatePool[0] = address(pool);
         duplicatePool[1] = address(pool);
+
+        address[] memory poolSecond = new address[](2);
+        poolSecond[0] = addresses[0];
+        poolSecond[1] = address(pool);
 
         uint256[] memory amounts = new uint256[](2);
         amounts[0] = amount;
@@ -310,20 +314,20 @@ contract MultiswapTest is TestRoot {
         pool.multiswap(differentTokens, amounts, duplicateTokens, allocations);
 
         vm.expectRevert(
-            abi.encodeWithSelector(
-                Pool.DuplicateToken.selector,
-                address(pool)
-            )
+            abi.encodeWithSelector(Pool.DuplicateToken.selector, address(pool))
         );
         pool.multiswap(duplicatePool, amounts, differentTokens, allocations);
 
         vm.expectRevert(
-            abi.encodeWithSelector(
-                Pool.DuplicateToken.selector,
-                address(pool)
-            )
+            abi.encodeWithSelector(Pool.DuplicateToken.selector, address(pool))
         );
         pool.multiswap(differentTokens, amounts, duplicatePool, allocations);
+
+        vm.expectRevert(abi.encodeWithSelector(Pool.LPTokenFirst.selector));
+        pool.multiswap(poolSecond, amounts, differentTokens, allocations);
+
+        vm.expectRevert(abi.encodeWithSelector(Pool.LPTokenFirst.selector));
+        pool.multiswap(differentTokens, amounts, poolSecond, allocations);
     }
 
     function testFailMultiWithdrawNonContract() public {
