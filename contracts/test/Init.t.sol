@@ -15,15 +15,16 @@ contract InitTest is Test {
         Token tokenA = new Token("Foo", "FOOA");
         Token tokenB = new Token("Foo", "FOOB");
         uint256 amount = 1e27;
+        uint256 minReceiveAmount = 0;
 
         pool.addUser(alice, 0);
 
         vm.expectRevert(abi.encodeWithSelector(Pool.NotInitialized.selector));
-        pool.stake(address(tokenA), amount);
+        pool.stake(address(tokenA), amount, minReceiveAmount);
         vm.expectRevert(abi.encodeWithSelector(Pool.NotInitialized.selector));
-        pool.unstake(address(tokenB), amount);
+        pool.unstake(address(tokenB), amount, minReceiveAmount);
         vm.expectRevert(abi.encodeWithSelector(Pool.NotInitialized.selector));
-        pool.swap(address(tokenA), address(tokenB), amount);
+        pool.swap(address(tokenA), address(tokenB), amount, minReceiveAmount);
 
         tokenA.mint(amount);
         tokenA.approve(address(pool), amount);
@@ -43,10 +44,7 @@ contract InitTest is Test {
         pool.removeAsset(address(tokenA));
 
         vm.expectRevert(
-            abi.encodeWithSelector(
-                Pool.AssetNotFound.selector,
-                address(tokenA)
-            )
+            abi.encodeWithSelector(Pool.AssetNotFound.selector, address(tokenA))
         );
         pool.removeAsset(address(tokenA));
 

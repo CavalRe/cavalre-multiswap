@@ -31,7 +31,8 @@ contract SwapTest is TestRoot {
         (amountOut, feeAmount) = pool.swap(
             address(depositToken),
             address(withdrawToken),
-            amount
+            amount,
+            0
         );
 
         assertEq(
@@ -89,12 +90,13 @@ contract SwapTest is TestRoot {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amount)
             );
-            pool.swap(address(depositToken), address(withdrawToken), amount);
+            pool.swap(address(depositToken), address(withdrawToken), amount, 0);
         } else {
             (amountOut, feeAmount) = pool.swap(
                 address(depositToken),
                 address(withdrawToken),
-                amount
+                amount,
+                0
             );
             checkSF(
                 address(depositToken),
@@ -121,7 +123,7 @@ contract SwapTest is TestRoot {
         vm.expectRevert(
             abi.encodeWithSelector(Pool.AssetNotFound.selector, depositAddress)
         );
-        pool.swap(depositAddress, withdrawAddress, 1);
+        pool.swap(depositAddress, withdrawAddress, 1, 0);
     }
 
     function testBadWithdrawalAddress() public {
@@ -131,7 +133,7 @@ contract SwapTest is TestRoot {
         vm.expectRevert(
             abi.encodeWithSelector(Pool.AssetNotFound.selector, withdrawAddress)
         );
-        pool.swap(depositAddress, withdrawAddress, 1);
+        pool.swap(depositAddress, withdrawAddress, 1, 0);
     }
 
     function testSwapDuplicateToken(uint256 index) public {
@@ -148,7 +150,7 @@ contract SwapTest is TestRoot {
                 address(depositToken)
             )
         );
-        pool.swap(address(depositToken), address(withdrawToken), amount);
+        pool.swap(address(depositToken), address(withdrawToken), amount, 0);
     }
 
     function testSwapZeroDeposit() public {
@@ -158,7 +160,7 @@ contract SwapTest is TestRoot {
         depositToken.mint(amount);
         depositToken.approve(address(pool), amount);
 
-        pool.swap(address(depositToken), address(withdrawToken), amount);
+        pool.swap(address(depositToken), address(withdrawToken), amount, 0);
     }
 
     /*
@@ -172,7 +174,7 @@ contract SwapTest is TestRoot {
         depositToken.approve(address(pool), amount);
 
         vm.expectRevert(abi.encodeWithSelector(Users.ZeroAddress.selector));
-        pool.swap(address(depositToken), address(0), amount);
+        pool.swap(address(depositToken), address(0), amount, 0);
     }
 
     function testSwapWithdrawNotInPool() public {
@@ -197,7 +199,7 @@ contract SwapTest is TestRoot {
                 address(outside)
             )
         );
-        pool.swap(address(depositToken), address(outside), amount);
+        pool.swap(address(depositToken), address(outside), amount, 0);
     }
 
     function testSwapDepositNotInPool() public {
@@ -213,7 +215,7 @@ contract SwapTest is TestRoot {
                 address(depositToken)
             )
         );
-        pool.swap(address(depositToken), address(withdrawToken), amount);
+        pool.swap(address(depositToken), address(withdrawToken), amount, 0);
     }
 
     /*
@@ -249,7 +251,8 @@ contract SwapTest is TestRoot {
         (poolAmount, feeAmount) = pool.swap(
             address(depositTokenA),
             address(pool),
-            amountA
+            amountA,
+            0
         );
 
         assertEq(depositTokenA.balanceOf(alice), 0);
@@ -262,7 +265,7 @@ contract SwapTest is TestRoot {
                 address(depositTokenA)
             )
         );
-        pool.swap(address(pool), address(depositTokenA), poolAmount);
+        pool.swap(address(pool), address(depositTokenA), poolAmount, 0);
         assertEq(depositTokenA.balanceOf(alice) > 0, true);
         assertEq(pool.balanceOf(alice), 0);
 

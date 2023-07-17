@@ -30,19 +30,27 @@ contract MultiswapTest is TestRoot {
         receiveTokens[0] = address(receiveToken);
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 1e18;
+        uint256[] memory minReceiveAmounts = new uint256[](1);
         uint256[] memory receiveAmounts = new uint256[](1);
         uint256 feeAmount;
         if (amount * 3 > pool.asset(payTokens[0]).balance) {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amount)
             );
-            pool.multiswap(payTokens, amounts, receiveTokens, allocations);
+            pool.multiswap(
+                payTokens,
+                amounts,
+                receiveTokens,
+                allocations,
+                minReceiveAmounts
+            );
         } else {
             (receiveAmounts, feeAmount) = pool.multiswap(
                 payTokens,
                 amounts,
                 receiveTokens,
-                allocations
+                allocations,
+                minReceiveAmounts
             );
 
             checkSF(
@@ -76,7 +84,14 @@ contract MultiswapTest is TestRoot {
         receiveTokens[0] = address(receiveToken);
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 1e18;
-        pool.multiswap(payTokens, amounts, receiveTokens, allocations);
+        uint256[] memory minReceiveAmounts = new uint256[](1);
+        pool.multiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations,
+            minReceiveAmounts
+        );
     }
 
     function testMultiFuzzAmount(uint256 amount) public {
@@ -95,19 +110,27 @@ contract MultiswapTest is TestRoot {
         receiveTokens[0] = address(receiveToken);
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 1e18;
+        uint256[] memory minReceiveAmounts = new uint256[](1);
         uint256[] memory receiveAmounts = new uint256[](1);
         uint256 feeAmount;
         if (amount * 3 > pool.asset(payTokens[0]).balance) {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amount)
             );
-            pool.multiswap(payTokens, amounts, receiveTokens, allocations);
+            pool.multiswap(
+                payTokens,
+                amounts,
+                receiveTokens,
+                allocations,
+                minReceiveAmounts
+            );
         } else {
             (receiveAmounts, feeAmount) = pool.multiswap(
                 payTokens,
                 amounts,
                 receiveTokens,
-                allocations
+                allocations,
+                minReceiveAmounts
             );
 
             checkSF(
@@ -137,13 +160,20 @@ contract MultiswapTest is TestRoot {
         receiveTokens[0] = address(receiveToken);
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 1e18;
+        uint256[] memory minReceiveAmounts = new uint256[](1);
         vm.expectRevert(
             abi.encodeWithSelector(
                 Pool.DuplicateToken.selector,
                 address(payToken)
             )
         );
-        pool.multiswap(payTokens, amounts, receiveTokens, allocations);
+        pool.multiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations,
+            minReceiveAmounts
+        );
 
         setUp();
         payTokens[0] = address(pool);
@@ -151,7 +181,13 @@ contract MultiswapTest is TestRoot {
         vm.expectRevert(
             abi.encodeWithSelector(Pool.DuplicateToken.selector, address(pool))
         );
-        pool.multiswap(payTokens, amounts, receiveTokens, allocations);
+        pool.multiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations,
+            minReceiveAmounts
+        );
     }
 
     function testIncorrectAllocation() public {
@@ -169,10 +205,17 @@ contract MultiswapTest is TestRoot {
         receiveTokens[0] = address(receiveToken);
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 2;
+        uint256[] memory minReceiveAmounts = new uint256[](1);
         vm.expectRevert(
             abi.encodeWithSelector(Pool.IncorrectAllocation.selector, 1e18, 2)
         );
-        pool.multiswap(payTokens, amounts, receiveTokens, allocations);
+        pool.multiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations,
+            minReceiveAmounts
+        );
     }
 
     function testWithdrawalMismatch() public {
@@ -191,10 +234,17 @@ contract MultiswapTest is TestRoot {
         receiveTokens[1] = address(tokens[2]);
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 1e18;
+        uint256[] memory minReceiveAmounts = new uint256[](1);
         vm.expectRevert(
             abi.encodeWithSelector(Pool.LengthMismatch.selector, 2, 1)
         );
-        pool.multiswap(payTokens, amounts, receiveTokens, allocations);
+        pool.multiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations,
+            minReceiveAmounts
+        );
     }
 
     function testDepositMismatch() public {
@@ -213,10 +263,17 @@ contract MultiswapTest is TestRoot {
         receiveTokens[0] = address(receiveToken);
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 1e18;
+        uint256[] memory minReceiveAmounts = new uint256[](1);
         vm.expectRevert(
             abi.encodeWithSelector(Pool.LengthMismatch.selector, 1, 2)
         );
-        pool.multiswap(payTokens, amounts, receiveTokens, allocations);
+        pool.multiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations,
+            minReceiveAmounts
+        );
     }
 
     function testMultiNoWithdrawal() public {
@@ -231,8 +288,15 @@ contract MultiswapTest is TestRoot {
         amounts[0] = amount;
         address[] memory receiveTokens = new address[](0);
         uint256[] memory allocations = new uint256[](0);
+        uint256[] memory minReceiveAmounts = new uint256[](0);
         vm.expectRevert(abi.encodeWithSelector(Pool.ZeroLength.selector));
-        pool.multiswap(payTokens, amounts, receiveTokens, allocations);
+        pool.multiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations,
+            minReceiveAmounts
+        );
     }
 
     function testMultiNoDeposit() public {
@@ -248,8 +312,15 @@ contract MultiswapTest is TestRoot {
         receiveTokens[0] = address(receiveToken);
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 1e18;
+        uint256[] memory minReceiveAmounts = new uint256[](1);
         vm.expectRevert(abi.encodeWithSelector(Pool.ZeroLength.selector));
-        pool.multiswap(payTokens, amounts, receiveTokens, allocations);
+        pool.multiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations,
+            minReceiveAmounts
+        );
     }
 
     function testMultiZeroDeposit() public {
@@ -267,7 +338,14 @@ contract MultiswapTest is TestRoot {
         receiveTokens[0] = address(receiveToken);
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 1e18;
-        pool.multiswap(payTokens, amounts, receiveTokens, allocations);
+        uint256[] memory minReceiveAmounts = new uint256[](1);
+        pool.multiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations,
+            minReceiveAmounts
+        );
     }
 
     function testMultiDuplicateToken() public {
@@ -297,13 +375,7 @@ contract MultiswapTest is TestRoot {
         allocations[0] = 5e17;
         allocations[0] = 5e17;
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Pool.DuplicateToken.selector,
-                duplicateTokens[0]
-            )
-        );
-        pool.multiswap(duplicateTokens, amounts, differentTokens, allocations);
+        uint256[] memory minReceiveAmounts = new uint256[](2);
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -311,23 +383,67 @@ contract MultiswapTest is TestRoot {
                 duplicateTokens[0]
             )
         );
-        pool.multiswap(differentTokens, amounts, duplicateTokens, allocations);
+        pool.multiswap(
+            duplicateTokens,
+            amounts,
+            differentTokens,
+            allocations,
+            minReceiveAmounts
+        );
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Pool.DuplicateToken.selector,
+                duplicateTokens[0]
+            )
+        );
+        pool.multiswap(
+            differentTokens,
+            amounts,
+            duplicateTokens,
+            allocations,
+            minReceiveAmounts
+        );
 
         vm.expectRevert(
             abi.encodeWithSelector(Pool.DuplicateToken.selector, address(pool))
         );
-        pool.multiswap(duplicatePool, amounts, differentTokens, allocations);
+        pool.multiswap(
+            duplicatePool,
+            amounts,
+            differentTokens,
+            allocations,
+            minReceiveAmounts
+        );
 
         vm.expectRevert(
             abi.encodeWithSelector(Pool.DuplicateToken.selector, address(pool))
         );
-        pool.multiswap(differentTokens, amounts, duplicatePool, allocations);
+        pool.multiswap(
+            differentTokens,
+            amounts,
+            duplicatePool,
+            allocations,
+            minReceiveAmounts
+        );
 
         vm.expectRevert(abi.encodeWithSelector(Pool.LPTokenFirst.selector));
-        pool.multiswap(poolSecond, amounts, differentTokens, allocations);
+        pool.multiswap(
+            poolSecond,
+            amounts,
+            differentTokens,
+            allocations,
+            minReceiveAmounts
+        );
 
         vm.expectRevert(abi.encodeWithSelector(Pool.LPTokenFirst.selector));
-        pool.multiswap(differentTokens, amounts, poolSecond, allocations);
+        pool.multiswap(
+            differentTokens,
+            amounts,
+            poolSecond,
+            allocations,
+            minReceiveAmounts
+        );
     }
 
     function testFailMultiWithdrawNonContract() public {
@@ -344,7 +460,14 @@ contract MultiswapTest is TestRoot {
         receiveTokens[0] = address(0);
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 1e18;
-        pool.multiswap(payTokens, amounts, receiveTokens, allocations);
+        uint256[] memory minReceiveAmounts = new uint256[](1);
+        pool.multiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations,
+            minReceiveAmounts
+        );
     }
 
     function testFailMultiWithdrawNotInPool() public {
@@ -362,7 +485,14 @@ contract MultiswapTest is TestRoot {
         receiveTokens[0] = address(outside);
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 1e18;
-        pool.multiswap(payTokens, amounts, receiveTokens, allocations);
+        uint256[] memory minReceiveAmounts = new uint256[](1);
+        pool.multiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations,
+            minReceiveAmounts
+        );
     }
 
     function checkScale() internal {
@@ -379,40 +509,34 @@ contract MultiswapTest is TestRoot {
 
     function testMultiPoolFuzz(
         uint256 amountA,
-        uint256 depositIndexA,
-        uint256 amountB,
-        uint256 depositIndexB
+        uint256 amountB
     ) public {
         // fuzz setup
         vm.assume((amountA > 1e17) && (amountA < 1e50));
         vm.assume((amountB > 1e17) && (amountB < 1e50));
-        depositIndexA = depositIndexA % tokens.length;
-        depositIndexB = depositIndexB % tokens.length;
-        vm.assume(depositIndexA != depositIndexB);
 
         address alice = address(1);
         vm.startPrank(alice);
 
         // initial state
-        tokens[depositIndexA].mint(amountA);
-        tokens[depositIndexA].approve(address(pool), amountA);
+        tokens[0].mint(amountA);
+        tokens[0].approve(address(pool), amountA);
 
-        Token payTokenB = tokens[depositIndexB];
-        payTokenB.mint(amountB);
-        payTokenB.approve(address(pool), amountB);
+        tokens[1].mint(amountB);
+        tokens[1].approve(address(pool), amountB);
 
         checkScale();
 
         // check initial state
         assertEq(
-            tokens[depositIndexA].balanceOf(alice) > 0,
+            tokens[0].balanceOf(alice) > 0,
             true,
             "Alice's initial balance of payTokenA is 0"
         );
         assertEq(
-            payTokenB.balanceOf(alice) > 0,
+            tokens[1].balanceOf(alice) > 0,
             true,
-            "Alice's initial balance of payTokenB is 0"
+            "Alice's initial balance of tokens[1] is 0"
         );
         // assertEq(
         //     pool.balanceOf(alice),
@@ -422,8 +546,8 @@ contract MultiswapTest is TestRoot {
 
         // swap
         address[] memory payTokens = new address[](2);
-        payTokens[0] = addresses[depositIndexA];
-        payTokens[1] = address(payTokenB);
+        payTokens[0] = addresses[0];
+        payTokens[1] = addresses[1];
         uint256[] memory amounts = new uint256[](2);
         amounts[0] = amountA;
         amounts[1] = amountB;
@@ -431,24 +555,38 @@ contract MultiswapTest is TestRoot {
         receiveTokens[0] = address(pool);
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 1e18;
+        uint256[] memory minReceiveAmounts = new uint256[](1);
         uint256[] memory receiveAmounts = new uint256[](1);
         uint256 feeAmount;
         if (amountA * 3 > pool.asset(payTokens[0]).balance) {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amountA)
             );
-            pool.multiswap(payTokens, amounts, receiveTokens, allocations);
+            pool.multiswap(
+                payTokens,
+                amounts,
+                receiveTokens,
+                allocations,
+                minReceiveAmounts
+            );
         } else if (amountB * 3 > pool.asset(payTokens[1]).balance) {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amountB)
             );
-            pool.multiswap(payTokens, amounts, receiveTokens, allocations);
+            pool.multiswap(
+                payTokens,
+                amounts,
+                receiveTokens,
+                allocations,
+                minReceiveAmounts
+            );
         } else {
             (receiveAmounts, feeAmount) = pool.multiswap(
                 payTokens,
                 amounts,
                 receiveTokens,
-                allocations
+                allocations,
+                minReceiveAmounts
             );
 
             checkSF(
@@ -461,14 +599,14 @@ contract MultiswapTest is TestRoot {
 
             // check post swap state
             assertEq(
-                tokens[depositIndexA].balanceOf(alice),
+                tokens[0].balanceOf(alice),
                 0,
                 "Alice's post swap balance of payTokenA is not 0"
             );
             assertEq(
-                payTokenB.balanceOf(alice),
+                tokens[1].balanceOf(alice),
                 0,
-                "Alice's post swap balance of payTokenB is not 0"
+                "Alice's post swap balance of tokens[1] is not 0"
             );
             assertEq(
                 pool.balanceOf(alice) > 0,
@@ -482,7 +620,7 @@ contract MultiswapTest is TestRoot {
         amounts = new uint256[](1);
         amounts[0] = pool.balanceOf(alice);
         receiveTokens = new address[](1);
-        receiveTokens[0] = addresses[depositIndexA];
+        receiveTokens[0] = addresses[0];
         allocations = new uint256[](1);
         allocations[0] = 1e18;
         receiveAmounts = new uint256[](1);
@@ -493,13 +631,20 @@ contract MultiswapTest is TestRoot {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amounts[0])
             );
-            pool.multiswap(payTokens, amounts, receiveTokens, allocations);
+            pool.multiswap(
+                payTokens,
+                amounts,
+                receiveTokens,
+                allocations,
+                minReceiveAmounts
+            );
         } else {
             (receiveAmounts, feeAmount) = pool.multiswap(
                 payTokens,
                 amounts,
                 receiveTokens,
-                allocations
+                allocations,
+                minReceiveAmounts
             );
 
             checkSF(
@@ -555,9 +700,9 @@ contract MultiswapTest is TestRoot {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amount)
             );
-            pool.swap(address(payToken), address(withdrawalToken), amount);
+            pool.swap(address(payToken), address(withdrawalToken), amount, 0);
         } else {
-            pool.swap(address(payToken), address(withdrawalToken), amount);
+            pool.swap(address(payToken), address(withdrawalToken), amount, 0);
 
             // test after swap balances
             uint256 afterSwapDepositBalance = payToken.balanceOf(alice);
@@ -581,42 +726,32 @@ contract MultiswapTest is TestRoot {
 
     function testMultiSwapFuzz(
         uint256 amountA,
-        uint256 amountB,
-        uint256 depositIndexA,
-        uint256 depositIndexB,
-        uint256 withdrawIndex
+        uint256 amountB
     ) public {
         // fuzz setup
         vm.assume((amountA > 1e17) && (amountA < 1e50));
         vm.assume((amountB > 1e17) && (amountB < 1e50));
-        depositIndexA = (depositIndexA % tokens.length) / 3;
-        depositIndexB = ((depositIndexB % tokens.length) / 3) + depositIndexA;
-        withdrawIndex = ((withdrawIndex % tokens.length) / 3) + depositIndexB;
-        vm.assume(depositIndexA != depositIndexB);
-        vm.assume(depositIndexA != withdrawIndex);
-        vm.assume(depositIndexB != withdrawIndex);
 
         vm.startPrank(address(1));
 
         // initial state
-        tokens[depositIndexA].mint(amountA);
-        tokens[depositIndexA].approve(address(pool), amountA);
+        tokens[0].mint(amountA);
+        tokens[0].approve(address(pool), amountA);
 
-        Token payTokenB = tokens[depositIndexB];
-        payTokenB.mint(amountB);
-        payTokenB.approve(address(pool), amountB);
+        tokens[1].mint(amountB);
+        tokens[1].approve(address(pool), amountB);
 
-        Token receiveToken = tokens[withdrawIndex];
+        Token receiveToken = tokens[2];
 
         // check initial state
-        assertEq(tokens[depositIndexA].balanceOf(address(1)) > 0, true);
-        assertEq(payTokenB.balanceOf(address(1)) > 0, true);
+        assertEq(tokens[0].balanceOf(address(1)) > 0, true);
+        assertEq(tokens[1].balanceOf(address(1)) > 0, true);
         assertEq(receiveToken.balanceOf(address(1)), 0);
 
         // swap
         address[] memory payTokens = new address[](2);
-        payTokens[0] = addresses[depositIndexA];
-        payTokens[1] = address(payTokenB);
+        payTokens[0] = addresses[0];
+        payTokens[1] = addresses[1];
         uint256[] memory amounts = new uint256[](2);
         amounts[0] = amountA;
         amounts[1] = amountB;
@@ -624,24 +759,38 @@ contract MultiswapTest is TestRoot {
         receiveTokens[0] = address(receiveToken);
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 1e18;
+        uint256[] memory minReceiveAmounts = new uint256[](1);
         uint256[] memory receiveAmounts = new uint256[](1);
         uint256 feeAmount;
         if (amountA * 3 > pool.asset(payTokens[0]).balance) {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amountA)
             );
-            pool.multiswap(payTokens, amounts, receiveTokens, allocations);
+            pool.multiswap(
+                payTokens,
+                amounts,
+                receiveTokens,
+                allocations,
+                minReceiveAmounts
+            );
         } else if (amountB * 3 > pool.asset(payTokens[1]).balance) {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amountB)
             );
-            pool.multiswap(payTokens, amounts, receiveTokens, allocations);
+            pool.multiswap(
+                payTokens,
+                amounts,
+                receiveTokens,
+                allocations,
+                minReceiveAmounts
+            );
         } else {
             (receiveAmounts, feeAmount) = pool.multiswap(
                 payTokens,
                 amounts,
                 receiveTokens,
-                allocations
+                allocations,
+                minReceiveAmounts
             );
 
             checkSF(
@@ -660,6 +809,7 @@ contract MultiswapTest is TestRoot {
         uint256[] memory amounts = new uint256[](numberOfTokens);
         address[] memory receiveTokens = new address[](numberOfTokens);
         uint256[] memory allocations = new uint256[](numberOfTokens);
+        uint256[] memory minReceiveAmounts = new uint256[](numberOfTokens);
         uint256[] memory receiveAmounts = new uint256[](numberOfTokens);
         uint256 feeAmount;
 
@@ -683,7 +833,8 @@ contract MultiswapTest is TestRoot {
             payTokens,
             amounts,
             receiveTokens,
-            allocations
+            allocations,
+            minReceiveAmounts
         );
 
         checkSF(payTokens, amounts, receiveTokens, allocations, receiveAmounts);

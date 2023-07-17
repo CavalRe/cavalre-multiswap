@@ -109,6 +109,8 @@ contract Pool is LPToken {
 
     error IncorrectAllocation(uint256 expected, uint256 actual);
 
+    error InsufficientOutputAmount(uint256 expected, uint256 actual);
+
     error InvalidStake(address payToken);
 
     error InvalidSwap(address payToken, address receiveToken);
@@ -452,18 +454,18 @@ contract Pool is LPToken {
         // Transfer tokens to the receiving address
         for (uint256 i; i < receiveTokens.length; i++) {
             address receiveToken = receiveTokens[i];
-            uint256 amountOut = receiveAmounts[i];
+            uint256 receiveAmount = receiveAmounts[i];
             // Update _balance and asset balances.
             if (receiveToken == address(this)) {
-                mint(_msgSender(), amountOut);
+                mint(_msgSender(), receiveAmount);
             } else {
-                _updateAssetBalance(receiveToken, 0, amountOut);
+                _updateAssetBalance(receiveToken, 0, receiveAmount);
 
                 SafeERC20.safeTransfer(
                     IERC20(receiveToken),
                     _msgSender(),
                     fromCanonical(
-                        amountOut,
+                        receiveAmount,
                         IERC20Metadata(receiveToken).decimals()
                     )
                 );
@@ -476,7 +478,8 @@ contract Pool is LPToken {
         address[] memory payTokens,
         uint256[] memory amounts,
         address[] memory receiveTokens,
-        uint256[] memory allocations
+        uint256[] memory allocations,
+        uint256[] memory minReceiveAmounts
     )
         public
         onlyInitialized
@@ -529,6 +532,14 @@ contract Pool is LPToken {
             allocations
         );
 
+        for (uint256 i; i < receiveTokens.length; i++) {
+            if (receiveAmounts[i] < minReceiveAmounts[i])
+                revert InsufficientOutputAmount(
+                    minReceiveAmounts[i],
+                    receiveAmounts[i]
+                );
+        }
+
         emit Multiswap(
             _msgSender(),
             payTokens,
@@ -542,7 +553,8 @@ contract Pool is LPToken {
     function swap(
         address payToken,
         address receiveToken,
-        uint256 payAmount
+        uint256 payAmount,
+        uint256 minReceiveAmount
     )
         public
         onlyInitialized
@@ -584,6 +596,9 @@ contract Pool is LPToken {
 
         receiveAmount = receiveAmounts[0];
 
+        if (receiveAmount < minReceiveAmount)
+            revert InsufficientOutputAmount(minReceiveAmount, receiveAmount);
+
         emit Swap(
             _msgSender(),
             payToken,
@@ -596,7 +611,8 @@ contract Pool is LPToken {
 
     function stake(
         address payToken,
-        uint256 payAmount
+        uint256 payAmount,
+        uint256 minReceiveAmount
     )
         public
         onlyInitialized
@@ -630,12 +646,16 @@ contract Pool is LPToken {
 
         receiveAmount = receiveAmounts[0];
 
+        if (receiveAmount < minReceiveAmount)
+            revert InsufficientOutputAmount(minReceiveAmount, receiveAmount);
+
         emit Stake(_msgSender(), payToken, payAmount, receiveAmount);
     }
 
     function unstake(
         address receiveToken,
-        uint256 payAmount
+        uint256 payAmount,
+        uint256 minReceiveAmount
     )
         public
         onlyInitialized
@@ -668,6 +688,9 @@ contract Pool is LPToken {
 
         receiveAmount = receiveAmounts[0];
 
+        if (receiveAmount < minReceiveAmount)
+            revert InsufficientOutputAmount(minReceiveAmount, receiveAmount);
+
         emit Unstake(
             _msgSender(),
             receiveToken,
@@ -679,24 +702,29 @@ contract Pool is LPToken {
 
     function addLiquidity(
         address token,
-        uint256 amount
+        uint256 amount,
+        uint256 minReceiveAmount
     ) public onlyInitialized onlyUnrestricted onlyOnce returns (uint256) {
         _txCount++;
 
         AssetState storage assetIn;
         uint256 g;
-        uint256 amountOut;
+        uint256 receiveAmount;
         uint256[] memory payAmounts = new uint256[](_assetAddress.length);
         if (token == address(this)) {
             g = (_poolState.balance + amount).divWadUp(_poolState.balance);
-            amountOut = amount;
+            receiveAmount = amount;
         } else {
             if (token == address(0)) revert ZeroAddress();
             assetIn = _assetState[token];
             if (assetIn.token != token) revert AssetNotFound(token);
             g = (assetIn.balance + amount).divWadUp(assetIn.balance);
-            amountOut = _poolState.balance.mulWadUp(g) - _poolState.balance;
+            receiveAmount = _poolState.balance.mulWadUp(g) - _poolState.balance;
         }
+
+        if (receiveAmount < minReceiveAmount)
+            revert InsufficientOutputAmount(minReceiveAmount, receiveAmount);
+
         for (uint256 i; i < _assetAddress.length; i++) {
             assetIn = _assetState[_assetAddress[i]];
             uint256 amountIn;
@@ -712,20 +740,24 @@ contract Pool is LPToken {
                 IERC20(assetIn.token),
                 _msgSender(),
                 address(this),
-                fromCanonical(amount, IERC20Metadata(assetIn.token).decimals())
+                fromCanonical(
+                    amountIn,
+                    IERC20Metadata(assetIn.token).decimals()
+                )
             );
         }
 
-        mint(_msgSender(), amountOut);
+        mint(_msgSender(), receiveAmount);
         _updatePoolBalance();
 
-        emit AddLiquidity(_msgSender(), payAmounts, amountOut);
+        emit AddLiquidity(_msgSender(), payAmounts, receiveAmount);
 
-        return amountOut;
+        return receiveAmount;
     }
 
     function removeLiquidity(
-        uint256 amount
+        uint256 amount,
+        uint256[] memory minReceiveAmounts
     )
         public
         onlyInitialized
@@ -758,6 +790,15 @@ contract Pool is LPToken {
             receiveTokens,
             allocations
         );
+
+        for (uint256 i; i < n; i++) {
+            if (receiveAmounts[i] < minReceiveAmounts[i])
+                revert InsufficientOutputAmount(
+                    minReceiveAmounts[i],
+                    receiveAmounts[i]
+                );
+        }
+
         emit RemoveLiquidity(_msgSender(), amount, receiveAmounts, feeAmount);
     }
 }

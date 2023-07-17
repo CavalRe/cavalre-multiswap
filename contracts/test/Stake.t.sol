@@ -26,7 +26,7 @@ contract StakeTest is TestRoot {
 
         payToken.approve(address(pool), amount);
 
-        (amountOut, ) = pool.stake(address(payToken), amount);
+        (amountOut, ) = pool.stake(address(payToken), amount, 0);
 
         assertEq(
             payToken.balanceOf(alice),
@@ -60,9 +60,9 @@ contract StakeTest is TestRoot {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amount)
             );
-            pool.stake(address(payToken), amount);
+            pool.stake(address(payToken), amount, 0);
         } else {
-            (amountOut, ) = pool.stake(address(payToken), amount);
+            (amountOut, ) = pool.stake(address(payToken), amount, 0);
 
             checkSF(address(payToken), address(pool), amount, amountOut);
 
@@ -80,30 +80,6 @@ contract StakeTest is TestRoot {
         }
     }
 
-    // function testStakeOtherAccount(uint256 payIndex, uint256 amount) public {
-    //     address alice = address(1);
-    //     vm.startPrank(alice);
-
-    //     address bob = address(3);
-    //     payIndex = payIndex % tokens.length;
-    //     Token payToken = tokens[payIndex];
-    //     amount = (amount % 1e59) + 1e17;
-
-    //     assertEq(pool.balanceOf(alice), 0);
-    //     assertEq(pool.balanceOf(bob), 0);
-
-    //     payToken.mint(amount);
-    //     payToken.approve(address(pool), amount);
-    //     uint256 amountOut = pool.stake(address(payToken), amount);
-    //     console.log("AMOUNT OUT", amountOut);
-
-    //     assertEq(pool.balanceOf(alice), 0);
-    //     assertEq(pool.balanceOf(bob) > 0, true);
-    //     assertEq(pool.balanceOf(bob), amountOut);
-
-    //     vm.stopPrank();
-    // }
-
     /*
      * Input Checking (Negative)
      */
@@ -115,7 +91,7 @@ contract StakeTest is TestRoot {
         vm.expectRevert(
             abi.encodeWithSelector(Pool.AssetNotFound.selector, depositAddress)
         );
-        pool.stake(depositAddress, 0);
+        pool.stake(depositAddress, 0, 0);
     }
 
     function testStakeZeroAmount(uint256 payIndex) public {
@@ -124,7 +100,7 @@ contract StakeTest is TestRoot {
 
         uint256 balance = pool.balanceOf(alice);
 
-        pool.stake(address(payToken), 0);
+        pool.stake(address(payToken), 0, 0);
         assertEq(pool.balanceOf(alice), balance);
     }
 
@@ -134,7 +110,7 @@ contract StakeTest is TestRoot {
         payToken.mint(amount);
 
         vm.expectRevert("ERC20: insufficient allowance");
-        pool.stake(address(payToken), amount);
+        pool.stake(address(payToken), amount, 0);
     }
 
     /*
@@ -143,6 +119,6 @@ contract StakeTest is TestRoot {
     function testFailStakeBadToken(uint256 amount) public {
         amount = (amount % 1e59) + 1e15;
 
-        pool.stake(address(0), amount);
+        pool.stake(address(0), amount, 0);
     }
 }

@@ -32,10 +32,14 @@ contract ContractTest is Context, Test {
     address[] private onePool = new address[](1);
     uint256[] private oneAmount = new uint256[](1);
     uint256[] private oneAllocation = new uint256[](1);
+    uint256[] private oneMin = new uint256[](1);
 
     address[] private twoTokens = new address[](2);
     uint256[] private twoAmounts = new uint256[](2);
     uint256[] private twoAllocations = new uint256[](2);
+    uint256[] private twoMins = new uint256[](2);
+
+    uint256[] private allMins = new uint256[](NTOKENS);
 
     uint256 private amountOut;
     uint256[] private receiveAmounts;
@@ -128,31 +132,37 @@ contract ContractTest is Context, Test {
     }
 
     function test1_Multiswap() public {
-        pool.multiswap(oneAsset, oneAmount, anotherAsset, oneAllocation);
+        pool.multiswap(
+            oneAsset,
+            oneAmount,
+            anotherAsset,
+            oneAllocation,
+            oneMin
+        );
     }
 
     function test1_Swap() public {
-        pool.swap(oneAsset[0], anotherAsset[0], oneAmount[0]);
+        pool.swap(oneAsset[0], anotherAsset[0], oneAmount[0], oneMin[0]);
     }
 
     function test1_Multistake() public {
-        pool.multiswap(oneAsset, oneAmount, onePool, oneAllocation);
+        pool.multiswap(oneAsset, oneAmount, onePool, oneAllocation, oneMin);
     }
 
     function test1_Stake() public {
-        pool.stake(oneAsset[0], oneAmount[0]);
+        pool.stake(oneAsset[0], oneAmount[0], oneMin[0]);
     }
 
     function test1_Multiunstake() public {
-        pool.multiswap(oneAsset, oneAmount, onePool, oneAllocation);
+        pool.multiswap(oneAsset, oneAmount, onePool, oneAllocation, oneMin);
     }
 
     function test1_Unstake() public {
-        pool.unstake(oneAsset[0], oneAmount[0]);
+        pool.unstake(oneAsset[0], oneAmount[0], oneMin[0]);
     }
 
     function test1_RemoveLiquidity() public {
-        pool.removeLiquidity(oneAmount[0]);
+        pool.removeLiquidity(oneAmount[0], allMins);
     }
 
     function test2_Swapping() public {
@@ -164,7 +174,8 @@ contract ContractTest is Context, Test {
             oneAsset,
             oneAmount,
             anotherAsset,
-            oneAllocation
+            oneAllocation,
+            oneMin
         );
         emit log("State after multiswap");
         emit log("");
@@ -179,7 +190,8 @@ contract ContractTest is Context, Test {
         (amountOut, feeAmount) = pool.swap(
             oneAsset[0],
             anotherAsset[0],
-            oneAmount[0]
+            oneAmount[0],
+            oneMin[0]
         );
         emit log("State after swap");
         emit log("");
@@ -197,7 +209,7 @@ contract ContractTest is Context, Test {
                 anotherAsset[0]
             )
         );
-        pool.swap(address(pool), anotherAsset[0], oneAmount[0]);
+        pool.swap(address(pool), anotherAsset[0], oneAmount[0], oneMin[0]);
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -206,7 +218,7 @@ contract ContractTest is Context, Test {
                 address(pool)
             )
         );
-        pool.swap(oneAsset[0], address(pool), oneAmount[0]);
+        pool.swap(oneAsset[0], address(pool), oneAmount[0], oneMin[0]);
     }
 
     function test2_Staking() public {
@@ -214,7 +226,8 @@ contract ContractTest is Context, Test {
             oneAsset,
             oneAmount,
             onePool,
-            oneAllocation
+            oneAllocation,
+            oneMin
         );
         amountOut = receiveAmounts[0];
         emit log("Multiswap:");
@@ -224,7 +237,7 @@ contract ContractTest is Context, Test {
         emit log("");
 
         setUp();
-        (amountOut, ) = pool.stake(oneAsset[0], amounts[0]);
+        (amountOut, ) = pool.stake(oneAsset[0], amounts[0], oneMin[0]);
 
         emit log("Stake:");
         emit log("");
@@ -234,7 +247,7 @@ contract ContractTest is Context, Test {
         vm.expectRevert(
             abi.encodeWithSelector(Pool.InvalidStake.selector, address(pool))
         );
-        pool.stake(address(pool), amounts[0]);
+        pool.stake(address(pool), amounts[0], oneMin[0]);
     }
 
     function test2_Unstaking() public {
@@ -246,7 +259,8 @@ contract ContractTest is Context, Test {
             onePool,
             oneAmount,
             anotherAsset,
-            oneAllocation
+            oneAllocation,
+            oneMin
         );
         amountOut = receiveAmounts[0];
         emit log("State after multiswap");
@@ -264,7 +278,11 @@ contract ContractTest is Context, Test {
         emit log("");
 
         setUp();
-        (amountOut, feeAmount) = pool.unstake(anotherAsset[0], oneAmount[0]);
+        (amountOut, feeAmount) = pool.unstake(
+            anotherAsset[0],
+            oneAmount[0],
+            oneMin[0]
+        );
         emit log("State after unstake");
         emit log("");
         emit log_named_uint("amountIn", oneAmount[0]);
@@ -277,7 +295,7 @@ contract ContractTest is Context, Test {
         vm.expectRevert(
             abi.encodeWithSelector(Pool.InvalidUnstake.selector, address(pool))
         );
-        pool.unstake(address(pool), amounts[0]);
+        pool.unstake(address(pool), amounts[0], oneMin[0]);
     }
 
     function test2_MixedStaking() public {
@@ -293,7 +311,8 @@ contract ContractTest is Context, Test {
             oneAsset,
             oneAmount,
             twoTokens,
-            twoAmounts
+            twoAmounts,
+            twoMins
         );
         emit log("State after mixed stake");
         emit log("");
@@ -326,7 +345,8 @@ contract ContractTest is Context, Test {
             twoTokens,
             twoAmounts,
             anotherAsset,
-            oneAllocation
+            oneAllocation,
+            oneMin
         );
         emit log("State after mixed unstake");
         emit log("");
@@ -370,7 +390,7 @@ contract ContractTest is Context, Test {
         emit log("");
         showPool(pool);
         emit log("");
-        pool.addLiquidity(addresses[0], tokens[0].balanceOf(address(pool)) / 2);
+        pool.addLiquidity(addresses[0], tokens[0].balanceOf(address(pool)) / 2, 0);
         emit log("======================");
         for (uint256 i; i < addresses.length; i++) {
             postTradePrices[i] = price(addresses[i]);
@@ -402,7 +422,7 @@ contract ContractTest is Context, Test {
         showPool(pool);
         emit log("");
         uint256 amount_ = tokens[0].balanceOf(address(pool)) / 2;
-        amount_ = pool.addLiquidity(addresses[0], amount_);
+        amount_ = pool.addLiquidity(addresses[0], amount_, 0);
         for (uint256 i; i < addresses.length; i++) {
             midTradePrices[i] = price(addresses[i]);
         }
@@ -412,9 +432,9 @@ contract ContractTest is Context, Test {
         emit log("");
         showPool(pool);
         emit log("");
-        vm.roll(block.number+1);
+        vm.roll(block.number + 1);
         amount_ = pool.info().balance / 3;
-        (receiveAmounts, feeAmount) = pool.removeLiquidity(amount_);
+        (receiveAmounts, feeAmount) = pool.removeLiquidity(amount_, allMins);
         emit log("======================");
         for (uint256 i; i < addresses.length; i++) {
             postTradePrices[i] = price(addresses[i]);

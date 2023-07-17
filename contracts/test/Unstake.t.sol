@@ -31,7 +31,7 @@ contract UnstakeTest is TestRoot {
 
         receiveToken.approve(address(pool), amount);
 
-        (amountOut, ) = pool.stake(address(receiveToken), amount);
+        (amountOut, ) = pool.stake(address(receiveToken), amount, 0);
 
         assertEq(
             receiveToken.balanceOf(alice),
@@ -47,11 +47,12 @@ contract UnstakeTest is TestRoot {
 
         pool.approve(address(pool), amountOut);
 
-        vm.roll(block.number+1);
+        vm.roll(block.number + 1);
 
         (receiveAmount, feeAmount) = pool.unstake(
             address(receiveToken),
-            amountOut
+            amountOut,
+            0
         );
 
         assertEq(
@@ -98,7 +99,7 @@ contract UnstakeTest is TestRoot {
         receiveToken.approve(address(pool), amount);
 
         uint256 amountOut;
-        (amountOut, ) = pool.stake(address(receiveToken), amount);
+        (amountOut, ) = pool.stake(address(receiveToken), amount, 0);
 
         assertEq(
             receiveToken.balanceOf(alice),
@@ -114,17 +115,18 @@ contract UnstakeTest is TestRoot {
 
         pool.approve(address(pool), amountOut);
 
-        vm.roll(block.number+1);
+        vm.roll(block.number + 1);
 
         if (amountOut * 3 > pool.info().balance) {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amountOut)
             );
-            pool.unstake(address(receiveToken), amountOut);
+            pool.unstake(address(receiveToken), amountOut, 0);
         } else {
             (receiveAmount, feeAmount) = pool.unstake(
                 address(receiveToken),
-                amountOut
+                amountOut,
+                0
             );
 
             assertEq(
@@ -154,39 +156,6 @@ contract UnstakeTest is TestRoot {
         }
     }
 
-    // function testUnstakeOtherAccount(
-    //     uint256 receiveIndex,
-    //     uint256 amount
-    // ) public {
-    //     address alice = address(1);
-    //     vm.startPrank(alice);
-
-    //     address bob = address(3);
-    //     receiveIndex = receiveIndex % tokens.length;
-    //     Token receiveToken = tokens[receiveIndex];
-    //     amount = (amount % 1e59) + 1e17;
-
-    //     assertEq(receiveToken.balanceOf(alice), 0);
-    //     assertEq(receiveToken.balanceOf(bob), 0);
-    //     assertEq(pool.balanceOf(alice), 0);
-    //     assertEq(pool.balanceOf(bob), 0);
-
-    //     receiveToken.mint(amount);
-    //     receiveToken.approve(address(pool), amount);
-    //     uint256 stakeOut = pool.stake(address(receiveToken), amount);
-    //     pool.approve(address(pool), stakeOut);
-    //     uint256 unstakeOut = pool.unstake(address(receiveToken), stakeOut);
-
-    //     // alice -> pool -> bob
-    //     assertEq(pool.balanceOf(alice), 0);
-    //     assertEq(receiveToken.balanceOf(alice), 0);
-    //     assertEq(pool.balanceOf(bob), 0);
-    //     assertEq(receiveToken.balanceOf(bob) > 0, true);
-    //     assertEq(receiveToken.balanceOf(bob), unstakeOut);
-
-    //     vm.stopPrank();
-    // }
-
     /*
      * Input Checking (Negative)
      */
@@ -201,7 +170,7 @@ contract UnstakeTest is TestRoot {
                 withdrawalAddress
             )
         );
-        pool.unstake(withdrawalAddress, 0);
+        pool.unstake(withdrawalAddress, 0, 0);
     }
 
     function testUnstakeZeroAmount(uint256 receiveIndex) public {
@@ -210,7 +179,7 @@ contract UnstakeTest is TestRoot {
         uint256 receiveBalance = receiveToken.balanceOf(alice);
         uint256 poolBalance = pool.balanceOf(alice);
 
-        pool.unstake(address(receiveToken), 0);
+        pool.unstake(address(receiveToken), 0, 0);
         assertEq(pool.balanceOf(alice), poolBalance);
         assertEq(receiveToken.balanceOf(alice), receiveBalance);
     }
@@ -225,10 +194,10 @@ contract UnstakeTest is TestRoot {
             vm.expectRevert(
                 abi.encodeWithSelector(Pool.TooLarge.selector, amount)
             );
-            pool.unstake(address(receiveToken), amount);
+            pool.unstake(address(receiveToken), amount, 0);
         } else {
             vm.expectRevert("ERC20: burn amount exceeds balance");
-            pool.unstake(address(receiveToken), amount);
+            pool.unstake(address(receiveToken), amount, 0);
         }
     }
 
@@ -238,6 +207,6 @@ contract UnstakeTest is TestRoot {
     function testFailUnstakeBadToken(uint256 amount) public {
         amount = (amount % 1e59) + 1e15;
 
-        pool.stake(address(0), amount);
+        pool.stake(address(0), amount, 0);
     }
 }
