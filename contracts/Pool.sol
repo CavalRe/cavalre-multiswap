@@ -339,7 +339,8 @@ contract Pool is LPToken {
         address[] memory payTokens,
         uint256[] memory amounts,
         address[] memory receiveTokens,
-        uint256[] memory allocations
+        uint256[] memory allocations,
+        uint256[] memory minReceiveAmounts
     )
         private
         onlyOnce
@@ -362,7 +363,6 @@ contract Pool is LPToken {
                 fee = fee.mulWadUp(ONE - discount_);
             }
         }
-        uint256 gamma = ONE - fee;
 
         // Compute scaledValueIn
         uint256 scaledValueIn;
@@ -383,7 +383,7 @@ contract Pool is LPToken {
 
             uint256 poolAlloc = fee;
             if (receiveTokens[0] == address(this)) {
-                poolAlloc += allocations[0].mulWadUp(gamma);
+                poolAlloc += allocations[0].mulWadUp(ONE - fee);
             }
             uint256 lastPoolBalance = _poolState.balance;
             uint256 scaledPoolOut = scaledValueIn.mulWadUp(poolAlloc);
@@ -416,7 +416,7 @@ contract Pool is LPToken {
             uint256 allocation;
             for (uint256 i; i < receiveTokens.length; i++) {
                 receiveToken = receiveTokens[i];
-                allocation = allocations[i].mulWadUp(gamma);
+                allocation = allocations[i].mulWadUp(ONE - fee);
                 scaledValueOut = scaledValueIn.mulWadUp(allocation);
                 if (receiveToken == address(this)) {
                     receiveAmounts[i] = poolOut - feeAmount;
@@ -426,6 +426,9 @@ contract Pool is LPToken {
                         scaledValueOut,
                         assetOut.scale + scaledValueOut
                     );
+                }
+                if (receiveAmounts[i] < minReceiveAmounts[i]) {
+                    revert InsufficientOutputAmount(minReceiveAmounts[i], receiveAmounts[i]);
                 }
             }
         }
@@ -529,16 +532,9 @@ contract Pool is LPToken {
             payTokens,
             amounts,
             receiveTokens,
-            allocations
+            allocations,
+            minReceiveAmounts
         );
-
-        for (uint256 i; i < receiveTokens.length; i++) {
-            if (receiveAmounts[i] < minReceiveAmounts[i])
-                revert InsufficientOutputAmount(
-                    minReceiveAmounts[i],
-                    receiveAmounts[i]
-                );
-        }
 
         emit Multiswap(
             _msgSender(),
@@ -580,24 +576,24 @@ contract Pool is LPToken {
         uint256[] memory amounts = new uint256[](1);
         address[] memory receiveTokens = new address[](1);
         uint256[] memory allocations = new uint256[](1);
+        uint256[] memory minReceiveAmounts = new uint256[](1);        
         uint256[] memory receiveAmounts = new uint256[](1);
 
         payTokens[0] = payToken;
         amounts[0] = payAmount;
         receiveTokens[0] = receiveToken;
         allocations[0] = 1e18;
+        minReceiveAmounts[0] = minReceiveAmount;
 
         (receiveAmounts, feeAmount) = _multiswap(
             payTokens,
             amounts,
             receiveTokens,
-            allocations
+            allocations,
+            minReceiveAmounts
         );
 
         receiveAmount = receiveAmounts[0];
-
-        if (receiveAmount < minReceiveAmount)
-            revert InsufficientOutputAmount(minReceiveAmount, receiveAmount);
 
         emit Swap(
             _msgSender(),
@@ -630,24 +626,24 @@ contract Pool is LPToken {
         uint256[] memory amounts = new uint256[](1);
         address[] memory receiveTokens = new address[](1);
         uint256[] memory allocations = new uint256[](1);
+        uint256[] memory minReceiveAmounts = new uint256[](1);
         uint256[] memory receiveAmounts = new uint256[](1);
 
         payTokens[0] = payToken;
         amounts[0] = payAmount;
         receiveTokens[0] = address(this);
         allocations[0] = 1e18;
+        minReceiveAmounts[0] = minReceiveAmount;
 
         (receiveAmounts, feeAmount) = _multiswap(
             payTokens,
             amounts,
             receiveTokens,
-            allocations
+            allocations,
+            minReceiveAmounts
         );
 
         receiveAmount = receiveAmounts[0];
-
-        if (receiveAmount < minReceiveAmount)
-            revert InsufficientOutputAmount(minReceiveAmount, receiveAmount);
 
         emit Stake(_msgSender(), payToken, payAmount, receiveAmount);
     }
@@ -672,24 +668,24 @@ contract Pool is LPToken {
         uint256[] memory amounts = new uint256[](1);
         address[] memory receiveTokens = new address[](1);
         uint256[] memory allocations = new uint256[](1);
+        uint256[] memory minReceiveAmounts = new uint256[](1);
         uint256[] memory receiveAmounts = new uint256[](1);
 
         payTokens[0] = address(this);
         amounts[0] = payAmount;
         receiveTokens[0] = receiveToken;
         allocations[0] = 1e18;
+        minReceiveAmounts[0] = minReceiveAmount;
 
         (receiveAmounts, feeAmount) = _multiswap(
             payTokens,
             amounts,
             receiveTokens,
-            allocations
+            allocations,
+            minReceiveAmounts
         );
 
         receiveAmount = receiveAmounts[0];
-
-        if (receiveAmount < minReceiveAmount)
-            revert InsufficientOutputAmount(minReceiveAmount, receiveAmount);
 
         emit Unstake(
             _msgSender(),
@@ -788,16 +784,9 @@ contract Pool is LPToken {
             payTokens,
             amounts,
             receiveTokens,
-            allocations
+            allocations,
+            minReceiveAmounts
         );
-
-        for (uint256 i; i < n; i++) {
-            if (receiveAmounts[i] < minReceiveAmounts[i])
-                revert InsufficientOutputAmount(
-                    minReceiveAmounts[i],
-                    receiveAmounts[i]
-                );
-        }
 
         emit RemoveLiquidity(_msgSender(), amount, receiveAmounts, feeAmount);
     }
