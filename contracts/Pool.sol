@@ -125,6 +125,10 @@ contract Pool is LPToken {
 
     error TooLarge(uint256 size);
 
+    error ZeroAllocation();
+
+    error ZeroAmount();
+
     error ZeroBalance();
 
     error ZeroLength();
@@ -146,7 +150,7 @@ contract Pool is LPToken {
     function fromCanonical(
         uint256 amount,
         uint8 decimals
-    ) private pure returns (uint256) {
+    ) internal pure returns (uint256) {
         if (decimals == 18) return amount;
         if (decimals < 18) return amount / (10 ** (18 - decimals));
         return amount * (10 ** (decimals - 18));
@@ -507,10 +511,17 @@ contract Pool is LPToken {
             isLP = _checkDuplicateTokens(payTokens, check_, isLP);
             isLP = _checkDuplicateTokens(receiveTokens, check_, isLP);
         }
+        // Check amounts
+        {
+            for (uint256 i; i < amounts.length; i++) {
+                if (amounts[i] == 0) revert ZeroAmount();
+            }
+        }
         // Check allocations
         {
             uint256 totalAllocation;
             for (uint256 i; i < allocations.length; i++) {
+                if (allocations[i] == 0) revert ZeroAllocation();
                 totalAllocation += allocations[i];
             }
             if (totalAllocation != 1e18)
@@ -570,7 +581,7 @@ contract Pool is LPToken {
             revert AssetNotFound(payToken);
         if (_assetState[receiveToken].token != receiveToken)
             revert AssetNotFound(receiveToken);
-
+        if (payAmount == 0) revert ZeroAmount();
         if (payAmount * 3 > _assetState[payToken].balance)
             revert TooLarge(payAmount);
 
