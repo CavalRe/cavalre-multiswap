@@ -160,6 +160,7 @@ contract SwapTest is TestRoot {
         depositToken.mint(amount);
         depositToken.approve(address(pool), amount);
 
+        vm.expectRevert(abi.encodeWithSelector(Pool.ZeroAmount.selector));
         pool.swap(address(depositToken), address(withdrawToken), amount, 0);
     }
 

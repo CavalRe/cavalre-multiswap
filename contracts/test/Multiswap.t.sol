@@ -339,6 +339,7 @@ contract MultiswapTest is TestRoot {
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 1e18;
         uint256[] memory minReceiveAmounts = new uint256[](1);
+        vm.expectRevert(abi.encodeWithSelector(Pool.ZeroAmount.selector));
         pool.multiswap(
             payTokens,
             amounts,
