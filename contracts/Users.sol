@@ -43,24 +43,11 @@ contract Users is Ownable {
         _;
     }
 
-    modifier onlyNotDenied() {
+    modifier onlyAllowed() {
         address user_ = _msgSender();
-        if (_userList.length > 0) {
-            if (
-                _userIndex[user_] > 0 &&
-                !_userList[_userIndex[user_] - 1].isAllowed
-            ) revert UserNotAllowed(user_);
-        }
-        _;
-    }
-
-    modifier onlyUnrestricted() {
-        address user_ = _msgSender();
-        if (_userList.length > 0) {
-            if (_userIndex[user_] == 0) revert UserNotFound(user_);
-            if (!_userList[_userIndex[user_] - 1].isAllowed)
-                revert UserNotAllowed(user_);
-        }
+        if (
+            _userIndex[user_] > 0 && !_userList[_userIndex[user_] - 1].isAllowed
+        ) revert UserNotAllowed(user_);
         _;
     }
 

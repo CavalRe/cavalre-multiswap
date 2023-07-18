@@ -153,45 +153,44 @@ contract Pool is LPToken {
     }
 
     function addAsset(
-        address payToken_,
+        address token_,
         uint256 balance_,
         uint256 fee_,
-        uint256 assetScale_
+        uint256 scale_
     ) public onlyUninitialized onlyOwner {
-        if (payToken_ == address(0)) revert ZeroAddress();
-        if (_assetState[payToken_].token == payToken_)
-            revert DuplicateToken(payToken_);
+        if (token_ == address(0)) revert ZeroAddress();
+        if (_assetState[token_].token == token_) revert DuplicateToken(token_);
         if (balance_ == 0) revert ZeroBalance();
-        if (assetScale_ == 0) revert ZeroScale();
+        if (scale_ == 0) revert ZeroScale();
 
-        _poolState.balance += assetScale_;
-        _poolState.meanBalance += assetScale_;
-        _poolState.scale += assetScale_;
-        _poolState.meanScale += assetScale_;
+        _poolState.balance += scale_;
+        _poolState.meanBalance += scale_;
+        _poolState.scale += scale_;
+        _poolState.meanScale += scale_;
 
-        uint8 decimals_ = IERC20Metadata(payToken_).decimals();
+        uint8 decimals_ = IERC20Metadata(token_).decimals();
 
         SafeERC20.safeTransferFrom(
-            IERC20(payToken_),
+            IERC20(token_),
             _msgSender(),
             address(this),
             fromCanonical(balance_, decimals_)
         );
 
-        _assetState[payToken_] = AssetState(
-            payToken_,
+        _assetState[token_] = AssetState(
+            token_,
             _assetAddress.length,
-            IERC20Metadata(payToken_).name(),
-            IERC20Metadata(payToken_).symbol(),
+            IERC20Metadata(token_).name(),
+            IERC20Metadata(token_).symbol(),
             decimals_,
             fee_,
             balance_,
             balance_,
-            assetScale_,
-            assetScale_,
+            scale_,
+            scale_,
             0
         );
-        _assetAddress.push(payToken_);
+        _assetAddress.push(token_);
     }
 
     function removeAsset(address token) public onlyUninitialized onlyOwner {
@@ -199,12 +198,12 @@ contract Pool is LPToken {
         AssetState storage asset_ = _assetState[token];
         if (asset_.token != token) revert AssetNotFound(token);
 
-        uint256 assetScale_ = asset_.scale;
+        uint256 scale_ = asset_.scale;
 
-        _poolState.balance -= assetScale_;
-        _poolState.meanBalance -= assetScale_;
-        _poolState.scale -= assetScale_;
-        _poolState.meanScale -= assetScale_;
+        _poolState.balance -= scale_;
+        _poolState.meanBalance -= scale_;
+        _poolState.scale -= scale_;
+        _poolState.meanScale -= scale_;
 
         delete _assetState[token];
 
@@ -428,7 +427,10 @@ contract Pool is LPToken {
                     );
                 }
                 if (receiveAmounts[i] < minReceiveAmounts[i]) {
-                    revert InsufficientOutputAmount(minReceiveAmounts[i], receiveAmounts[i]);
+                    revert InsufficientOutputAmount(
+                        minReceiveAmounts[i],
+                        receiveAmounts[i]
+                    );
                 }
             }
         }
@@ -486,7 +488,7 @@ contract Pool is LPToken {
     )
         public
         onlyInitialized
-        onlyUnrestricted
+        onlyAllowed
         returns (uint256[] memory receiveAmounts, uint256 feeAmount)
     {
         // Check lengths
@@ -554,7 +556,7 @@ contract Pool is LPToken {
     )
         public
         onlyInitialized
-        onlyUnrestricted
+        onlyAllowed
         returns (uint256 receiveAmount, uint256 feeAmount)
     {
         if (payToken == address(0)) revert ZeroAddress();
@@ -576,7 +578,7 @@ contract Pool is LPToken {
         uint256[] memory amounts = new uint256[](1);
         address[] memory receiveTokens = new address[](1);
         uint256[] memory allocations = new uint256[](1);
-        uint256[] memory minReceiveAmounts = new uint256[](1);        
+        uint256[] memory minReceiveAmounts = new uint256[](1);
         uint256[] memory receiveAmounts = new uint256[](1);
 
         payTokens[0] = payToken;
@@ -612,7 +614,7 @@ contract Pool is LPToken {
     )
         public
         onlyInitialized
-        onlyUnrestricted
+        onlyAllowed
         returns (uint256 receiveAmount, uint256 feeAmount)
     {
         if (payToken == address(0)) revert ZeroAddress();
@@ -655,7 +657,7 @@ contract Pool is LPToken {
     )
         public
         onlyInitialized
-        onlyUnrestricted
+        onlyAllowed
         returns (uint256 receiveAmount, uint256 feeAmount)
     {
         if (receiveToken == address(0)) revert ZeroAddress();
@@ -700,23 +702,17 @@ contract Pool is LPToken {
         address token,
         uint256 amount,
         uint256 minReceiveAmount
-    ) public onlyInitialized onlyUnrestricted onlyOnce returns (uint256) {
+    ) public onlyInitialized onlyAllowed onlyOnce returns (uint256) {
         _txCount++;
 
         AssetState storage assetIn;
-        uint256 g;
         uint256 receiveAmount;
         uint256[] memory payAmounts = new uint256[](_assetAddress.length);
-        if (token == address(this)) {
-            g = (_poolState.balance + amount).divWadUp(_poolState.balance);
-            receiveAmount = amount;
-        } else {
-            if (token == address(0)) revert ZeroAddress();
-            assetIn = _assetState[token];
-            if (assetIn.token != token) revert AssetNotFound(token);
-            g = (assetIn.balance + amount).divWadUp(assetIn.balance);
-            receiveAmount = _poolState.balance.mulWadUp(g) - _poolState.balance;
-        }
+        if (token == address(0)) revert ZeroAddress();
+        assetIn = _assetState[token];
+        if (assetIn.token != token) revert AssetNotFound(token);
+        uint256 g = (assetIn.balance + amount).divWadUp(assetIn.balance);
+        receiveAmount = _poolState.balance.mulWadUp(g) - _poolState.balance;
 
         if (receiveAmount < minReceiveAmount)
             revert InsufficientOutputAmount(minReceiveAmount, receiveAmount);

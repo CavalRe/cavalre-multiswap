@@ -57,7 +57,7 @@ contract LPToken is ERC20, Ownable, Users {
     function transfer(
         address to,
         uint256 amount
-    ) public override onlyUnrestricted returns (bool) {
+    ) public override onlyAllowed returns (bool) {
         if (_userIndex[to] == 0) revert UserNotFound(to);
         if (!_userList[_userIndex[to] - 1].isAllowed) revert UserNotAllowed(to);
         amount = amount.divWadUp(_ratio);
@@ -108,7 +108,7 @@ contract LPToken is ERC20, Ownable, Users {
         return super.decreaseAllowance(spender, subtractedValue);
     }
 
-    function mint(address to, uint256 amount) internal {
+    function mint(address to, uint256 amount) internal onlyAllowed {
         _totalSupply += amount;
         amount = amount.divWadUp(_ratio);
         super._mint(to, amount);
@@ -123,7 +123,7 @@ contract LPToken is ERC20, Ownable, Users {
     function distributeFee(uint256 amount) internal {
         uint256 protocolAmount = amount.mulWadUp(_protocolFee);
         uint256 userAmount = amount - protocolAmount;
-        _mint(_protocolFeeRecipient, protocolAmount);
+        mint(_protocolFeeRecipient, protocolAmount);
         _totalSupply += userAmount;
         _ratio = _totalSupply.divWadUp(super.totalSupply());
     }
