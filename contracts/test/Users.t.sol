@@ -9,6 +9,7 @@ contract UsersTest is Test {
 
     address alice = address(1);
     address bob = address(2);
+    address carol = address(3);
 
     function setUp() public {
         vm.startPrank(alice);
@@ -16,39 +17,97 @@ contract UsersTest is Test {
         users = new Users();
     }
 
-    function testUsers() public {
+    function testUsers_addUser() public {
         users.addUser(alice, 0);
 
-        assertTrue(users.user(alice).isAllowed, "Alice is allowed after being added as a user.");
+        assertTrue(
+            users.user(alice).isAllowed,
+            "Alice is allowed after being added as a user."
+        );
 
         vm.expectRevert(
             abi.encodeWithSelector(Users.UserAlreadyAdded.selector, alice)
         );
         users.addUser(alice, 0);
+    }
 
+    function testUsers_setAllowed() public {
+        users.addUser(alice, 0);
         users.setAllowed(alice, false);
 
-        assertFalse(users.user(alice).isAllowed, "Alice is not allowed after being disappowed.");
+        assertFalse(
+            users.user(alice).isAllowed,
+            "Alice is not allowed after being disappowed."
+        );
+    }
 
+    function testUsers_userNotFound() public {
         vm.expectRevert(
             abi.encodeWithSelector(Users.UserNotFound.selector, bob)
         );
         users.user(bob);
 
+        users.addUser(alice, 0);
         users.addUser(bob, 0);
 
-        assertTrue(users.user(bob).isAllowed, "Bob is allowed after being added as a user.");
+        assertTrue(
+            users.user(bob).isAllowed,
+            "Bob is allowed after being added as a user."
+        );
 
-        users.setAllowed(alice, true);
+        users.removeUser(bob);
 
-        assertTrue(users.user(alice).isAllowed, "Alice is allowed after being allowed.");
+        vm.expectRevert(
+            abi.encodeWithSelector(Users.UserNotFound.selector, bob)
+        );
+        users.user(bob);
+    }
 
-        assertEq(users.users()[0].associates[0], alice, "Alice is an associate of the first user.");
+    function testUsers_associates() public {
+        users.addUser(alice, 0);
+        users.addUser(bob, 0);
+        users.addAssociate(alice, carol);
 
-        assertEq(users.user(alice).associates[0], alice, "Alice is the first associate of Alice.");
+        assertTrue(
+            users.user(alice).isAllowed,
+            "Alice is allowed after being allowed."
+        );
 
-        assertEq(users.users()[1].associates[0], bob, "Bob is an associate of the second user.");
+        assertEq(
+            users.users()[0].associates[0],
+            alice,
+            "Alice is an associate of the first user."
+        );
 
-        assertEq(users.user(bob).associates[0], bob, "Bob is the first associate of Bob.");
+        assertEq(
+            users.user(alice).associates[0],
+            alice,
+            "Alice is the first associate of Alice."
+        );
+
+        assertEq(
+            users.users()[1].associates[0],
+            bob,
+            "Bob is an associate of the second user."
+        );
+
+        assertEq(
+            users.user(bob).associates[0],
+            bob,
+            "Bob is the first associate of Bob."
+        );
+
+        assertEq(
+            users.user(alice).associates[1],
+            carol,
+            "Carol is the second associate of Alice."
+        );
+
+        users.removeAssociate(carol, alice);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(Users.UserNotFound.selector, alice)
+        );
+        users.user(alice);
     }
 }
