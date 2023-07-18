@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import {Users, FixedPointMathLib} from "@cavalre/Users.sol";
+import {Users, UserState, FixedPointMathLib} from "@cavalre/Users.sol";
 import {ERC20, IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -14,7 +14,22 @@ contract LPToken is ERC20, Ownable, Users {
     uint256 private _totalSupply;
     uint256 private _ratio; // virtual -> real
 
+    bool internal _tradingPaused;
+
     error InvalidProtocolFee(uint256 fee);
+
+    error TradingPaused();
+
+    error UserNotAllowed(address user_);
+
+    modifier onlyAllowed() {
+        if (_tradingPaused) revert TradingPaused();
+        address user_ = _msgSender();
+        if (
+            _userIndex[user_] > 0 && !_userList[_userIndex[user_] - 1].isAllowed
+        ) revert UserNotAllowed(user_);
+        _;
+    }
 
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {
         _ratio = 1e18;
@@ -85,7 +100,8 @@ contract LPToken is ERC20, Ownable, Users {
         uint256 amount
     ) public override returns (bool) {
         if (_userIndex[from] == 0) revert UserNotFound(from);
-        if (!_userList[_userIndex[from] - 1].isAllowed) revert UserNotAllowed(from);
+        if (!_userList[_userIndex[from] - 1].isAllowed)
+            revert UserNotAllowed(from);
         if (_userIndex[to] == 0) revert UserNotFound(to);
         if (!_userList[_userIndex[to] - 1].isAllowed) revert UserNotAllowed(to);
         amount = amount.divWadUp(_ratio);
@@ -126,5 +142,13 @@ contract LPToken is ERC20, Ownable, Users {
         mint(_protocolFeeRecipient, protocolAmount);
         _totalSupply += userAmount;
         _ratio = _totalSupply.divWadUp(super.totalSupply());
+    }
+
+    function pauseTrading() public onlyOwner {
+        _tradingPaused = true;
+    }
+
+    function resumeTrading() public onlyOwner {
+        _tradingPaused = false;
     }
 }

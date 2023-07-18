@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import {LPToken, FixedPointMathLib, IERC20, IERC20Metadata} from "@cavalre/LPToken.sol";
+import {LPToken, UserState, FixedPointMathLib, IERC20, IERC20Metadata} from "@cavalre/LPToken.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 struct PoolState {
@@ -39,16 +39,6 @@ contract Pool is LPToken {
     uint256 private _txCount;
 
     uint256 private _isInitialized;
-
-    modifier onlyInitialized() {
-        if (_isInitialized == 0) revert NotInitialized();
-        _;
-    }
-
-    modifier onlyUninitialized() {
-        if (_isInitialized == 1) revert AlreadyInitialized();
-        _;
-    }
 
     PoolState private _poolState;
 
@@ -123,6 +113,8 @@ contract Pool is LPToken {
 
     error NotInitialized();
 
+    error OnlyOneTransaction(address user_);
+
     error TooLarge(uint256 size);
 
     error ZeroAllocation();
@@ -134,6 +126,28 @@ contract Pool is LPToken {
     error ZeroLength();
 
     error ZeroScale();
+
+    modifier onlyInitialized() {
+        if (_isInitialized == 0) revert NotInitialized();
+        _;
+    }
+
+    modifier onlyOnce() {
+        address userAddress_ = _msgSender();
+        if (_userIndex[userAddress_] == 0) {
+            addUser(userAddress_, 0);
+        }
+        UserState storage user_ = _userList[_userIndex[userAddress_] - 1];
+        if (block.number == user_.lastBlock)
+            revert OnlyOneTransaction(userAddress_);
+        user_.lastBlock = block.number;
+        _;
+    }
+
+    modifier onlyUninitialized() {
+        if (_isInitialized == 1) revert AlreadyInitialized();
+        _;
+    }
 
     constructor(
         string memory name,

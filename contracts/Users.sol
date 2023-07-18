@@ -17,8 +17,6 @@ contract Users is Ownable {
     uint256 internal constant ONE = 1e18;
     uint256 internal constant HALF = 5e17;
 
-    bool internal _tradingPaused;
-
     UserState[] internal _userList;
     mapping(address => uint256) internal _userIndex;
 
@@ -26,46 +24,11 @@ contract Users is Ownable {
 
     error InvalidUser(address user_);
 
-    error OnlyOneTransaction(address user_);
-
-    error TradingPaused();
-
     error UserAlreadyAdded(address user_);
-
-    error UserNotAllowed(address user_);
 
     error UserNotFound(address user_);
 
     error ZeroAddress();
-
-    modifier onlyOnce() {
-        address userAddress_ = _msgSender();
-        if (_userIndex[userAddress_] == 0) {
-            addUser(userAddress_, 0);
-        }
-        UserState storage user_ = _userList[_userIndex[userAddress_] - 1];
-        if (block.number == user_.lastBlock)
-            revert OnlyOneTransaction(userAddress_);
-        user_.lastBlock = block.number;
-        _;
-    }
-
-    modifier onlyAllowed() {
-        if (_tradingPaused) revert TradingPaused();
-        address user_ = _msgSender();
-        if (
-            _userIndex[user_] > 0 && !_userList[_userIndex[user_] - 1].isAllowed
-        ) revert UserNotAllowed(user_);
-        _;
-    }
-
-    function pauseTrading() public onlyOwner {
-        _tradingPaused = true;
-    }
-
-    function resumeTrading() public onlyOwner {
-        _tradingPaused = false;
-    }
 
     function users() public view returns (UserState[] memory) {
         return _userList;
