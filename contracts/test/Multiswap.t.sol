@@ -471,7 +471,7 @@ contract MultiswapTest is TestRoot {
     }
 
     function testFailMultiWithdrawNotInPool() public {
-        Token outside = new Token("Foo", "BAR");
+        Token outside = new Token("Foo", "BAR", 18);
         Token payToken = tokens[0];
         uint256 amount = 1e27;
         payToken.mint(amount);
@@ -507,10 +507,7 @@ contract MultiswapTest is TestRoot {
         assertEq(scaleSum, scale);
     }
 
-    function testMultiPoolFuzz(
-        uint256 amountA,
-        uint256 amountB
-    ) public {
+    function testMultiPoolFuzz(uint256 amountA, uint256 amountB) public {
         // fuzz setup
         vm.assume((amountA > 1e17) && (amountA < 1e50));
         vm.assume((amountB > 1e17) && (amountB < 1e50));
@@ -724,10 +721,7 @@ contract MultiswapTest is TestRoot {
         vm.stopPrank();
     }
 
-    function testMultiSwapFuzz(
-        uint256 amountA,
-        uint256 amountB
-    ) public {
+    function testMultiSwapFuzz(uint256 amountA, uint256 amountB) public {
         // fuzz setup
         vm.assume((amountA > 1e17) && (amountA < 1e50));
         vm.assume((amountB > 1e17) && (amountB < 1e50));

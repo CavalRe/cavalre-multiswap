@@ -12,8 +12,8 @@ contract InitTest is Test {
         vm.startPrank(alice);
         Pool pool = new Pool("Pool", "P", int256(1e16));
 
-        Token tokenA = new Token("Foo", "FOOA");
-        Token tokenB = new Token("Foo", "FOOB");
+        Token tokenA = new Token("Foo", "FOOA", 18);
+        Token tokenB = new Token("Foo", "FOOB", 18);
         uint256 amount = 1e27;
         uint256 minReceiveAmount = 0;
 
@@ -100,7 +100,7 @@ contract InitTest is Test {
 
         vm.startPrank(bob);
         uint256 amount = 1e18;
-        Token tokenA = new Token("Foo", "FOOA");
+        Token tokenA = new Token("Foo", "FOOA", 18);
         tokenA.mint(amount);
         tokenA.approve(address(pool), amount);
         pool.addAsset(address(tokenA), amount, 1e18, 1e18);

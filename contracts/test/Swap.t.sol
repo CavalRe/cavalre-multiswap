@@ -117,7 +117,7 @@ contract SwapTest is TestRoot {
 
     /// @dev `swap` should revert with `AssetNotFound` if the address is not a managed asset
     function testBadDepositAddress() public {
-        Token token = new Token("Foo", "FOO");
+        Token token = new Token("Foo", "FOO", 18);
         address depositAddress = address(token);
         address withdrawAddress = address(tokens[0]);
         vm.expectRevert(
@@ -127,7 +127,7 @@ contract SwapTest is TestRoot {
     }
 
     function testBadWithdrawalAddress() public {
-        Token token = new Token("Foo", "FOO");
+        Token token = new Token("Foo", "FOO", 18);
         address depositAddress = address(tokens[0]);
         address withdrawAddress = address(token);
         vm.expectRevert(
@@ -178,7 +178,7 @@ contract SwapTest is TestRoot {
     }
 
     function testSwapWithdrawNotInPool() public {
-        Token outside = new Token("Foo", "BAR");
+        Token outside = new Token("Foo", "BAR", 18);
         Token depositToken = tokens[0];
         uint256 amount = 1e27;
         depositToken.mint(amount);
@@ -203,7 +203,7 @@ contract SwapTest is TestRoot {
     }
 
     function testSwapDepositNotInPool() public {
-        Token depositToken = new Token("Foo", "BAR");
+        Token depositToken = new Token("Foo", "BAR", 18);
         Token withdrawToken = tokens[0];
         uint256 amount = 1e27;
         depositToken.mint(amount);

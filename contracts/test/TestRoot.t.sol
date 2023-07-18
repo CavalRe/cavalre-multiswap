@@ -23,7 +23,6 @@ contract TestRoot is Test, Context {
     address carol = address(3);
 
     function setUp() public {
-
         vm.startPrank(alice);
         vm.roll(1);
 
@@ -42,7 +41,7 @@ contract TestRoot is Test, Context {
             uint256 balance = 100 * amount;
             string memory name = "Token";
             string memory symbol = "T";
-            Token token = new Token(name, symbol);
+            Token token = new Token(name, symbol, 18);
             token.burn(token.balanceOf(alice));
             token.mint(balance);
             token.approve(address(pool), balance);

@@ -73,7 +73,7 @@ contract ContractTest is Context, Test {
             scale = balance;
             name = string(abi.encodePacked("Token ", Strings.toString(i + 1)));
             symbol = string(abi.encodePacked("T", Strings.toString(i + 1)));
-            token = new Token(name, symbol);
+            token = new Token(name, symbol, 18);
             token.mint(balance);
             token.approve(address(pool), balance);
             pool.addAsset(address(token), balance, fee, scale);
@@ -390,7 +390,11 @@ contract ContractTest is Context, Test {
         emit log("");
         showPool(pool);
         emit log("");
-        pool.addLiquidity(addresses[0], tokens[0].balanceOf(address(pool)) / 2, 0);
+        pool.addLiquidity(
+            addresses[0],
+            tokens[0].balanceOf(address(pool)) / 2,
+            0
+        );
         emit log("======================");
         for (uint256 i; i < addresses.length; i++) {
             postTradePrices[i] = price(addresses[i]);

@@ -36,7 +36,7 @@ contract InfoTest is TestRoot {
 
     /// @dev `asset` should revert with `AssetNotFound` if the address is not a managed asset
     function testCannotInvalidAsset() public {
-        Token token = new Token("Foo", "FOO");
+        Token token = new Token("Foo", "FOO", 18);
         vm.expectRevert(
             abi.encodeWithSelector(Pool.AssetNotFound.selector, address(token))
         );
