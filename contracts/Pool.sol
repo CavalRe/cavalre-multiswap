@@ -769,14 +769,11 @@ contract Pool is LPToken {
         return receiveAmount;
     }
 
-    function removeLiquidity(
+    function _removeLiquidity(
+        address sender,
         uint256 amount,
         uint256[] memory minReceiveAmounts
-    )
-        public
-        onlyInitialized
-        returns (uint256[] memory receiveAmounts, uint256 feeAmount)
-    {
+    ) internal returns (uint256[] memory receiveAmounts, uint256 feeAmount) {
         uint256 n = _assetAddress.length;
         address[] memory payTokens = new address[](1);
         uint256[] memory amounts = new uint256[](1);
@@ -800,8 +797,6 @@ contract Pool is LPToken {
             allocations[n - 1] = 1e18 - totalAllocation;
         }
 
-        address sender = _msgSender();
-
         (receiveAmounts, feeAmount) = _multiswap(
             sender,
             payTokens,
@@ -812,5 +807,20 @@ contract Pool is LPToken {
         );
 
         emit RemoveLiquidity(sender, amount, receiveAmounts, feeAmount);
+    }
+
+    function removeLiquidity(
+        uint256 amount,
+        uint256[] memory minReceiveAmounts
+    )
+        public
+        onlyInitialized
+        returns (uint256[] memory receiveAmounts, uint256 feeAmount)
+    {
+        (receiveAmounts, feeAmount) = _removeLiquidity(
+            _msgSender(),
+            amount,
+            minReceiveAmounts
+        );
     }
 }
