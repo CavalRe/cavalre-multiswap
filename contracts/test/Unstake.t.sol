@@ -162,7 +162,7 @@ contract UnstakeTest is TestRoot {
 
     /// @dev `unstake` should revert with `AssetNotFound` if the address is not a managed asset
     function testBadDepositAddress() public {
-        Token token = new Token("Foo", "FOO");
+        Token token = new Token("Foo", "FOO", 18);
         address withdrawalAddress = address(token);
         vm.expectRevert(
             abi.encodeWithSelector(
