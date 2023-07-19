@@ -52,6 +52,7 @@ contract BetaTest is Test {
     uint256[] private twoAllocations = new uint256[](2);
     uint256[] private twoMins = new uint256[](2);
 
+    uint256[] private allAmounts = new uint256[](NTOKENS);
     uint256[] private allMins = new uint256[](NTOKENS);
 
     uint256 private amountOut;
@@ -114,7 +115,7 @@ contract BetaTest is Test {
         prices[4] = 1e18;
         prices[5] = 1e18;
         prices[6] = 1e18;
-        prices[7] = 1908e15;
+        prices[7] = 1908e18;
         prices[8] = 30065e18;
         prices[9] = 30065e18;
 
@@ -129,6 +130,13 @@ contract BetaTest is Test {
         }
 
         pool.initialize();
+
+        for (uint256 i; i < NTOKENS; i++) {
+            token = tokens[symbols[i]];
+            balance = token.balanceOf(address(pool));
+            token.mint(balance);
+            token.approve(address(pool), balance);
+        }
 
         oneAsset[0] = address(tokens["USDC"]);
         anotherAsset[0] = address(tokens["BTC.b"]);
@@ -230,6 +238,7 @@ contract BetaTest is Test {
         showPool(pool);
         emit log("");
         emit log_named_uint("amountIn", oneAmount[0]);
+        emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
         (amountOut, feeAmount) = pool.swap(
             oneAsset[0],
             anotherAsset[0],
@@ -240,6 +249,148 @@ contract BetaTest is Test {
         emit log("");
         emit log_named_uint("amountIn", oneAmount[0]);
         emit log_named_uint("amountOut", amountOut);
+        emit log_named_uint("feeAmount", feeAmount);
+        emit log("");
+        showPool(pool);
+        emit log("");
+    }
+
+    function testBetaStake() public {
+        emit log("Initial state");
+        emit log("");
+        showPool(pool);
+        emit log("");
+        emit log_named_uint("amountIn", oneAmount[0]);
+        emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
+        (amountOut, feeAmount) = pool.stake(
+            oneAsset[0],
+            oneAmount[0],
+            oneMin[0]
+        );
+        emit log("State after stake");
+        emit log("");
+        emit log_named_uint("amountOut", amountOut);
+        emit log_named_uint("feeAmount", feeAmount);
+        emit log("");
+        showPool(pool);
+        emit log("");
+    }
+
+    function testBetaUnstake() public {
+        emit log("Initial state");
+        emit log("");
+        showPool(pool);
+        emit log("");
+        emit log_named_uint("amountIn", oneAmount[0]);
+        emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
+        (amountOut, feeAmount) = pool.unstake(
+            anotherAsset[0],
+            oneAmount[0],
+            oneMin[0]
+        );
+        emit log("State after stake");
+        emit log("");
+        emit log_named_uint("amountOut", amountOut);
+        emit log_named_uint("feeAmount", feeAmount);
+        emit log("");
+        showPool(pool);
+        emit log("");
+    }
+
+    function testBetaMixedStake() public {
+        twoTokens[0] = address(pool);
+        twoTokens[1] = anotherAsset[0];
+        twoAmounts[0] = 5e17;
+        twoAmounts[1] = 5e17;
+        emit log("Initial state");
+        emit log("");
+        showPool(pool);
+        emit log("");
+        emit log_named_uint("amountIn", oneAmount[0]);
+        emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
+        (receiveAmounts, feeAmount) = pool.multiswap(
+            oneAsset,
+            oneAmount,
+            twoTokens,
+            twoAmounts,
+            twoMins
+        );
+        emit log("State after stake");
+        emit log("");
+        emit log_named_uint("amountOut 1", receiveAmounts[0]);
+        emit log_named_uint("amountOut 2", receiveAmounts[1]);
+        emit log_named_uint("feeAmount", feeAmount);
+        emit log("");
+        showPool(pool);
+        emit log("");
+    }
+
+    function testBetaMixedUnstake() public {
+        twoTokens[0] = address(pool);
+        twoTokens[1] = oneAsset[0];
+        twoAmounts[0] = oneAmount[0];
+        twoAmounts[1] = oneAmount[0];
+        emit log("=============");
+        emit log("Initial state");
+        emit log("");
+        showPool(pool);
+        emit log("");
+        emit log_named_uint("amountIn 1", twoAmounts[0]);
+        emit log_named_uint("amountIn 2", twoAmounts[1]);
+        emit log("");
+        (receiveAmounts, feeAmount) = pool.multiswap(
+            twoTokens,
+            twoAmounts,
+            anotherAsset,
+            oneAllocation,
+            oneMin
+        );
+        emit log("=================");
+        emit log("State after stake");
+        emit log("");
+        emit log_named_uint("amountOut", receiveAmounts[0]);
+        emit log_named_uint("feeAmount", feeAmount);
+        emit log("");
+        showPool(pool);
+        emit log("");
+    }
+
+    function testBetaAddLiquidity() public {
+        emit log("=============");
+        emit log("Initial state");
+        emit log("");
+        showPool(pool);
+        emit log("");
+        emit log_named_uint("amountIn", oneAmount[0]);
+        emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
+        emit log("");
+        amountOut = pool.addLiquidity(oneAsset[0], oneAmount[0], oneMin[0]);
+        emit log("=================");
+        emit log("State after addLiquidity");
+        emit log("");
+        emit log_named_uint("amountOut", amountOut);
+        emit log_named_uint("feeAmount", feeAmount);
+        emit log("");
+        showPool(pool);
+        emit log("");
+    }
+
+    function testBetaRemoveLiquidity() public {
+        emit log("=============");
+        emit log("Initial state");
+        emit log("");
+        showPool(pool);
+        emit log("");
+        emit log_named_uint("amountIn", oneAmount[0]);
+        emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
+        emit log("");
+        (receiveAmounts, feeAmount) = pool.removeLiquidity(marketCap, allMins);
+        emit log("=================");
+        emit log("State after removeLiquidity");
+        emit log("");
+        for (uint256 i; i < NTOKENS; i++) {
+            emit log_named_uint("amountOut", receiveAmounts[i]);
+        }
         emit log_named_uint("feeAmount", feeAmount);
         emit log("");
         showPool(pool);
