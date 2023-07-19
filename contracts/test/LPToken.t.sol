@@ -11,7 +11,7 @@ contract PoolMintable is Pool {
     constructor(
         string memory name_,
         string memory symbol_,
-        int256 tau_
+        uint256 tau_
     ) Pool(name_, symbol_, tau_) {}
 
     function distributeFee_(uint256 amount) public {
@@ -32,7 +32,7 @@ contract LPTokenTest is Test {
     
     function setUp() public {
         vm.roll(1);
-        pool = new PoolMintable("Pool", "P", int256(1e16));
+        pool = new PoolMintable("Pool", "P", 1e16);
     }
 
     function testLPToken_mint(uint256 amount) public {

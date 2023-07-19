@@ -9,7 +9,7 @@ struct PoolState {
     string name;
     string symbol;
     uint8 decimals;
-    int256 tau;
+    int256 w;
     uint256 balance;
     uint256 meanBalance;
     uint256 scale;
@@ -165,13 +165,13 @@ contract Pool is LPToken {
     constructor(
         string memory name,
         string memory symbol,
-        int256 tau
+        uint256 tau
     ) LPToken(name, symbol) {
         _poolState.token = address(this);
         _poolState.name = name;
         _poolState.symbol = symbol;
         _poolState.decimals = 18;
-        _poolState.tau = tau;
+        _poolState.w = int256(ONE - tau);
     }
 
     function fromCanonical(
@@ -284,18 +284,17 @@ contract Pool is LPToken {
         uint256 newValue,
         uint256 lastValue,
         uint256 lastMean,
-        uint256 lastUpdated
-    ) private view returns (uint256) {
-        int256 delta = int256(_txCount - lastUpdated);
-        int256 tau = _poolState.tau;
+        uint256 delta
+    ) internal view returns (uint256) {
+        int256 w = _poolState.w;
         if (delta == 0) return lastMean;
         if (delta == 1) {
             return
                 newValue.mulWadUp(
-                    uint256(int256(lastMean.divWadUp(newValue)).powWad(tau))
+                    uint256(int256(lastMean.divWadUp(newValue)).powWad(w))
                 );
         } else {
-            int256 exp = tau.powWad(delta);
+            int256 exp = w.powWad(int256(delta * ONE));
             return
                 newValue
                     .mulWadUp(
@@ -304,9 +303,7 @@ contract Pool is LPToken {
                         )
                     )
                     .mulWadUp(
-                        uint256(
-                            int256(lastValue.divWadUp(newValue)).powWad(tau)
-                        )
+                        uint256(int256(lastValue.divWadUp(newValue)).powWad(w))
                     );
         }
     }
@@ -326,7 +323,7 @@ contract Pool is LPToken {
             asset_.balance,
             lastBalance,
             asset_.meanBalance,
-            asset_.lastUpdated
+            _txCount - asset_.lastUpdated
         );
         asset_.lastUpdated = _txCount;
         emit BalanceUpdate(_txCount, token, asset_.balance, asset_.meanBalance);
@@ -339,7 +336,7 @@ contract Pool is LPToken {
             _poolState.balance,
             lastPoolBalance,
             _poolState.meanBalance,
-            _poolState.lastUpdated
+            _txCount - _poolState.lastUpdated
         );
         _poolState.lastUpdated = _txCount;
         emit BalanceUpdate(
@@ -726,7 +723,6 @@ contract Pool is LPToken {
         if (_assetState[receiveToken].token != receiveToken)
             revert AssetNotFound(receiveToken);
         if (payAmount * 3 > _poolState.balance) revert TooLarge(payAmount);
-
 
         address[] memory payTokens = new address[](1);
         uint256[] memory amounts = new uint256[](1);

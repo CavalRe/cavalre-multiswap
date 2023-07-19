@@ -9,7 +9,7 @@ contract TestPool is Pool {
     constructor(
         string memory name_,
         string memory symbol_,
-        int256 tau_
+        uint256 tau_
     ) Pool(name_, symbol_, tau_) {}
 
     function fromCanonical_(
@@ -35,7 +35,7 @@ contract BetaTest is Test {
     uint256[] private fees = new uint256[](NTOKENS);
     uint256[] private prices = new uint256[](NTOKENS);
 
-    int256 private tau = 1e16;
+    uint256 private tau = 1e16;
     uint256 private bps = 1e14;
 
     uint256 private marketCap = 1e25;
