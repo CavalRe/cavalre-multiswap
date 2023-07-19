@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import "@cavalre/LPToken.sol";
+import "@cavalre/Pool.sol";
+import "@cavalre/Users.sol";
 import "forge-std/Test.sol";
 
-contract LPMintable is LPToken {
+contract PoolMintable is Pool {
     using FixedPointMathLib for uint256;
 
     constructor(
         string memory name_,
-        string memory symbol_
-    ) LPToken(name_, symbol_) {}
+        string memory symbol_,
+        int256 tau_
+    ) Pool(name_, symbol_, tau_) {}
 
     function distributeFee_(uint256 amount) public {
         super.distributeFee(amount);
@@ -26,10 +28,11 @@ contract LPMintable is LPToken {
 }
 
 contract LPTokenTest is Test {
-    LPMintable private lpToken;
-
+    PoolMintable private pool;
+    
     function setUp() public {
-        lpToken = new LPMintable("LP", "LP");
+        vm.roll(1);
+        pool = new PoolMintable("Pool", "P", int256(1e16));
     }
 
     function testLPToken_mint(uint256 amount) public {
@@ -38,25 +41,25 @@ contract LPTokenTest is Test {
         address alice = address(1);
         address bob = address(2);
 
-        lpToken.addUser(alice, 0);
+        pool.addUser(alice, 0);
 
         vm.startPrank(alice);
 
-        lpToken.mint_(amount);
-        assertEq(lpToken.balanceOf(alice), amount, "Balance of alice after minting.");
-        assertEq(lpToken.totalSupply(), amount, "Total supply after minting.");
+        pool.mint_(amount);
+        assertEq(pool.balanceOf(alice), amount, "Balance of alice after minting.");
+        assertEq(pool.totalSupply(), amount, "Total supply after minting.");
 
         vm.stopPrank();
 
-        lpToken.addUser(bob, 0);
-        lpToken.setAllowed(bob, false);
+        pool.addUser(bob, 0);
+        pool.setAllowed(bob, false);
 
         vm.startPrank(bob);
 
         vm.expectRevert(
             abi.encodeWithSelector(LPToken.UserNotAllowed.selector, bob)
         );
-        lpToken.mint_(amount);
+        pool.mint_(amount);
     }
 
     function testLPToken_burn(uint256 amount) public {
@@ -65,31 +68,37 @@ contract LPTokenTest is Test {
         address alice = address(1);
         address bob = address(2);
 
-        lpToken.addUser(alice, 0);
+        pool.addUser(alice, 0);
 
         vm.startPrank(alice);
 
         uint256 burnAmount = amount / 2;
 
-        lpToken.mint_(amount);
-        lpToken.burn_(burnAmount);
-        assertEq(lpToken.balanceOf(alice), amount - burnAmount, "Balance of alice after burning.");
-        assertEq(lpToken.totalSupply(), amount - burnAmount, "Total supply after burning.");
+        pool.mint_(amount);
+        pool.burn_(burnAmount);
+        assertEq(pool.balanceOf(alice), amount - burnAmount, "Balance of alice after burning.");
+        assertEq(pool.totalSupply(), amount - burnAmount, "Total supply after burning.");
 
         vm.stopPrank();
 
-        lpToken.addUser(bob, 0);
+        pool.addUser(bob, 0);
 
         vm.startPrank(bob);
-        lpToken.mint_(amount);
+        pool.mint_(amount);
+
+        emit log_named_uint("Bob's balance", pool.balanceOf(bob));
+        emit log_named_uint("Total supply", pool.totalSupply());
 
         vm.stopPrank();
 
-        lpToken.setAllowed(bob, false);
+        pool.setAllowed(bob, false);
+
+        emit log_named_uint("Bob's balance", pool.balanceOf(bob));
+        emit log_named_uint("Total supply", pool.totalSupply());
 
         vm.startPrank(bob);
 
-        lpToken.burn_(amount);
+        pool.burn_(amount);
 
         vm.stopPrank();
     }
@@ -100,26 +109,26 @@ contract LPTokenTest is Test {
         address alice = address(1);
         address bob = address(2);
 
-        lpToken.addUser(alice, 0);
+        pool.addUser(alice, 0);
 
         vm.startPrank(alice);
 
-        lpToken.mint_(amount);
-        assertEq(lpToken.balanceOf(alice), amount, "Balance of alice after minting.");
-        assertEq(lpToken.totalSupply(), amount, "Total supply after minting.");
+        pool.mint_(amount);
+        assertEq(pool.balanceOf(alice), amount, "Balance of alice after minting.");
+        assertEq(pool.totalSupply(), amount, "Total supply after minting.");
 
         vm.expectRevert(
             abi.encodeWithSelector(Users.UserNotFound.selector, bob)
         );
-        lpToken.transfer(bob, amount);
+        pool.transfer(bob, amount);
 
         vm.stopPrank();
 
-        lpToken.addUser(bob, 0);
+        pool.addUser(bob, 0);
 
         vm.startPrank(alice);
 
-        lpToken.transfer(bob, amount);
+        pool.transfer(bob, amount);
 
         vm.stopPrank();
     }
@@ -131,15 +140,15 @@ contract LPTokenTest is Test {
         address bob = address(2);
         address carol = address(3);
 
-        lpToken.addUser(alice, 0);
+        pool.addUser(alice, 0);
 
         vm.startPrank(alice);
 
-        lpToken.increaseAllowance(bob, amount);
+        pool.increaseAllowance(bob, amount);
 
-        lpToken.mint_(amount);
-        assertEq(lpToken.balanceOf(alice), amount, "Balance of alice after minting.");
-        assertEq(lpToken.totalSupply(), amount, "Total supply after minting.");
+        pool.mint_(amount);
+        assertEq(pool.balanceOf(alice), amount, "Balance of alice after minting.");
+        assertEq(pool.totalSupply(), amount, "Total supply after minting.");
 
         vm.stopPrank();
 
@@ -148,26 +157,26 @@ contract LPTokenTest is Test {
         vm.expectRevert(
             abi.encodeWithSelector(Users.UserNotFound.selector, carol)
         );
-        lpToken.transferFrom(alice, carol, amount);
+        pool.transferFrom(alice, carol, amount);
 
         vm.stopPrank();
 
-        lpToken.addUser(carol, 0);
+        pool.addUser(carol, 0);
 
         vm.startPrank(bob);
 
-        lpToken.transferFrom(alice, carol, amount);
+        pool.transferFrom(alice, carol, amount);
 
         vm.stopPrank();
 
-        lpToken.setAllowed(alice, false);
+        pool.setAllowed(alice, false);
 
         vm.startPrank(bob);
 
         vm.expectRevert(
             abi.encodeWithSelector(LPToken.UserNotAllowed.selector, alice)
         );
-        lpToken.transferFrom(alice, carol, amount);
+        pool.transferFrom(alice, carol, amount);
 
         vm.stopPrank();
     }
@@ -177,32 +186,32 @@ contract LPTokenTest is Test {
 
         address alice = address(1);
 
-        lpToken.addUser(alice, 0);
+        pool.addUser(alice, 0);
 
         vm.startPrank(alice);
 
-        lpToken.mint_(amount);
-        assertEq(lpToken.balanceOf(alice), amount, "Balance of alice after minting.");
-        assertEq(lpToken.totalSupply(), amount, "Total supply after minting.");
+        pool.mint_(amount);
+        assertEq(pool.balanceOf(alice), amount, "Balance of alice after minting.");
+        assertEq(pool.totalSupply(), amount, "Total supply after minting.");
 
         vm.stopPrank();
 
         address bob = address(2);
 
-        lpToken.addUser(bob, 0);
+        pool.addUser(bob, 0);
 
         vm.startPrank(bob);
 
-        lpToken.mint_(amount);
-        assertEq(lpToken.balanceOf(bob), amount, "Balance of bob after minting.");
-        assertEq(lpToken.totalSupply(), 2 * amount, "Total supply after second minting.");
+        pool.mint_(amount);
+        assertEq(pool.balanceOf(bob), amount, "Balance of bob after minting.");
+        assertEq(pool.totalSupply(), 2 * amount, "Total supply after second minting.");
 
         vm.stopPrank();
 
-        lpToken.distributeFee_(2 * amount);
+        pool.distributeFee_(2 * amount);
 
-        assertEq(lpToken.balanceOf(alice), 2 * amount, "Balance of alice after fee distribution.");
-        assertEq(lpToken.balanceOf(bob), 2 * amount, "Balance of bob after fee distribution.");
-        assertEq(lpToken.totalSupply(), 4 * amount, "Total supply after fee distribution.");
+        assertEq(pool.balanceOf(alice), 2 * amount, "Balance of alice after fee distribution.");
+        assertEq(pool.balanceOf(bob), 2 * amount, "Balance of bob after fee distribution.");
+        assertEq(pool.totalSupply(), 4 * amount, "Total supply after fee distribution.");
     }
 }

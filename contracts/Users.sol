@@ -69,11 +69,6 @@ contract Users is Ownable {
         delete _userIndex[user_];
     }
 
-    function setAllowed(address user_, bool isAllowed_) public onlyOwner {
-        if (_userIndex[user_] == 0) revert UserNotFound(user_);
-        _userList[_userIndex[user_] - 1].isAllowed = isAllowed_;
-    }
-
     function setDiscount(address user_, uint256 discount_) public onlyOwner {
         if (_userIndex[user_] == 0) revert UserNotFound(user_);
         if (discount_ > ONE) revert InvalidDiscount(discount_);

@@ -837,4 +837,18 @@ contract Pool is LPToken {
             minReceiveAmounts
         );
     }
+
+    function setAllowed(address user_, bool isAllowed_) public onlyOwner {
+        if (_userIndex[user_] == 0) revert UserNotFound(user_);
+        _userList[_userIndex[user_] - 1].isAllowed = isAllowed_;
+        if (!isAllowed_ && _assetAddress.length > 0) {
+            uint256 balance = balanceOf(user_);
+            if (balance > 0)
+                _removeLiquidity(
+                    user_,
+                    balance,
+                    new uint256[](_assetAddress.length)
+                );
+        }
+    }
 }
