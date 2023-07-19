@@ -45,7 +45,15 @@ contract Pool is LPToken {
     mapping(address => AssetState) private _assetState;
     address[] private _assetAddress;
 
+    event BalanceUpdate(
+        uint256 indexed txCount,
+        address indexed token,
+        uint256 balance,
+        uint256 meanBalance
+    );
+
     event Multiswap(
+        uint256 indexed txCount,
         address indexed user,
         address[] payTokens,
         address[] receiveTokens,
@@ -55,6 +63,7 @@ contract Pool is LPToken {
     );
 
     event Swap(
+        uint256 indexed txCount,
         address indexed user,
         address payToken,
         address receiveToken,
@@ -64,6 +73,7 @@ contract Pool is LPToken {
     );
 
     event Stake(
+        uint256 indexed txCount,
         address indexed user,
         address payToken,
         uint256 payAmount,
@@ -71,6 +81,7 @@ contract Pool is LPToken {
     );
 
     event Unstake(
+        uint256 indexed txCount,
         address indexed user,
         address receiveToken,
         uint256 payAmount,
@@ -79,12 +90,14 @@ contract Pool is LPToken {
     );
 
     event AddLiquidity(
+        uint256 indexed txCount,
         address indexed user,
         uint256[] payAmounts,
         uint256 receiveAmount
     );
 
     event RemoveLiquidity(
+        uint256 indexed txCount,
         address indexed user,
         uint256 payAmount,
         uint256[] receiveAmounts,
@@ -316,6 +329,7 @@ contract Pool is LPToken {
             asset_.lastUpdated
         );
         asset_.lastUpdated = _txCount;
+        emit BalanceUpdate(_txCount, token, asset_.balance, asset_.meanBalance);
     }
 
     function _updatePoolBalance() private {
@@ -328,6 +342,12 @@ contract Pool is LPToken {
             _poolState.lastUpdated
         );
         _poolState.lastUpdated = _txCount;
+        emit BalanceUpdate(
+            _txCount,
+            address(this),
+            _poolState.balance,
+            _poolState.meanBalance
+        );
     }
 
     function _checkDuplicateTokens(
@@ -570,6 +590,7 @@ contract Pool is LPToken {
         );
 
         emit Multiswap(
+            _txCount,
             sender,
             payTokens,
             receiveTokens,
@@ -605,33 +626,35 @@ contract Pool is LPToken {
         if (payAmount * 3 > _assetState[payToken].balance)
             revert TooLarge(payAmount);
 
-        address[] memory payTokens = new address[](1);
-        uint256[] memory amounts = new uint256[](1);
-        address[] memory receiveTokens = new address[](1);
-        uint256[] memory allocations = new uint256[](1);
-        uint256[] memory minReceiveAmounts = new uint256[](1);
-        uint256[] memory receiveAmounts = new uint256[](1);
-
-        payTokens[0] = payToken;
-        amounts[0] = payAmount;
-        receiveTokens[0] = receiveToken;
-        allocations[0] = 1e18;
-        minReceiveAmounts[0] = minReceiveAmount;
-
         address sender = _msgSender();
+        {
+            address[] memory payTokens = new address[](1);
+            uint256[] memory amounts = new uint256[](1);
+            address[] memory receiveTokens = new address[](1);
+            uint256[] memory allocations = new uint256[](1);
+            uint256[] memory minReceiveAmounts = new uint256[](1);
+            uint256[] memory receiveAmounts = new uint256[](1);
 
-        (receiveAmounts, feeAmount) = _multiswap(
-            sender,
-            payTokens,
-            amounts,
-            receiveTokens,
-            allocations,
-            minReceiveAmounts
-        );
+            payTokens[0] = payToken;
+            amounts[0] = payAmount;
+            receiveTokens[0] = receiveToken;
+            allocations[0] = 1e18;
+            minReceiveAmounts[0] = minReceiveAmount;
 
-        receiveAmount = receiveAmounts[0];
+            (receiveAmounts, feeAmount) = _multiswap(
+                sender,
+                payTokens,
+                amounts,
+                receiveTokens,
+                allocations,
+                minReceiveAmounts
+            );
+
+            receiveAmount = receiveAmounts[0];
+        }
 
         emit Swap(
+            _txCount,
             sender,
             payToken,
             receiveToken,
@@ -658,33 +681,34 @@ contract Pool is LPToken {
         if (payAmount * 3 > _assetState[payToken].balance)
             revert TooLarge(payAmount);
 
-        address[] memory payTokens = new address[](1);
-        uint256[] memory amounts = new uint256[](1);
-        address[] memory receiveTokens = new address[](1);
-        uint256[] memory allocations = new uint256[](1);
-        uint256[] memory minReceiveAmounts = new uint256[](1);
-        uint256[] memory receiveAmounts = new uint256[](1);
-
-        payTokens[0] = payToken;
-        amounts[0] = payAmount;
-        receiveTokens[0] = address(this);
-        allocations[0] = 1e18;
-        minReceiveAmounts[0] = minReceiveAmount;
-
         address sender = _msgSender();
+        {
+            address[] memory payTokens = new address[](1);
+            uint256[] memory amounts = new uint256[](1);
+            address[] memory receiveTokens = new address[](1);
+            uint256[] memory allocations = new uint256[](1);
+            uint256[] memory minReceiveAmounts = new uint256[](1);
+            uint256[] memory receiveAmounts = new uint256[](1);
 
-        (receiveAmounts, feeAmount) = _multiswap(
-            sender,
-            payTokens,
-            amounts,
-            receiveTokens,
-            allocations,
-            minReceiveAmounts
-        );
+            payTokens[0] = payToken;
+            amounts[0] = payAmount;
+            receiveTokens[0] = address(this);
+            allocations[0] = 1e18;
+            minReceiveAmounts[0] = minReceiveAmount;
 
-        receiveAmount = receiveAmounts[0];
+            (receiveAmounts, feeAmount) = _multiswap(
+                sender,
+                payTokens,
+                amounts,
+                receiveTokens,
+                allocations,
+                minReceiveAmounts
+            );
 
-        emit Stake(sender, payToken, payAmount, receiveAmount);
+            receiveAmount = receiveAmounts[0];
+        }
+
+        emit Stake(_txCount, sender, payToken, payAmount, receiveAmount);
     }
 
     function unstake(
@@ -702,6 +726,7 @@ contract Pool is LPToken {
         if (_assetState[receiveToken].token != receiveToken)
             revert AssetNotFound(receiveToken);
         if (payAmount * 3 > _poolState.balance) revert TooLarge(payAmount);
+
 
         address[] memory payTokens = new address[](1);
         uint256[] memory amounts = new uint256[](1);
@@ -729,7 +754,14 @@ contract Pool is LPToken {
 
         receiveAmount = receiveAmounts[0];
 
-        emit Unstake(sender, receiveToken, payAmount, receiveAmount, feeAmount);
+        emit Unstake(
+            _txCount,
+            sender,
+            receiveToken,
+            payAmount,
+            receiveAmount,
+            feeAmount
+        );
     }
 
     function addLiquidity(
@@ -778,7 +810,7 @@ contract Pool is LPToken {
         mint(sender, receiveAmount);
         _updatePoolBalance();
 
-        emit AddLiquidity(sender, payAmounts, receiveAmount);
+        emit AddLiquidity(_txCount, sender, payAmounts, receiveAmount);
 
         return receiveAmount;
     }
@@ -820,7 +852,13 @@ contract Pool is LPToken {
             minReceiveAmounts
         );
 
-        emit RemoveLiquidity(sender, amount, receiveAmounts, feeAmount);
+        emit RemoveLiquidity(
+            _txCount,
+            sender,
+            amount,
+            receiveAmounts,
+            feeAmount
+        );
     }
 
     function removeLiquidity(
