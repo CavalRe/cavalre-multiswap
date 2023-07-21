@@ -8,14 +8,9 @@
   },
   "author": "",
   "license": "",
-  "devDependencies": {
-    "prettier": "^2.5.1",
-    "prettier-plugin-solidity": "^1.0.0-beta.13",
-    "solhint": "^3.3.7"
-  },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.9.1",
-    "forge-std": "^1.1.2",
-    "solady": "^0.0.105"
+    "@openzeppelin/contracts": "^4.9.2",
+    "forge-std": "github:foundry-rs/forge-std#v1.6.0",
+    "solady": "^0.0.110"
   }
 }

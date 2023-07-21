@@ -2,6 +2,7 @@
 pragma solidity 0.8.19;
 
 import {LPToken, UserState, FixedPointMathLib, IERC20, IERC20Metadata} from "@cavalre/LPToken.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 struct PoolState {
@@ -31,7 +32,7 @@ struct AssetState {
     uint256 lastUpdated;
 }
 
-contract Pool is LPToken {
+contract Pool is LPToken, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using FixedPointMathLib for uint256;
     using FixedPointMathLib for int256;
@@ -379,6 +380,7 @@ contract Pool is LPToken {
     )
         private
         onlyOnce
+        nonReentrant
         returns (uint256[] memory receiveAmounts, uint256 feeAmount)
     {
         _txCount++;
@@ -764,7 +766,14 @@ contract Pool is LPToken {
         address token,
         uint256 amount,
         uint256 minReceiveAmount
-    ) public onlyInitialized onlyAllowed onlyOnce returns (uint256) {
+    )
+        public
+        onlyInitialized
+        onlyAllowed
+        onlyOnce
+        nonReentrant
+        returns (uint256)
+    {
         _txCount++;
 
         AssetState storage assetIn;

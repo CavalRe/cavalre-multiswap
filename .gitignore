@@ -8,5 +8,6 @@ typechain
 #Hardhat files
 cache
 artifacts
+broadcast
 
 olympext.vsix
