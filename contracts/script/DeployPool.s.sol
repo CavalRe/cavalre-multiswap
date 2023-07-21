@@ -62,7 +62,7 @@ contract DeployPoolScript is Script, Test {
         tokens[3] = new Token("Euro Coin", "EUROC", 6);
         tokens[4] = new Token("Bridged USDC", "USDC.e", 6);
         tokens[5] = new Token("Bridged USDt", "USDT.e", 6);
-        tokens[6] = new Token("Brdiged DAI", "DAI.e", 18);
+        tokens[6] = new Token("Bridged DAI", "DAI.e", 18);
         tokens[7] = new Token("Bridged WETH", "WETH.e", 18);
         tokens[8] = new Token("Bridged WBTC", "WBTC.e", 8);
         tokens[9] = new Token("Bridged BTC", "BTC.b", 8);
