@@ -72,6 +72,8 @@ contract UsersTest is Test {
     }
 
     function createUsers(uint256 nUsers, uint256 nAssociates) public {
+        assertEq(pool.users().length, 0, "Pool has users before adding users.");
+
         uint256 n;
         address user;
         address associate;
@@ -79,6 +81,11 @@ contract UsersTest is Test {
             n++;
             user = toAddress(n);
             pool.addUser(user, 0);
+            assertEq(
+                pool.users().length,
+                i + 1,
+                "Pool has incorrect number of users after adding a user."
+            );
             for (uint256 j; j < nAssociates - 1; j++) {
                 n++;
                 associate = toAddress(n);
@@ -130,6 +137,12 @@ contract UsersTest is Test {
 
         pool.removeUser(toAddress(11));
 
+        assertEq(
+            pool.users().length,
+            nUsers - 1,
+            "Pool has incorrect number of users after removing a user."
+        );
+
         uint256 n;
         address user;
         address associate;
@@ -169,23 +182,35 @@ contract UsersTest is Test {
 
         uint256 n;
         address associate;
-        for (uint256 i; i < nUsers * nAssociates; i++) {
-            n++;
-            associate = toAddress(n);
+        for (uint256 i; i < nUsers; i++) {
+            for (uint256 j; j < nAssociates; j++) {
+                n++;
+                associate = toAddress(n);
 
-            assertTrue(
-                pool.user(associate).isAllowed,
-                "Associate is allowed after another user is removed."
-            );
+                assertTrue(
+                    pool.user(associate).isAllowed,
+                    "Associate is allowed before associate is removed."
+                );
 
-            pool.removeAssociate(associate);
+                pool.removeAssociate(associate);
 
-            vm.expectRevert(
-                abi.encodeWithSelector(Users.UserNotFound.selector, associate)
-            );
-            pool.user(associate);
+                if (n < (i + 1) * nAssociates) {
+                    assertEq(
+                        pool.users().length,
+                        nUsers - i,
+                        "Pool has incorrect number of users after removing an associate."
+                    );
+                }
+
+                vm.expectRevert(
+                    abi.encodeWithSelector(
+                        Users.UserNotFound.selector,
+                        associate
+                    )
+                );
+                pool.user(associate);
+            }
         }
-
 
         for (uint256 i; i < nUsers * nAssociates; i++) {
             n++;
