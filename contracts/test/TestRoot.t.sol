@@ -36,7 +36,7 @@ contract TestRoot is Test, Context {
         uint256 fee_ = 1e15;
         // uint256 fee_ = 0;
 
-        for (uint256 i = 0; i < NTOKENS; i++) {
+        for (uint256 i; i < NTOKENS; i++) {
             uint256 amount = (i + 1) * 1e27;
             uint256 balance = 100 * amount;
             string memory name = "Token";
@@ -111,14 +111,14 @@ contract TestRoot is Test, Context {
         uint256 valueIn;
         uint256 valueOut;
 
-        for (uint256 i = 0; i < payTokens.length; i++) {
+        for (uint256 i; i < payTokens.length; i++) {
             valueIn += amounts[i].mulWadUp(price(payTokens[i]));
         }
 
         assertGt(valueIn, 0, "Value in must be greater than 0");
 
         uint256 fee_;
-        for (uint256 i = 0; i < receiveTokens.length; i++) {
+        for (uint256 i; i < receiveTokens.length; i++) {
             fee_ += allocations[i].mulWadUp(fee(receiveTokens[i]));
             valueOut += receiveAmounts[i].mulWadUp(price(receiveTokens[i]));
         }

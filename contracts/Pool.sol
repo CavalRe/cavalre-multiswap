@@ -353,7 +353,7 @@ contract Pool is LPToken, ReentrancyGuard {
         bool[] memory check_,
         bool isLP
     ) private view returns (bool) {
-        for (uint256 i = 0; i < tokens.length; i++) {
+        for (uint256 i; i < tokens.length; i++) {
             address token = tokens[i];
             if (token == address(0)) revert ZeroAddress();
             if (address(this) == token) {

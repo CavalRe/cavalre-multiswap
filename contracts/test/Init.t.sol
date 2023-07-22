@@ -69,7 +69,7 @@ contract InitTest is Test {
         pool.initialize();
 
         AssetState[] memory assets = pool.assets();
-        for (uint256 i = 0; i < assets.length; i++) {
+        for (uint256 i; i < assets.length; i++) {
             address token = assets[i].token;
             assertEq(token, assets[assets[i].index].token);
         }
