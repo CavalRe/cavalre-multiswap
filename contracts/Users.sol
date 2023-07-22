@@ -60,13 +60,21 @@ contract Users is Ownable {
         uint256 index_ = _userIndex[user_] - 1;
         uint256 lastIndex_ = _userList.length - 1;
 
+        // Reset _userIndex for all associates of user being removed
+        address[] memory associates = _userList[index_].associates;
+        for (uint256 i; i < associates.length; i++) {
+            delete _userIndex[associates[i]];
+        }
+
         if (index_ != lastIndex_) {
             _userList[index_] = _userList[lastIndex_];
-            _userIndex[_userList[lastIndex_].associates[0]] = index_ + 1;
+            // Reset _userIndex for all associates of user replacing the one being removed
+            associates = _userList[index_].associates;
+            for (uint256 i; i < associates.length; i++) {
+                _userIndex[associates[i]] = index_ + 1;
+            }
         }
         _userList.pop();
-
-        delete _userIndex[user_];
     }
 
     function setDiscount(address user_, uint256 discount_) public onlyOwner {
@@ -85,20 +93,22 @@ contract Users is Ownable {
     }
 
     function removeAssociate(
-        address user_,
         address associate_
     ) public onlyOwner {
-        if (_userIndex[user_] == 0) revert UserNotFound(user_);
         if (_userIndex[associate_] == 0) revert UserNotFound(associate_);
-        if (_userIndex[user_] != _userIndex[associate_])
-            revert InvalidUser(associate_);
 
-        uint256 index_ = _userIndex[user_] - 1;
-        uint256 lastIndex_ = _userList[index_].associates.length - 1;
+        uint256 index_ = _userIndex[associate_] - 1;
+        address[] memory associates = _userList[index_].associates;
 
-        if (index_ != lastIndex_) {
-            for (uint256 i = 0; i < _userList[index_].associates.length; i++) {
-                if (_userList[index_].associates[i] == associate_) {
+        if (associates.length == 1) {
+            removeUser(associate_);
+            return;
+        }
+
+        uint256 lastIndex_ = associates.length - 1;
+        if (associate_ != associates[lastIndex_]) {
+            for (uint256 i; i < associates.length - 1; i++) {
+                if (associate_ == associates[i]) {
                     _userList[index_].associates[i] = _userList[index_]
                         .associates[lastIndex_];
                     break;

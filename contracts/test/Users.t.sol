@@ -67,51 +67,134 @@ contract UsersTest is Test {
         pool.user(bob);
     }
 
-    function testUsers_associates() public {
-        pool.addUser(alice, 0);
-        pool.addUser(bob, 0);
-        pool.addAssociate(alice, carol);
+    function toAddress(uint256 value) public pure returns (address) {
+        return address(uint160(value));
+    }
 
-        assertTrue(
-            pool.user(alice).isAllowed,
-            "Alice is allowed after being allowed."
-        );
+    function createUsers(uint256 nUsers, uint256 nAssociates) public {
+        uint256 n;
+        address user;
+        address associate;
+        for (uint256 i; i < nUsers; i++) {
+            n++;
+            user = toAddress(n);
+            pool.addUser(user, 0);
+            for (uint256 j; j < nAssociates - 1; j++) {
+                n++;
+                associate = toAddress(n);
+                pool.addAssociate(user, associate);
+            }
+        }
+    }
 
-        assertEq(
-            pool.users()[0].associates[0],
-            alice,
-            "Alice is an associate of the first user."
-        );
+    function testAssociates_isAllowed() public {
+        uint256 nUsers = 3;
+        uint256 nAssociates = 10;
+        createUsers(nUsers, nAssociates);
 
-        assertEq(
-            pool.user(alice).associates[0],
-            alice,
-            "Alice is the first associate of Alice."
-        );
+        for (uint256 i; i < nUsers * nAssociates; i++) {
+            assertTrue(
+                pool.user(toAddress(i + 1)).isAllowed,
+                "Associate is allowed after being added."
+            );
+        }
+    }
 
-        assertEq(
-            pool.users()[1].associates[0],
-            bob,
-            "Bob is an associate of the second user."
-        );
+    function testAssociates_isAssociate() public {
+        uint256 nUsers = 3;
+        uint256 nAssociates = 10;
+        createUsers(nUsers, nAssociates);
 
-        assertEq(
-            pool.user(bob).associates[0],
-            bob,
-            "Bob is the first associate of Bob."
-        );
+        uint256 n;
+        address user;
+        address associate;
+        for (uint256 i; i < nUsers; i++) {
+            n++;
+            user = toAddress(n);
+            for (uint256 j; j < nAssociates - 1; j++) {
+                n++;
+                associate = toAddress(n);
+            }
+            assertEq(
+                pool.user(user).associates,
+                pool.user(associate).associates,
+                "Associate is not an associate of user."
+            );
+        }
+    }
 
-        assertEq(
-            pool.user(alice).associates[1],
-            carol,
-            "Carol is the second associate of Alice."
-        );
+    function testAssociates_removeUser() public {
+        uint256 nUsers = 3;
+        uint256 nAssociates = 10;
+        createUsers(nUsers, nAssociates);
 
-        pool.removeAssociate(carol, alice);
+        pool.removeUser(toAddress(11));
 
-        vm.expectRevert(
-            abi.encodeWithSelector(Users.UserNotFound.selector, alice)
-        );
-        pool.user(alice);
+        uint256 n;
+        address user;
+        address associate;
+        for (uint256 i; i < nUsers; i++) {
+            n++;
+            user = toAddress(n);
+            for (uint256 j; j < nAssociates - 1; j++) {
+                n++;
+                associate = toAddress(n);
+                if (n <= 10 || n > 20) {
+                    assertTrue(
+                        pool.user(associate).isAllowed,
+                        "Associate is allowed after another user is removed."
+                    );
+                    assertEq(
+                        pool.user(user).associates,
+                        pool.user(associate).associates,
+                        "Associate is not an associate of user."
+                    );
+                } else {
+                    vm.expectRevert(
+                        abi.encodeWithSelector(
+                            Users.UserNotFound.selector,
+                            associate
+                        )
+                    );
+                    pool.user(associate);
+                }
+            }
+        }
+    }
+
+    function testAssociates_removeAssociate() public {
+        uint256 nUsers = 3;
+        uint256 nAssociates = 10;
+        createUsers(nUsers, nAssociates);
+
+        uint256 n;
+        address associate;
+        for (uint256 i; i < nUsers * nAssociates; i++) {
+            n++;
+            associate = toAddress(n);
+
+            assertTrue(
+                pool.user(associate).isAllowed,
+                "Associate is allowed after another user is removed."
+            );
+
+            pool.removeAssociate(associate);
+
+            vm.expectRevert(
+                abi.encodeWithSelector(Users.UserNotFound.selector, associate)
+            );
+            pool.user(associate);
+        }
+
+
+        for (uint256 i; i < nUsers * nAssociates; i++) {
+            n++;
+            associate = toAddress(n);
+
+            vm.expectRevert(
+                abi.encodeWithSelector(Users.UserNotFound.selector, associate)
+            );
+            pool.user(associate);
+        }
     }
 }
