@@ -84,6 +84,7 @@ contract Users is Ownable {
     }
 
     function addAssociate(address user_, address associate_) public onlyOwner {
+        if (associate_ == address(0)) revert ZeroAddress();
         if (_userIndex[user_] == 0) revert UserNotFound(user_);
         if (_userIndex[associate_] != 0) revert UserAlreadyAdded(associate_);
 
@@ -91,9 +92,7 @@ contract Users is Ownable {
         _userList[_userIndex[user_] - 1].associates.push(associate_);
     }
 
-    function removeAssociate(
-        address associate_
-    ) public onlyOwner {
+    function removeAssociate(address associate_) public onlyOwner {
         if (_userIndex[associate_] == 0) revert UserNotFound(associate_);
 
         uint256 index_ = _userIndex[associate_] - 1;
