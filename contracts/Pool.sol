@@ -237,8 +237,6 @@ contract Pool is LPToken, ReentrancyGuard {
         _poolState.scale -= scale_;
         _poolState.meanScale -= scale_;
 
-        delete _assetState[token];
-
         SafeERC20.safeTransfer(
             IERC20(token),
             owner(),
@@ -253,6 +251,8 @@ contract Pool is LPToken, ReentrancyGuard {
             _assetState[_assetAddress[index_]].index = index_;
         }
         _assetAddress.pop();
+
+        delete _assetState[token];
     }
 
     function initialize() public onlyUninitialized onlyOwner {

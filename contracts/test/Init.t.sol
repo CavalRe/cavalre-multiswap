@@ -41,14 +41,24 @@ contract InitTest is Test {
         );
         pool.addAsset(address(tokenB), amount, 1e18, 1e18);
 
+        uint256 balanceBefore = tokenA.balanceOf(alice);
         pool.removeAsset(address(tokenA));
+
+        pool.assets();
+
+        assertEq(tokenA.balanceOf(alice) - balanceBefore, amount);
 
         vm.expectRevert(
             abi.encodeWithSelector(Pool.AssetNotFound.selector, address(tokenA))
         );
         pool.removeAsset(address(tokenA));
 
+        balanceBefore = tokenB.balanceOf(alice);
         pool.removeAsset(address(tokenB));
+
+        pool.assets();
+
+        assertEq(tokenB.balanceOf(alice) - balanceBefore, amount);
 
         tokenA.mint(amount);
         tokenA.approve(address(pool), amount);
