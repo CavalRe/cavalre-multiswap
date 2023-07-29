@@ -84,7 +84,7 @@ contract LPToken is ERC20, Ownable, Users {
         address spender
     ) public view override returns (uint256) {
         uint256 allowance_ = super.allowance(owner, spender);
-        if (allowance_ == type(uint256).max) return allowance_;
+        if (allowance_ > type(uint256).max / _ratio) return type(uint256).max;
         return allowance_.mulWadUp(_ratio);
     }
 
