@@ -83,14 +83,18 @@ contract LPToken is ERC20, Ownable, Users {
         address owner,
         address spender
     ) public view override returns (uint256) {
-        return super.allowance(owner, spender).mulWadUp(_ratio);
+        uint256 allowance_ = super.allowance(owner, spender);
+        if (allowance_ == type(uint256).max) return allowance_;
+        return allowance_.mulWadUp(_ratio);
     }
 
     function approve(
         address spender,
         uint256 amount
     ) public override returns (bool) {
-        amount = amount.divWadUp(_ratio);
+        if (amount != type(uint256).max) {
+            amount = amount.divWadUp(_ratio);
+        }
         return super.approve(spender, amount);
     }
 
@@ -112,15 +116,17 @@ contract LPToken is ERC20, Ownable, Users {
         address spender,
         uint256 addedValue
     ) public override returns (bool) {
-        addedValue = addedValue.divWadUp(_ratio);
-        return super.increaseAllowance(spender, addedValue);
+        address owner = _msgSender();
+        return approve(spender, allowance(owner, spender) + addedValue);
     }
 
     function decreaseAllowance(
         address spender,
         uint256 subtractedValue
     ) public override returns (bool) {
-        subtractedValue = subtractedValue.divWadUp(_ratio);
+        if (subtractedValue != type(uint256).max) {
+            subtractedValue = subtractedValue.divWadUp(_ratio);
+        }
         return super.decreaseAllowance(spender, subtractedValue);
     }
 

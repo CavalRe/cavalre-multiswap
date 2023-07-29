@@ -25,6 +25,10 @@ contract PoolMintable is Pool {
     function burn_(uint256 amount) public {
         super.burn(_msgSender(), amount);
     }
+
+    function spendAllowance_(address owner, uint256 amount) public {
+        super._spendAllowance(owner, _msgSender(), amount);
+    }
 }
 
 contract LPTokenTest is Test {
@@ -33,6 +37,39 @@ contract LPTokenTest is Test {
     function setUp() public {
         vm.roll(1);
         pool = new PoolMintable("Pool", "P", 1e16);
+    }
+
+    function testLPToken_allowance() public {
+        address alice = address(1);
+        address bob = address(2);
+
+        pool.addUser(alice, 0);
+
+        vm.startPrank(alice);
+
+        pool.increaseAllowance(bob, 1e18);
+        assertEq(pool.allowance(alice, bob), 1e18, "Allowance of alice to bob after increasing.");
+        pool.decreaseAllowance(bob, 1e18);
+        assertEq(pool.allowance(alice, bob), 0, "Allowance of alice to bob after decreasing.");
+
+        vm.stopPrank();
+
+        pool.addUser(bob, 0);
+
+        vm.startPrank(bob);
+
+        pool.increaseAllowance(alice, type(uint256).max);
+
+        uint256 allowanceBefore = pool.allowance(bob, alice);
+        assertEq(allowanceBefore, type(uint256).max, "Allowance of bob to alice after increasing.");
+
+        vm.stopPrank();
+
+        vm.startPrank(alice);
+
+        pool.spendAllowance_(bob, 1e18);
+
+        assertEq(pool.allowance(bob, alice), allowanceBefore, "Allowance of bob to alice after spending.");
     }
 
     function testLPToken_mint(uint256 amount) public {
