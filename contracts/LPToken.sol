@@ -57,7 +57,7 @@ contract LPToken is ERC20, Ownable, Users {
         _userList[_userIndex[recipient] - 1].isAllowed = true;
     }
 
-    function ratio() internal view returns (uint256) {
+    function ratio() public view returns (uint256) {
         return _ratio;
     }
 
