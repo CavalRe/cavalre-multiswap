@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 import "@cavalre/Pool.sol";
 import "@cavalre/test/Token.t.sol";
+import "@cavalre/Users.sol";
 import "forge-std/Test.sol";
 
 contract TestPool is Pool {
@@ -35,6 +36,7 @@ contract BetaTest is Test {
     uint256[] private fees = new uint256[](NTOKENS);
     uint256[] private prices = new uint256[](NTOKENS);
 
+    uint256 private constant ONE = 1e18;
     uint256 private tau = 1e16;
     uint256 private bps = 1e14;
 
@@ -395,5 +397,15 @@ contract BetaTest is Test {
         emit log("");
         showPool(pool);
         emit log("");
+    }
+
+    function testDiscount() public {
+        pool.setDiscount(alice, ONE);
+        testBetaSwap();
+
+        vm.expectRevert(
+            abi.encodeWithSelector(Users.InvalidDiscount.selector, 2 * ONE)
+        );
+        pool.setDiscount(alice, 2 * ONE);
     }
 }

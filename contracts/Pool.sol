@@ -173,6 +173,8 @@ contract Pool is LPToken, ReentrancyGuard {
         _poolState.symbol = symbol;
         _poolState.decimals = 18;
         _poolState.w = int256(ONE - tau);
+
+        addUser(_msgSender(), 0);
     }
 
     function fromCanonical(
@@ -442,7 +444,9 @@ contract Pool is LPToken, ReentrancyGuard {
                         scaledPoolOut,
                         _poolState.scale - scaledPoolOut
                     );
-                    feeAmount = poolOut.fullMulDiv(fee, poolAlloc);
+                    if (poolAlloc > 0) {
+                        feeAmount = poolOut.fullMulDiv(fee, poolAlloc);
+                    }
                 }
             }
 
