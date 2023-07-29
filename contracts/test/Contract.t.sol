@@ -52,8 +52,6 @@ contract ContractTest is Context, Test {
         pool = new Pool("Pool", "P", 1e16);
         tokens = new Token[](NTOKENS);
 
-        pool.addUser(alice, 0);
-
         addresses = new address[](NTOKENS);
         amounts = new uint256[](NTOKENS);
         fees = new uint256[](NTOKENS);

@@ -17,8 +17,6 @@ contract InitTest is Test {
         uint256 amount = 1e27;
         uint256 minReceiveAmount = 0;
 
-        pool.addUser(alice, 0);
-
         vm.expectRevert(abi.encodeWithSelector(Pool.NotInitialized.selector));
         pool.stake(address(tokenA), amount, minReceiveAmount);
         vm.expectRevert(abi.encodeWithSelector(Pool.NotInitialized.selector));

@@ -22,8 +22,6 @@ contract UsersTest is Test {
     }
 
     function testUsers_addUser() public {
-        pool.addUser(alice, 0);
-
         assertTrue(
             pool.user(alice).isAllowed,
             "Alice is allowed after being added as a user."
@@ -36,7 +34,6 @@ contract UsersTest is Test {
     }
 
     function testUsers_setAllowed() public {
-        pool.addUser(alice, 0);
         pool.setAllowed(alice, false);
 
         assertFalse(
@@ -51,7 +48,6 @@ contract UsersTest is Test {
         );
         pool.user(bob);
 
-        pool.addUser(alice, 0);
         pool.addUser(bob, 0);
 
         assertTrue(
@@ -72,7 +68,11 @@ contract UsersTest is Test {
     }
 
     function createUsers(uint256 nUsers, uint256 nAssociates) public {
-        assertEq(pool.users().length, 0, "Pool has users before adding users.");
+        assertEq(
+            pool.users().length,
+            1,
+            "Pool has one user (the owner) before adding users."
+        );
 
         uint256 n;
         address user;
@@ -80,7 +80,9 @@ contract UsersTest is Test {
         for (uint256 i; i < nUsers; i++) {
             n++;
             user = toAddress(n);
-            pool.addUser(user, 0);
+            if (n > 1) {
+                pool.addUser(user, 0);
+            }
             assertEq(
                 pool.users().length,
                 i + 1,

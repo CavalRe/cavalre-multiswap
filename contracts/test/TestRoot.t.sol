@@ -30,8 +30,6 @@ contract TestRoot is Test, Context {
         tokens = new Token[](NTOKENS);
         addresses = new address[](NTOKENS);
 
-        pool.addUser(alice, 0);
-
         uint256 scale_ = 1e27;
         uint256 fee_ = 1e15;
         // uint256 fee_ = 0;
