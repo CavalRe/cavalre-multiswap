@@ -26,10 +26,10 @@ contract InitTest is Test {
 
         tokenA.mint(amount);
         tokenA.approve(address(pool), amount);
-        pool.addAsset(address(tokenA), amount, 1e18, 1e18);
+        pool.addAsset(address(tokenA), amount, 1e15, 1e18);
         tokenB.mint(amount);
         tokenB.approve(address(pool), amount);
-        pool.addAsset(address(tokenB), amount, 1e18, 1e18);
+        pool.addAsset(address(tokenB), amount, 1e15, 1e18);
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -37,7 +37,7 @@ contract InitTest is Test {
                 address(tokenB)
             )
         );
-        pool.addAsset(address(tokenB), amount, 1e18, 1e18);
+        pool.addAsset(address(tokenB), amount, 1e15, 1e18);
 
         uint256 balanceBefore = tokenA.balanceOf(alice);
         pool.removeAsset(address(tokenA));
@@ -60,17 +60,17 @@ contract InitTest is Test {
 
         tokenA.mint(amount);
         tokenA.approve(address(pool), amount);
-        pool.addAsset(address(tokenA), amount, 1e18, 1e18);
+        pool.addAsset(address(tokenA), amount, 1e15, 1e18);
         tokenB.mint(amount);
         tokenB.approve(address(pool), amount);
-        pool.addAsset(address(tokenB), amount, 1e18, 1e18);
+        pool.addAsset(address(tokenB), amount, 1e15, 1e18);
 
         pool.initialize();
 
         vm.expectRevert(
             abi.encodeWithSelector(Pool.AlreadyInitialized.selector)
         );
-        pool.addAsset(address(tokenB), amount, 1e18, 1e18);
+        pool.addAsset(address(tokenB), amount, 1e15, 1e18);
         vm.expectRevert(
             abi.encodeWithSelector(Pool.AlreadyInitialized.selector)
         );
@@ -111,7 +111,7 @@ contract InitTest is Test {
         Token tokenA = new Token("Foo", "FOOA", 18);
         tokenA.mint(amount);
         tokenA.approve(address(pool), amount);
-        pool.addAsset(address(tokenA), amount, 1e18, 1e18);
+        pool.addAsset(address(tokenA), amount, 1e15, 1e18);
         vm.stopPrank();
     }
 }

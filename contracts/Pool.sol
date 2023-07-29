@@ -168,6 +168,7 @@ contract Pool is LPToken, ReentrancyGuard {
         string memory symbol,
         uint256 tau
     ) LPToken(name, symbol) {
+        if (tau >= ONE) revert TooLarge(tau);
         _poolState.token = address(this);
         _poolState.name = name;
         _poolState.symbol = symbol;
@@ -196,6 +197,7 @@ contract Pool is LPToken, ReentrancyGuard {
         if (_assetState[token_].token == token_) revert DuplicateToken(token_);
         if (balance_ == 0) revert ZeroBalance();
         if (scale_ == 0) revert ZeroScale();
+        if (fee_ >= ONE) revert TooLarge(fee_);
 
         _poolState.balance += scale_;
         _poolState.meanBalance += scale_;
