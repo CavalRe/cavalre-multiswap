@@ -448,6 +448,8 @@ contract BetaTest is Test {
 
         vm.stopPrank();
 
+        vm.startPrank(alice);
+
         vm.expectRevert(
             abi.encodeWithSelector(Users.InvalidDiscount.selector, 2 * ONE)
         );
