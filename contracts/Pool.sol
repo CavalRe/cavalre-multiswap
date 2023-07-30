@@ -175,7 +175,7 @@ contract Pool is LPToken, ReentrancyGuard {
         _poolState.decimals = 18;
         _poolState.w = int256(ONE - tau);
 
-        addUser(_msgSender(), 0);
+        _addUser(_msgSender(), 0);
     }
 
     function fromCanonical(

@@ -52,7 +52,7 @@ contract LPToken is ERC20, Ownable, Users {
     function setProtocolFeeRecipient(address recipient) public onlyOwner {
         _protocolFeeRecipient = recipient;
         if (_userIndex[recipient] == 0) {
-            addUser(recipient, 0);
+            _addUser(recipient, 0);
         }
         _userList[_userIndex[recipient] - 1].isAllowed = true;
     }

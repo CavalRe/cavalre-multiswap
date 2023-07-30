@@ -432,8 +432,21 @@ contract BetaTest is Test {
     }
 
     function testDiscount() public {
-        pool.setDiscount(alice, ONE);
-        testBetaSwap();
+        pool.addUser(bob, 0);
+        pool.setDiscount(bob, ONE);
+
+        vm.startPrank(bob);
+        tokens["USDC"].mint(oneAmount[0]);
+        tokens["USDC"].approve(address(pool), oneAmount[0]);
+
+        pool.swap(
+            oneAsset[0],
+            anotherAsset[0],
+            oneAmount[0],
+            oneMin[0]
+        );
+
+        vm.stopPrank();
 
         vm.expectRevert(
             abi.encodeWithSelector(Users.InvalidDiscount.selector, 2 * ONE)
