@@ -39,7 +39,7 @@ contract Users is Ownable {
         return _userList[_userIndex[user_] - 1];
     }
 
-    function addUser(address user_, uint256 discount_) public onlyOwner {
+    function _addUser(address user_, uint256 discount_) internal {
         if (user_ == address(0)) revert ZeroAddress();
         if (_userIndex[user_] > 0) revert UserAlreadyAdded(user_);
         if (discount_ > ONE) revert InvalidDiscount(discount_);
@@ -52,6 +52,10 @@ contract Users is Ownable {
         userState_.associates.push(user_);
 
         _userIndex[user_] = _userList.length;
+    }
+
+    function addUser(address user_, uint256 discount_) public onlyOwner {
+        _addUser(user_, discount_);
     }
 
     function removeUser(address user_) public onlyOwner {

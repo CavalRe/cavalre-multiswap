@@ -149,7 +149,7 @@ contract Pool is LPToken, ReentrancyGuard {
     modifier onlyOnce() {
         address userAddress_ = _msgSender();
         if (_userIndex[userAddress_] == 0) {
-            addUser(userAddress_, 0);
+            _addUser(userAddress_, 0);
         }
         UserState storage user_ = _userList[_userIndex[userAddress_] - 1];
         if (block.number == user_.lastBlock)

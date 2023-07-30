@@ -263,6 +263,10 @@ contract BetaTest is Test {
     }
 
     function testBetaSwap() public {
+        vm.startPrank(bob);
+        tokens["USDC"].mint(oneAmount[0]);
+        tokens["USDC"].approve(address(pool), oneAmount[0]);
+
         emit log("Initial state");
         emit log("");
         showPool(pool);
