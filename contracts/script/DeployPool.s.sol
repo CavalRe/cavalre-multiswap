@@ -98,12 +98,12 @@ contract DeployPoolScript is Script, Test {
         uint256 balance;
         uint256 conversion;
         for (uint256 i; i < 10; i++) {
-            value = marketCap.mulWadUp(weights[i]);
-            balance = value.divWadUp(prices[i]);
             token = Token(tokens[i]);
             conversion = 10 ** (18 - token.decimals());
-            token.mint(balance / conversion);
-            token.approve(address(pool), balance / conversion);
+            value = marketCap.mulWadUp(weights[i]);
+            balance = value.divWadUp(prices[i]) / conversion;
+            token.mint(balance);
+            token.approve(address(pool), balance);
             pool.addAsset(address(token), fees[i], balance, value);
         }
 

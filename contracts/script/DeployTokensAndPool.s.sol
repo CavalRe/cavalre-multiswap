@@ -68,11 +68,13 @@ contract DeployTokensAndPoolScript is Script, Test {
         tokens[9] = new Token("Bridged BTC", "BTC.b", 8);
 
         uint256 balance;
+        uint256 conversion;
         for (uint256 i; i < 10; i++) {
             token = tokens[i];
             emit log_named_address(token.symbol(), address(tokens[i]));
 
-            balance = marketCap.divWadUp(prices[i]);
+            conversion = 10 ** (18 - token.decimals());
+            balance = marketCap.divWadUp(prices[i]) / conversion;
             token.mint(balance);
             token.approve(address(pool), balance);
             pool.addAsset(address(token), fees[i], balance, marketCap);

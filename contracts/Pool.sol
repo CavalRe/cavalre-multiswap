@@ -188,7 +188,7 @@ contract Pool is LPToken, ReentrancyGuard {
     function addAsset(
         address token_,
         uint256 fee_, // 18 decimals
-        uint256 balance_, // 18 decimals
+        uint256 balance_, // Token decimals
         uint256 scale_ // 18 decimals
     ) public onlyUninitialized onlyOwner {
         if (token_ == address(0)) revert ZeroAddress();
@@ -197,27 +197,21 @@ contract Pool is LPToken, ReentrancyGuard {
         if (scale_ == 0) revert ZeroScale();
         if (fee_ >= ONE) revert TooLarge(fee_);
 
-        uint8 decimals_ = IERC20Metadata(token_).decimals();
-        uint256 conversion_ = 10 ** (18 - decimals_);
-
-        if (balance_ != conversion_ * (balance_ / conversion_))
-            revert IncorrectDecimals(
-                conversion_ * (balance_ / conversion_),
-                balance_
-            );
+        SafeERC20.safeTransferFrom(
+            IERC20(token_),
+            _msgSender(),
+            address(this),
+            balance_ // Convert from canonical
+        );
 
         _poolState.balance += scale_;
         _poolState.meanBalance += scale_;
         _poolState.scale += scale_;
         _poolState.meanScale += scale_;
 
-        SafeERC20.safeTransferFrom(
-            IERC20(token_),
-            _msgSender(),
-            address(this),
-            balance_ / conversion_ // Convert from canonical
-        );
-
+        uint8 decimals_ = IERC20Metadata(token_).decimals();
+        uint256 conversion_ = 10 ** (18 - decimals_);
+        balance_ *= conversion_; // Convert to canonical
         _assetState[token_] = AssetState(
             token_,
             _assetAddress.length,

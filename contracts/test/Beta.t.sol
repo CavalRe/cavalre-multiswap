@@ -145,13 +145,13 @@ contract BetaTest is Test {
             token = tokens[symbols[i]];
             conversion = 10 ** (18 - token.decimals());
             conversions[i] = conversion;
-            balance = marketCap.divWadUp(prices[i]);
-            token.mint(balance / conversion);
-            token.approve(address(pool), balance / conversion);
+            balance = marketCap.divWadUp(prices[i]) / conversion;
+            token.mint(balance);
+            token.approve(address(pool), balance);
             pool.addAsset(
                 address(token),
                 fees[i],
-                (balance / conversion) * conversion,
+                balance,
                 marketCap
             );
             // emit log("----------------");
