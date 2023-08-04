@@ -75,7 +75,7 @@ contract DeployTokensAndPoolScript is Script, Test {
             balance = marketCap.divWadUp(prices[i]);
             token.mint(balance);
             token.approve(address(pool), balance);
-            pool.addAsset(address(token), balance, fees[i], marketCap);
+            pool.addAsset(address(token), fees[i], balance, marketCap);
         }
 
         pool.initialize();

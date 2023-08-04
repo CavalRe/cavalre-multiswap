@@ -24,6 +24,7 @@ struct AssetState {
     string name;
     string symbol;
     uint8 decimals;
+    uint256 conversion;
     uint256 fee;
     uint256 balance;
     uint256 meanBalance;
@@ -111,9 +112,13 @@ contract Pool is LPToken, ReentrancyGuard {
 
     error DuplicateToken(address payToken);
 
+    error ExcessivePayAmount(uint256 expected, uint256 actual);
+
     error IncorrectAllocation(uint256 expected, uint256 actual);
 
-    error InsufficientOutputAmount(uint256 expected, uint256 actual);
+    error IncorrectDecimals(uint256 expected, uint256 actual);
+
+    error InsufficientReceiveAmount(uint256 expected, uint256 actual);
 
     error InvalidStake(address payToken);
 
@@ -130,6 +135,8 @@ contract Pool is LPToken, ReentrancyGuard {
     error OnlyOneTransaction(address user_);
 
     error TooLarge(uint256 size);
+
+    error TooSmall(uint256 size);
 
     error ZeroAllocation();
 
@@ -178,20 +185,11 @@ contract Pool is LPToken, ReentrancyGuard {
         _addUser(_msgSender(), 0);
     }
 
-    function fromCanonical(
-        uint256 amount,
-        uint8 decimals
-    ) internal pure returns (uint256) {
-        if (decimals == 18) return amount;
-        if (decimals < 18) return amount / (10 ** (18 - decimals));
-        return amount * (10 ** (decimals - 18));
-    }
-
     function addAsset(
         address token_,
-        uint256 balance_,
-        uint256 fee_,
-        uint256 scale_
+        uint256 fee_, // 18 decimals
+        uint256 balance_, // 18 decimals
+        uint256 scale_ // 18 decimals
     ) public onlyUninitialized onlyOwner {
         if (token_ == address(0)) revert ZeroAddress();
         if (_assetState[token_].token == token_) revert DuplicateToken(token_);
@@ -199,18 +197,25 @@ contract Pool is LPToken, ReentrancyGuard {
         if (scale_ == 0) revert ZeroScale();
         if (fee_ >= ONE) revert TooLarge(fee_);
 
+        uint8 decimals_ = IERC20Metadata(token_).decimals();
+        uint256 conversion_ = 10 ** (18 - decimals_);
+
+        if (balance_ != conversion_ * (balance_ / conversion_))
+            revert IncorrectDecimals(
+                conversion_ * (balance_ / conversion_),
+                balance_
+            );
+
         _poolState.balance += scale_;
         _poolState.meanBalance += scale_;
         _poolState.scale += scale_;
         _poolState.meanScale += scale_;
 
-        uint8 decimals_ = IERC20Metadata(token_).decimals();
-
         SafeERC20.safeTransferFrom(
             IERC20(token_),
             _msgSender(),
             address(this),
-            fromCanonical(balance_, decimals_)
+            balance_ / conversion_ // Convert from canonical
         );
 
         _assetState[token_] = AssetState(
@@ -219,6 +224,7 @@ contract Pool is LPToken, ReentrancyGuard {
             IERC20Metadata(token_).name(),
             IERC20Metadata(token_).symbol(),
             decimals_,
+            10 ** (18 - decimals_),
             fee_,
             balance_,
             balance_,
@@ -235,7 +241,6 @@ contract Pool is LPToken, ReentrancyGuard {
         if (asset_.token != token) revert AssetNotFound(token);
 
         uint256 scale_ = asset_.scale;
-
         _poolState.balance -= scale_;
         _poolState.meanBalance -= scale_;
         _poolState.scale -= scale_;
@@ -244,7 +249,7 @@ contract Pool is LPToken, ReentrancyGuard {
         SafeERC20.safeTransfer(
             IERC20(token),
             owner(),
-            fromCanonical(asset_.balance, asset_.decimals)
+            asset_.balance / asset_.conversion // Convert from canonical
         );
 
         uint256 index_ = asset_.index;
@@ -413,9 +418,9 @@ contract Pool is LPToken, ReentrancyGuard {
                 // Contribution from assets only
                 for (uint256 i; i < payTokens.length; i++) {
                     address token_ = payTokens[i];
-                    uint256 amount_ = amounts[i];
                     if (token_ != address(this)) {
                         AssetState storage assetIn = _assetState[token_];
+                        uint256 amount_ = amounts[i] * assetIn.conversion; // Convert to canonical
                         scaledValueIn += assetIn.scale.fullMulDiv(
                             amount_,
                             assetIn.balance + amount_
@@ -466,13 +471,15 @@ contract Pool is LPToken, ReentrancyGuard {
                         receiveAmounts[i] = poolOut - feeAmount;
                     } else {
                         AssetState storage assetOut = _assetState[receiveToken];
-                        receiveAmounts[i] = assetOut.balance.fullMulDiv(
-                            scaledValueOut,
-                            assetOut.scale + scaledValueOut
-                        );
+                        receiveAmounts[i] =
+                            assetOut.balance.fullMulDiv(
+                                scaledValueOut,
+                                assetOut.scale + scaledValueOut
+                            ) /
+                            assetOut.conversion; // Convert from canonical
                     }
                     if (receiveAmounts[i] < minReceiveAmounts[i]) {
-                        revert InsufficientOutputAmount(
+                        revert InsufficientReceiveAmount(
                             minReceiveAmounts[i],
                             receiveAmounts[i]
                         );
@@ -491,14 +498,15 @@ contract Pool is LPToken, ReentrancyGuard {
             if (payToken == address(this)) {
                 burn(sender, amount);
             } else {
-                _updateAssetBalance(payToken, amount, 0);
-
                 SafeERC20.safeTransferFrom(
                     IERC20(payToken),
                     sender,
                     address(this),
-                    fromCanonical(amount, IERC20Metadata(payToken).decimals())
+                    amount
                 );
+
+                amount *= _assetState[payToken].conversion; // Convert to canonical
+                _updateAssetBalance(payToken, amount, 0);
             }
         }
 
@@ -510,16 +518,14 @@ contract Pool is LPToken, ReentrancyGuard {
             if (receiveToken == address(this)) {
                 mint(sender, receiveAmount);
             } else {
-                _updateAssetBalance(receiveToken, 0, receiveAmount);
-
                 SafeERC20.safeTransfer(
                     IERC20(receiveToken),
                     sender,
-                    fromCanonical(
-                        receiveAmount,
-                        IERC20Metadata(receiveToken).decimals()
-                    )
+                    receiveAmount
                 );
+
+                receiveAmount *= _assetState[receiveToken].conversion; // Convert to canonical
+                _updateAssetBalance(receiveToken, 0, receiveAmount);
             }
         }
         _updatePoolBalance();
@@ -577,7 +583,9 @@ contract Pool is LPToken, ReentrancyGuard {
                 if (payToken == address(this)) {
                     balance_ = _poolState.balance;
                 } else {
-                    balance_ = _assetState[payToken].balance;
+                    balance_ =
+                        _assetState[payToken].balance /
+                        _assetState[payToken].conversion; // Convert from canonical
                 }
                 if (amounts[i] * 3 > balance_) revert TooLarge(amounts[i]);
             }
@@ -628,8 +636,10 @@ contract Pool is LPToken, ReentrancyGuard {
         if (_assetState[receiveToken].token != receiveToken)
             revert AssetNotFound(receiveToken);
         if (payAmount == 0) revert ZeroAmount();
-        if (payAmount * 3 > _assetState[payToken].balance)
-            revert TooLarge(payAmount);
+        if (
+            payAmount * 3 >
+            _assetState[payToken].balance / _assetState[payToken].conversion
+        ) revert TooLarge(payAmount);
 
         address sender = _msgSender();
         {
@@ -683,8 +693,10 @@ contract Pool is LPToken, ReentrancyGuard {
         if (payToken == address(this)) revert InvalidStake(payToken);
         if (_assetState[payToken].token != payToken)
             revert AssetNotFound(payToken);
-        if (payAmount * 3 > _assetState[payToken].balance)
-            revert TooLarge(payAmount);
+        if (
+            payAmount * 3 >
+            _assetState[payToken].balance / _assetState[payToken].conversion
+        ) revert TooLarge(payAmount);
 
         address sender = _msgSender();
         {
@@ -769,61 +781,50 @@ contract Pool is LPToken, ReentrancyGuard {
     }
 
     function addLiquidity(
-        address token,
-        uint256 amount,
-        uint256 minReceiveAmount
+        uint256 receiveAmount,
+        uint256[] memory maxPayAmounts
     )
         public
         onlyInitialized
         onlyAllowed
         onlyOnce
         nonReentrant
-        returns (uint256)
+        returns (uint256[] memory payAmounts)
     {
+        if (receiveAmount == 0) revert ZeroAmount();
+
         _txCount++;
 
         AssetState storage assetIn;
-        uint256 receiveAmount;
-        uint256[] memory payAmounts = new uint256[](_assetAddress.length);
-        if (token == address(0)) revert ZeroAddress();
-        assetIn = _assetState[token];
-        if (assetIn.token != token) revert AssetNotFound(token);
-        uint256 g = (assetIn.balance + amount).divWadUp(assetIn.balance);
-        receiveAmount = _poolState.balance.mulWadUp(g) - _poolState.balance;
-
-        if (receiveAmount < minReceiveAmount)
-            revert InsufficientOutputAmount(minReceiveAmount, receiveAmount);
-
+        payAmounts = new uint256[](_assetAddress.length);
         address sender = _msgSender();
 
+        uint256 g = (_poolState.balance + receiveAmount).divWadUp(
+            _poolState.balance
+        );
         for (uint256 i; i < _assetAddress.length; i++) {
             assetIn = _assetState[_assetAddress[i]];
-            uint256 amountIn;
-            if (assetIn.token == token) {
-                amountIn = amount;
-            } else {
-                amountIn = assetIn.balance.mulWadUp(g) - assetIn.balance;
-            }
-            payAmounts[i] = amountIn;
-            _updateAssetBalance(_assetAddress[i], amountIn, 0);
+            uint256 payAmount = (assetIn.balance.mulWadUp(g) -
+                assetIn.balance) / assetIn.conversion;
+            if (payAmount > maxPayAmounts[i])
+                revert ExcessivePayAmount(maxPayAmounts[i], payAmount);
+            payAmounts[i] = payAmount;
 
             SafeERC20.safeTransferFrom(
                 IERC20(assetIn.token),
                 sender,
                 address(this),
-                fromCanonical(
-                    amountIn,
-                    IERC20Metadata(assetIn.token).decimals()
-                )
+                payAmount
             );
+
+            payAmount *= assetIn.conversion; // Convert to canonical
+            _updateAssetBalance(_assetAddress[i], payAmount, 0);
         }
 
         mint(sender, receiveAmount);
         _updatePoolBalance();
 
         emit AddLiquidity(_txCount, sender, payAmounts, receiveAmount);
-
-        return receiveAmount;
     }
 
     function _removeLiquidity(

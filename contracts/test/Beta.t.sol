@@ -34,21 +34,6 @@ import "@cavalre/test/Token.t.sol";
 import "@cavalre/Users.sol";
 import "forge-std/Test.sol";
 
-contract TestPool is Pool {
-    constructor(
-        string memory name_,
-        string memory symbol_,
-        uint256 tau_
-    ) Pool(name_, symbol_, tau_) {}
-
-    function fromCanonical_(
-        uint256 amount_,
-        uint8 decimals_
-    ) public pure returns (uint256) {
-        return super.fromCanonical(amount_, decimals_);
-    }
-}
-
 contract BetaTest is Test {
     using FixedPointMathLib for uint256;
 
@@ -56,13 +41,14 @@ contract BetaTest is Test {
 
     mapping(string => Token) private tokens;
     string[] private symbols = new string[](NTOKENS);
-    TestPool private pool;
+    Pool private pool;
     address private alice = address(1);
     address private bob = address(2);
     address private carol = address(3);
 
     uint256[] private fees = new uint256[](NTOKENS);
     uint256[] private prices = new uint256[](NTOKENS);
+    uint256[] private conversions = new uint256[](NTOKENS);
 
     uint256 private constant ONE = 1e18;
     uint256 private tau = 1e16;
@@ -74,8 +60,11 @@ contract BetaTest is Test {
     address[] private anotherAsset = new address[](1);
     address[] private onePool = new address[](1);
     uint256[] private oneAmount = new uint256[](1);
+    uint256[] private oneConversion = new uint256[](1);
+    uint256[] private anotherConversion = new uint256[](1);
     uint256[] private oneAllocation = new uint256[](1);
     uint256[] private oneMin = new uint256[](1);
+    uint256[] private oneMax = new uint256[](1);
 
     address[] private twoTokens = new address[](2);
     uint256[] private twoAmounts = new uint256[](2);
@@ -84,6 +73,7 @@ contract BetaTest is Test {
 
     uint256[] private allAmounts = new uint256[](NTOKENS);
     uint256[] private allMins = new uint256[](NTOKENS);
+    uint256[] private allMaxs = new uint256[](NTOKENS);
 
     uint256 private amountOut;
     uint256[] private receiveAmounts;
@@ -125,7 +115,7 @@ contract BetaTest is Test {
         symbols[9] = token.symbol();
         tokens[token.symbol()] = token;
 
-        pool = new TestPool("Pool", "P", tau);
+        pool = new Pool("Pool", "P", tau);
 
         fees[0] = 15 * bps;
         fees[1] = 5 * bps;
@@ -149,14 +139,28 @@ contract BetaTest is Test {
         prices[8] = 30065e18;
         prices[9] = 30065e18;
 
+        uint256 conversion;
         uint256 balance;
         for (uint256 i; i < NTOKENS; i++) {
             token = tokens[symbols[i]];
-
+            conversion = 10 ** (18 - token.decimals());
+            conversions[i] = conversion;
             balance = marketCap.divWadUp(prices[i]);
-            token.mint(balance);
-            token.approve(address(pool), balance);
-            pool.addAsset(address(token), balance, fees[i], marketCap);
+            token.mint(balance / conversion);
+            token.approve(address(pool), balance / conversion);
+            pool.addAsset(
+                address(token),
+                fees[i],
+                (balance / conversion) * conversion,
+                marketCap
+            );
+            // emit log("----------------");
+            // emit log_named_string("Symbol", token.symbol());
+            // emit log_named_uint("Conversion", conversion);
+            // emit log_named_uint("Balance", balance);
+            // emit log_named_string("Minted", token.symbol());
+            // emit log_named_string("Approved", token.symbol());
+            // emit log_named_string("Added", token.symbol());
         }
 
         pool.initialize();
@@ -166,13 +170,17 @@ contract BetaTest is Test {
             balance = token.balanceOf(address(pool));
             token.mint(balance);
             token.approve(address(pool), balance);
+            allMaxs[i] = type(uint256).max;
         }
 
         oneAsset[0] = address(tokens["USDC"]);
+        oneConversion[0] = conversions[1];
         anotherAsset[0] = address(tokens["BTC.b"]);
+        anotherConversion[0] = conversions[9];
         onePool[0] = address(pool);
         oneAmount[0] = 1e24;
         oneAllocation[0] = 1e18;
+        oneMax[0] = type(uint256).max;
     }
 
     function testDecimals() public {
@@ -222,7 +230,7 @@ contract BetaTest is Test {
         for (uint256 i; i < NTOKENS; i++) {
             assertEq(assets[i].symbol, symbols[i], "Asset symbol");
             assertEq(
-                pool.fromCanonical_(assets[i].balance, assets[i].decimals),
+                assets[i].balance / assets[i].conversion,
                 tokens[symbols[i]].balanceOf(address(pool)),
                 "Asset balance"
             );
@@ -264,24 +272,26 @@ contract BetaTest is Test {
 
     function testBetaSwap() public {
         vm.startPrank(bob);
-        tokens["USDC"].mint(oneAmount[0]);
-        tokens["USDC"].approve(address(pool), oneAmount[0]);
+
+        uint256 amount = oneAmount[0] / oneConversion[0];
+        tokens["USDC"].mint(amount);
+        tokens["USDC"].approve(address(pool), amount);
 
         emit log("Initial state");
         emit log("");
         showPool(pool);
         emit log("");
-        emit log_named_uint("amountIn", oneAmount[0]);
+        emit log_named_uint("amountIn", amount);
         emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
         (amountOut, feeAmount) = pool.swap(
             oneAsset[0],
             anotherAsset[0],
-            oneAmount[0],
+            amount,
             oneMin[0]
         );
         emit log("State after swap");
         emit log("");
-        emit log_named_uint("amountIn", oneAmount[0]);
+        emit log_named_uint("amountIn", amount);
         emit log_named_uint("amountOut", amountOut);
         emit log_named_uint("feeAmount", feeAmount);
         emit log("");
@@ -290,17 +300,15 @@ contract BetaTest is Test {
     }
 
     function testBetaStake() public {
+        uint256 amount = oneAmount[0] / oneConversion[0];
+
         emit log("Initial state");
         emit log("");
         showPool(pool);
         emit log("");
-        emit log_named_uint("amountIn", oneAmount[0]);
+        emit log_named_uint("amountIn", amount);
         emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
-        (amountOut, feeAmount) = pool.stake(
-            oneAsset[0],
-            oneAmount[0],
-            oneMin[0]
-        );
+        (amountOut, feeAmount) = pool.stake(oneAsset[0], amount, oneMin[0]);
         emit log("State after stake");
         emit log("");
         emit log_named_uint("amountOut", amountOut);
@@ -332,6 +340,9 @@ contract BetaTest is Test {
     }
 
     function testBetaMixedStake() public {
+        uint256[] memory amount = new uint256[](1);
+        amount[0] = oneAmount[0] / oneConversion[0];
+
         twoTokens[0] = address(pool);
         twoTokens[1] = anotherAsset[0];
         twoAmounts[0] = 5e17;
@@ -344,7 +355,7 @@ contract BetaTest is Test {
         emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
         (receiveAmounts, feeAmount) = pool.multiswap(
             oneAsset,
-            oneAmount,
+            amount,
             twoTokens,
             twoAmounts,
             twoMins
@@ -363,7 +374,7 @@ contract BetaTest is Test {
         twoTokens[0] = address(pool);
         twoTokens[1] = oneAsset[0];
         twoAmounts[0] = oneAmount[0];
-        twoAmounts[1] = oneAmount[0];
+        twoAmounts[1] = oneAmount[0] / oneConversion[0];
         emit log("=============");
         emit log("Initial state");
         emit log("");
@@ -398,12 +409,9 @@ contract BetaTest is Test {
         emit log_named_uint("amountIn", oneAmount[0]);
         emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
         emit log("");
-        amountOut = pool.addLiquidity(oneAsset[0], oneAmount[0], oneMin[0]);
+        pool.addLiquidity(oneAmount[0], allMaxs);
         emit log("=================");
         emit log("State after addLiquidity");
-        emit log("");
-        emit log_named_uint("amountOut", amountOut);
-        emit log_named_uint("feeAmount", feeAmount);
         emit log("");
         showPool(pool);
         emit log("");
@@ -436,15 +444,11 @@ contract BetaTest is Test {
         pool.setDiscount(bob, ONE);
 
         vm.startPrank(bob);
-        tokens["USDC"].mint(oneAmount[0]);
-        tokens["USDC"].approve(address(pool), oneAmount[0]);
+        uint256 amount = oneAmount[0] / oneConversion[0];
+        tokens["USDC"].mint(amount);
+        tokens["USDC"].approve(address(pool), amount);
 
-        pool.swap(
-            oneAsset[0],
-            anotherAsset[0],
-            oneAmount[0],
-            oneMin[0]
-        );
+        pool.swap(oneAsset[0], anotherAsset[0], amount, oneMin[0]);
 
         vm.stopPrank();
 

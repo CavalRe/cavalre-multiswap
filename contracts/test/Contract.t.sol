@@ -40,6 +40,7 @@ contract ContractTest is Context, Test {
     uint256[] private twoMins = new uint256[](2);
 
     uint256[] private allMins = new uint256[](NTOKENS);
+    uint256[] private allMaxs = new uint256[](NTOKENS);
 
     uint256 private amountOut;
     uint256[] private receiveAmounts;
@@ -74,7 +75,7 @@ contract ContractTest is Context, Test {
             token = new Token(name, symbol, 18);
             token.mint(balance);
             token.approve(address(pool), balance);
-            pool.addAsset(address(token), balance, fee, scale);
+            pool.addAsset(address(token), fee, balance, scale);
 
             tokens[i] = token;
 
@@ -86,11 +87,20 @@ contract ContractTest is Context, Test {
 
         pool.initialize();
 
+        emit log_named_string("name", pool.name());
+        emit log_named_uint("balance", pool.info().balance);
         for (uint256 i; i < NTOKENS; i++) {
             token = tokens[i];
             balance = token.balanceOf(address(pool));
             token.mint(balance);
             token.approve(address(pool), balance);
+            allMaxs[i] = type(uint256).max;
+            emit log_named_string("name", token.name());
+            emit log_named_uint("balance", balance);
+            emit log_named_uint(
+                "allowance",
+                token.allowance(alice, address(pool))
+            );
         }
 
         oneAsset[0] = addresses[0];
@@ -388,14 +398,16 @@ contract ContractTest is Context, Test {
         emit log("");
         showPool(pool);
         emit log("");
-        pool.addLiquidity(
-            addresses[0],
-            tokens[0].balanceOf(address(pool)) / 2,
-            0
-        );
+        uint256[] memory payAmounts;
+        payAmounts = pool.addLiquidity(1e18, allMaxs);
         emit log("======================");
         for (uint256 i; i < addresses.length; i++) {
             postTradePrices[i] = price(addresses[i]);
+            emit log_named_uint("Pay Amount", payAmounts[i]);
+            emit log_named_uint(
+                "Conversion",
+                pool.asset(addresses[i]).conversion
+            );
             emit log_named_uint("Pre-Trade Price", preTradePrices[i]);
             emit log_named_uint("Post-Trade Price", postTradePrices[i]);
             emit log("");
@@ -424,7 +436,7 @@ contract ContractTest is Context, Test {
         showPool(pool);
         emit log("");
         uint256 amount_ = tokens[0].balanceOf(address(pool)) / 2;
-        amount_ = pool.addLiquidity(addresses[0], amount_, 0);
+        pool.addLiquidity(oneAmount[0], allMaxs);
         for (uint256 i; i < addresses.length; i++) {
             midTradePrices[i] = price(addresses[i]);
         }

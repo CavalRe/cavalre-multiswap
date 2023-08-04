@@ -46,7 +46,7 @@ contract TestRoot is Test, Context {
             tokens[i] = token;
             addresses[i] = address(token);
 
-            pool.addAsset(address(token), balance, fee_, scale_);
+            pool.addAsset(address(token), fee_, balance, scale_);
         }
 
         pool.initialize();
