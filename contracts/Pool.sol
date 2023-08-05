@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import {LPToken, UserState, FixedPointMathLib, IERC20, IERC20Metadata} from "@cavalre/LPToken.sol";
+import {LPToken, UserState, FixedPointMathLib} from "@cavalre/LPToken.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 struct PoolState {
@@ -261,7 +262,7 @@ contract Pool is LPToken, ReentrancyGuard {
     function initialize() public onlyUninitialized onlyOwner {
         _isInitialized = 1;
 
-        mint(_msgSender(), _poolState.scale);
+        _mint(_msgSender(), _poolState.scale);
     }
 
     function info() public view returns (PoolState memory) {
@@ -490,7 +491,7 @@ contract Pool is LPToken, ReentrancyGuard {
             address payToken = payTokens[i];
             uint256 amount = amounts[i];
             if (payToken == address(this)) {
-                burn(sender, amount);
+                _burn(sender, amount);
             } else {
                 SafeERC20.safeTransferFrom(
                     IERC20(payToken),
@@ -510,7 +511,7 @@ contract Pool is LPToken, ReentrancyGuard {
             uint256 receiveAmount = receiveAmounts[i];
             // Update _balance and asset balances.
             if (receiveToken == address(this)) {
-                mint(sender, receiveAmount);
+                _mint(sender, receiveAmount);
             } else {
                 SafeERC20.safeTransfer(
                     IERC20(receiveToken),
@@ -815,7 +816,7 @@ contract Pool is LPToken, ReentrancyGuard {
             _updateAssetBalance(_assetAddress[i], payAmount, 0);
         }
 
-        mint(sender, receiveAmount);
+        _mint(sender, receiveAmount);
         _updatePoolBalance();
 
         emit AddLiquidity(_txCount, sender, payAmounts, receiveAmount);
