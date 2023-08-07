@@ -7,9 +7,10 @@ import "forge-std/Test.sol";
 
 contract SetProtocolFeeScript is Script, Test {
 
-    uint256 public deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+    uint256 private deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+    address private poolAddress = vm.envAddress("POOL_ADDRESS");
 
-    Pool private pool = Pool(0x34c8b5c7793fCd063a87ee84d05d4F19F9900C00);
+    Pool private pool = Pool(poolAddress);
 
     function run() external {
         vm.startBroadcast(deployerPrivateKey);
