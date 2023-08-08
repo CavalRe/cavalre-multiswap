@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
+import "@cavalre/LPToken.sol";
 import "@cavalre/Pool.sol";
 import "@cavalre/Users.sol";
 import "forge-std/Test.sol";
@@ -94,7 +95,7 @@ contract LPTokenTest is Test {
         vm.startPrank(bob);
 
         vm.expectRevert(
-            abi.encodeWithSelector(LPToken.UserNotAllowed.selector, bob)
+            abi.encodeWithSelector(ILPToken.UserNotAllowed.selector, bob)
         );
         pool.mint_(amount);
     }
@@ -211,7 +212,7 @@ contract LPTokenTest is Test {
         vm.startPrank(bob);
 
         vm.expectRevert(
-            abi.encodeWithSelector(LPToken.UserNotAllowed.selector, alice)
+            abi.encodeWithSelector(ILPToken.UserNotAllowed.selector, alice)
         );
         pool.transferFrom(alice, carol, amount);
 

@@ -9,10 +9,11 @@
 
 pragma solidity 0.8.19;
 
+import {ILPToken} from "@cavalre/ILPToken.sol";
 import {Users, UserState, FixedPointMathLib} from "@cavalre/Users.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract LPToken is Ownable, Users {
+contract LPToken is ILPToken, Ownable, Users {
     using FixedPointMathLib for uint256;
 
     mapping(address => uint256) private _virtualBalances;
@@ -30,22 +31,6 @@ contract LPToken is Ownable, Users {
     address private _protocolFeeRecipient;
 
     bool internal _tradingPaused;
-
-    event Approval(
-        address indexed owner,
-        address indexed spender,
-        uint256 value
-    );
-
-    event DistributeFee(uint256 lpAmount, uint256 protocolAmount);
-
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    error InvalidProtocolFee(uint256 fee);
-
-    error TradingPaused();
-
-    error UserNotAllowed(address user_);
 
     modifier onlyAllowed() {
         if (_tradingPaused) revert TradingPaused();
