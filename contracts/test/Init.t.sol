@@ -17,11 +17,11 @@ contract InitTest is Test {
         uint256 amount = 1e27;
         uint256 minReceiveAmount = 0;
 
-        vm.expectRevert(abi.encodeWithSelector(Pool.NotInitialized.selector));
+        vm.expectRevert(abi.encodeWithSelector(IPool.NotInitialized.selector));
         pool.stake(address(tokenA), amount, minReceiveAmount);
-        vm.expectRevert(abi.encodeWithSelector(Pool.NotInitialized.selector));
+        vm.expectRevert(abi.encodeWithSelector(IPool.NotInitialized.selector));
         pool.unstake(address(tokenB), amount, minReceiveAmount);
-        vm.expectRevert(abi.encodeWithSelector(Pool.NotInitialized.selector));
+        vm.expectRevert(abi.encodeWithSelector(IPool.NotInitialized.selector));
         pool.swap(address(tokenA), address(tokenB), amount, minReceiveAmount);
 
         tokenA.mint(amount);
@@ -33,7 +33,7 @@ contract InitTest is Test {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Pool.DuplicateToken.selector,
+                IPool.DuplicateToken.selector,
                 address(tokenB)
             )
         );
@@ -47,7 +47,7 @@ contract InitTest is Test {
         assertEq(tokenA.balanceOf(alice) - balanceBefore, amount);
 
         vm.expectRevert(
-            abi.encodeWithSelector(Pool.AssetNotFound.selector, address(tokenA))
+            abi.encodeWithSelector(IPool.AssetNotFound.selector, address(tokenA))
         );
         pool.removeAsset(address(tokenA));
 
@@ -68,11 +68,11 @@ contract InitTest is Test {
         pool.initialize();
 
         vm.expectRevert(
-            abi.encodeWithSelector(Pool.AlreadyInitialized.selector)
+            abi.encodeWithSelector(IPool.AlreadyInitialized.selector)
         );
         pool.addAsset(address(tokenB), 1e15, amount, 1e18);
         vm.expectRevert(
-            abi.encodeWithSelector(Pool.AlreadyInitialized.selector)
+            abi.encodeWithSelector(IPool.AlreadyInitialized.selector)
         );
         pool.initialize();
 

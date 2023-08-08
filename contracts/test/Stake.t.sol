@@ -58,7 +58,7 @@ contract StakeTest is TestRoot {
         payToken.approve(address(pool), amount);
         if (amount * 3 > balance) {
             vm.expectRevert(
-                abi.encodeWithSelector(Pool.TooLarge.selector, amount)
+                abi.encodeWithSelector(IPool.TooLarge.selector, amount)
             );
             pool.stake(address(payToken), amount, 0);
         } else {
@@ -89,7 +89,7 @@ contract StakeTest is TestRoot {
         Token token = new Token("Foo", "FOO", 18);
         address depositAddress = address(token);
         vm.expectRevert(
-            abi.encodeWithSelector(Pool.AssetNotFound.selector, depositAddress)
+            abi.encodeWithSelector(IPool.AssetNotFound.selector, depositAddress)
         );
         pool.stake(depositAddress, 0, 0);
     }

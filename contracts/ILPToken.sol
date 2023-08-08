@@ -9,7 +9,7 @@
 
 pragma solidity 0.8.19;
 
-import {IUsers} from "@cavalre/Users.sol";
+import {IUsers} from "@cavalre/IUsers.sol";
 
 interface ILPToken is IUsers {
     event Approval(

@@ -119,7 +119,7 @@ contract UnstakeTest is TestRoot {
 
         if (amountOut * 3 > pool.info().balance) {
             vm.expectRevert(
-                abi.encodeWithSelector(Pool.TooLarge.selector, amountOut)
+                abi.encodeWithSelector(IPool.TooLarge.selector, amountOut)
             );
             pool.unstake(address(receiveToken), amountOut, 0);
         } else {
@@ -166,7 +166,7 @@ contract UnstakeTest is TestRoot {
         address withdrawalAddress = address(token);
         vm.expectRevert(
             abi.encodeWithSelector(
-                Pool.AssetNotFound.selector,
+                IPool.AssetNotFound.selector,
                 withdrawalAddress
             )
         );
@@ -192,7 +192,7 @@ contract UnstakeTest is TestRoot {
 
         if (3 * amount > pool.info().balance) {
             vm.expectRevert(
-                abi.encodeWithSelector(Pool.TooLarge.selector, amount)
+                abi.encodeWithSelector(IPool.TooLarge.selector, amount)
             );
             pool.unstake(address(receiveToken), amount, 0);
         } else {

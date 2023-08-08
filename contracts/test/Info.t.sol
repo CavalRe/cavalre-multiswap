@@ -38,7 +38,7 @@ contract InfoTest is TestRoot {
     function testCannotInvalidAsset() public {
         Token token = new Token("Foo", "FOO", 18);
         vm.expectRevert(
-            abi.encodeWithSelector(Pool.AssetNotFound.selector, address(token))
+            abi.encodeWithSelector(IPool.AssetNotFound.selector, address(token))
         );
         pool.asset(address(token));
     }

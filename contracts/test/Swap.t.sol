@@ -88,7 +88,7 @@ contract SwapTest is TestRoot {
 
         if (amount * 3 > balance) {
             vm.expectRevert(
-                abi.encodeWithSelector(Pool.TooLarge.selector, amount)
+                abi.encodeWithSelector(IPool.TooLarge.selector, amount)
             );
             pool.swap(address(depositToken), address(withdrawToken), amount, 0);
         } else {
@@ -121,7 +121,7 @@ contract SwapTest is TestRoot {
         address depositAddress = address(token);
         address withdrawAddress = address(tokens[0]);
         vm.expectRevert(
-            abi.encodeWithSelector(Pool.AssetNotFound.selector, depositAddress)
+            abi.encodeWithSelector(IPool.AssetNotFound.selector, depositAddress)
         );
         pool.swap(depositAddress, withdrawAddress, 1, 0);
     }
@@ -131,7 +131,7 @@ contract SwapTest is TestRoot {
         address depositAddress = address(tokens[0]);
         address withdrawAddress = address(token);
         vm.expectRevert(
-            abi.encodeWithSelector(Pool.AssetNotFound.selector, withdrawAddress)
+            abi.encodeWithSelector(IPool.AssetNotFound.selector, withdrawAddress)
         );
         pool.swap(depositAddress, withdrawAddress, 1, 0);
     }
@@ -146,7 +146,7 @@ contract SwapTest is TestRoot {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Pool.DuplicateToken.selector,
+                IPool.DuplicateToken.selector,
                 address(depositToken)
             )
         );
@@ -160,7 +160,7 @@ contract SwapTest is TestRoot {
         depositToken.mint(amount);
         depositToken.approve(address(pool), amount);
 
-        vm.expectRevert(abi.encodeWithSelector(Pool.ZeroAmount.selector));
+        vm.expectRevert(abi.encodeWithSelector(IPool.ZeroAmount.selector));
         pool.swap(address(depositToken), address(withdrawToken), amount, 0);
     }
 
@@ -196,7 +196,7 @@ contract SwapTest is TestRoot {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Pool.AssetNotFound.selector,
+                IPool.AssetNotFound.selector,
                 address(outside)
             )
         );
@@ -212,7 +212,7 @@ contract SwapTest is TestRoot {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Pool.AssetNotFound.selector,
+                IPool.AssetNotFound.selector,
                 address(depositToken)
             )
         );
@@ -244,7 +244,7 @@ contract SwapTest is TestRoot {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Pool.InvalidSwap.selector,
+                IPool.InvalidSwap.selector,
                 address(depositTokenA),
                 address(pool)
             )
@@ -261,7 +261,7 @@ contract SwapTest is TestRoot {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Pool.InvalidSwap.selector,
+                IPool.InvalidSwap.selector,
                 address(pool),
                 address(depositTokenA)
             )

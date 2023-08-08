@@ -212,7 +212,7 @@ contract ContractTest is Context, Test {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Pool.InvalidSwap.selector,
+                IPool.InvalidSwap.selector,
                 address(pool),
                 anotherAsset[0]
             )
@@ -221,7 +221,7 @@ contract ContractTest is Context, Test {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Pool.InvalidSwap.selector,
+                IPool.InvalidSwap.selector,
                 oneAsset[0],
                 address(pool)
             )
@@ -253,7 +253,7 @@ contract ContractTest is Context, Test {
         emit log_named_uint("amountOut", amountOut);
 
         vm.expectRevert(
-            abi.encodeWithSelector(Pool.InvalidStake.selector, address(pool))
+            abi.encodeWithSelector(IPool.InvalidStake.selector, address(pool))
         );
         pool.stake(address(pool), amounts[0], oneMin[0]);
     }
@@ -301,7 +301,7 @@ contract ContractTest is Context, Test {
         emit log("");
 
         vm.expectRevert(
-            abi.encodeWithSelector(Pool.InvalidUnstake.selector, address(pool))
+            abi.encodeWithSelector(IPool.InvalidUnstake.selector, address(pool))
         );
         pool.unstake(address(pool), amounts[0], oneMin[0]);
     }
