@@ -28,7 +28,7 @@ contract UsersTest is Test {
         );
 
         vm.expectRevert(
-            abi.encodeWithSelector(Users.UserAlreadyAdded.selector, alice)
+            abi.encodeWithSelector(IUsers.UserAlreadyAdded.selector, alice)
         );
         pool.addUser(alice, 0);
     }
@@ -44,7 +44,7 @@ contract UsersTest is Test {
 
     function testUsers_userNotFound() public {
         vm.expectRevert(
-            abi.encodeWithSelector(Users.UserNotFound.selector, bob)
+            abi.encodeWithSelector(IUsers.UserNotFound.selector, bob)
         );
         pool.user(bob);
 
@@ -58,7 +58,7 @@ contract UsersTest is Test {
         pool.removeUser(bob);
 
         vm.expectRevert(
-            abi.encodeWithSelector(Users.UserNotFound.selector, bob)
+            abi.encodeWithSelector(IUsers.UserNotFound.selector, bob)
         );
         pool.user(bob);
     }
@@ -167,7 +167,7 @@ contract UsersTest is Test {
                 } else {
                     vm.expectRevert(
                         abi.encodeWithSelector(
-                            Users.UserNotFound.selector,
+                            IUsers.UserNotFound.selector,
                             associate
                         )
                     );
@@ -206,7 +206,7 @@ contract UsersTest is Test {
 
                 vm.expectRevert(
                     abi.encodeWithSelector(
-                        Users.UserNotFound.selector,
+                        IUsers.UserNotFound.selector,
                         associate
                     )
                 );
@@ -219,7 +219,7 @@ contract UsersTest is Test {
             associate = toAddress(n);
 
             vm.expectRevert(
-                abi.encodeWithSelector(Users.UserNotFound.selector, associate)
+                abi.encodeWithSelector(IUsers.UserNotFound.selector, associate)
             );
             pool.user(associate);
         }

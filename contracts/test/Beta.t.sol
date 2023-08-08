@@ -455,7 +455,7 @@ contract BetaTest is Test {
         vm.startPrank(alice);
 
         vm.expectRevert(
-            abi.encodeWithSelector(Users.InvalidDiscount.selector, 2 * ONE)
+            abi.encodeWithSelector(IUsers.InvalidDiscount.selector, 2 * ONE)
         );
         pool.setDiscount(alice, 2 * ONE);
     }

@@ -155,7 +155,7 @@ contract LPTokenTest is Test {
         assertEq(pool.totalSupply(), amount, "Total supply after minting.");
 
         vm.expectRevert(
-            abi.encodeWithSelector(Users.UserNotFound.selector, bob)
+            abi.encodeWithSelector(IUsers.UserNotFound.selector, bob)
         );
         pool.transfer(bob, amount);
 
@@ -192,7 +192,7 @@ contract LPTokenTest is Test {
         vm.startPrank(bob);
 
         vm.expectRevert(
-            abi.encodeWithSelector(Users.UserNotFound.selector, carol)
+            abi.encodeWithSelector(IUsers.UserNotFound.selector, carol)
         );
         pool.transferFrom(alice, carol, amount);
 

@@ -174,7 +174,7 @@ contract SwapTest is TestRoot {
         depositToken.mint(amount);
         depositToken.approve(address(pool), amount);
 
-        vm.expectRevert(abi.encodeWithSelector(Users.ZeroAddress.selector));
+        vm.expectRevert(abi.encodeWithSelector(IUsers.ZeroAddress.selector));
         pool.swap(address(depositToken), address(0), amount, 0);
     }
 

@@ -1,17 +1,11 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
+import {IUsers, UserState} from "@cavalre/IUsers.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {FixedPointMathLib} from "solady/utils/FixedPointMathLib.sol";
 
-struct UserState {
-    bool isAllowed;
-    uint256 discount;
-    address[] associates;
-    uint256 lastBlock;
-}
-
-contract Users is Ownable {
+contract Users is IUsers, Ownable {
     using FixedPointMathLib for uint256;
 
     uint256 internal constant ONE = 1e18;
@@ -19,16 +13,6 @@ contract Users is Ownable {
 
     UserState[] internal _userList;
     mapping(address => uint256) internal _userIndex;
-
-    error InvalidDiscount(uint256 discount_);
-
-    error InvalidUser(address user_);
-
-    error UserAlreadyAdded(address user_);
-
-    error UserNotFound(address user_);
-
-    error ZeroAddress();
 
     function users() public view returns (UserState[] memory) {
         return _userList;
