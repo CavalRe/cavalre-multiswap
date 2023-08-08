@@ -203,7 +203,13 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             _txCount - asset_.lastUpdated
         );
         asset_.lastUpdated = _txCount;
-        emit BalanceUpdate(_txCount, token, asset_.balance, asset_.meanBalance);
+        emit BalanceUpdate(
+            _txCount,
+            token,
+            asset_.balance,
+            asset_.meanBalance,
+            IERC20(token).balanceOf(_msgSender())
+        );
     }
 
     function _updatePoolBalance() private {
@@ -220,7 +226,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             _txCount,
             address(this),
             _poolState.balance,
-            _poolState.meanBalance
+            _poolState.meanBalance,
+            this.balanceOf(_msgSender())
         );
     }
 

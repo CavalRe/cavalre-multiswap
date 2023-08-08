@@ -36,7 +36,8 @@ interface IPool is ILPToken {
         uint256 indexed txCount,
         address indexed token,
         uint256 balance,
-        uint256 meanBalance
+        uint256 meanBalance,
+        uint256 userBalance
     );
 
     event Multiswap(
