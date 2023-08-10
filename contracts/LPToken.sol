@@ -82,9 +82,6 @@ contract LPToken is ILPToken, Ownable, Users {
     }
 
     function approve(address spender, uint256 amount) public returns (bool) {
-        if (amount != type(uint256).max) {
-            amount = amount.divWadUp(_ratio);
-        }
         address owner = _msgSender();
         _approve(owner, spender, amount);
         return true;
