@@ -557,6 +557,7 @@ contract MultiswapTest is TestRoot {
         uint256[] memory receiveAmounts = new uint256[](1);
         uint256 feeAmount;
         if (amountA * 3 > pool.asset(payTokens[0]).balance) {
+            vm.roll(block.number + 1);
             vm.expectRevert(
                 abi.encodeWithSelector(IPool.TooLarge.selector, amountA)
             );
@@ -568,6 +569,7 @@ contract MultiswapTest is TestRoot {
                 minReceiveAmounts
             );
         } else if (amountB * 3 > pool.asset(payTokens[1]).balance) {
+            vm.roll(block.number + 1);
             vm.expectRevert(
                 abi.encodeWithSelector(IPool.TooLarge.selector, amountB)
             );
@@ -579,6 +581,7 @@ contract MultiswapTest is TestRoot {
                 minReceiveAmounts
             );
         } else {
+            vm.roll(block.number + 1);
             (receiveAmounts, feeAmount) = pool.multiswap(
                 payTokens,
                 amounts,
@@ -626,6 +629,7 @@ contract MultiswapTest is TestRoot {
         pool.approve(address(pool), pool.balanceOf(alice));
 
         if (amounts[0] * 3 > pool.info().balance) {
+            vm.roll(block.number + 1);
             vm.expectRevert(
                 abi.encodeWithSelector(IPool.TooLarge.selector, amounts[0])
             );
@@ -637,6 +641,7 @@ contract MultiswapTest is TestRoot {
                 minReceiveAmounts
             );
         } else {
+            vm.roll(block.number + 1);
             (receiveAmounts, feeAmount) = pool.multiswap(
                 payTokens,
                 amounts,

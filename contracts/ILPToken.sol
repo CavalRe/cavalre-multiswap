@@ -24,8 +24,6 @@ interface ILPToken is IUsers {
 
     error InvalidProtocolFee(uint256 fee);
 
-    error TradingPaused();
-
     error UserNotAllowed(address user_);
 
     function name() external view returns (string memory);
@@ -66,10 +64,6 @@ interface ILPToken is IUsers {
         address spender,
         uint256 subtractedValue
     ) external returns (bool);
-
-    function pauseTrading() external;
-
-    function resumeTrading() external;
 
     function protocolFee() external view returns (uint256);
 

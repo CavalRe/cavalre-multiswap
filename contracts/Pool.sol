@@ -21,20 +21,10 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     mapping(address => AssetState) private _assetState;
     address[] private _assetAddress;
 
+    bool private _tradingPaused;
+
     modifier onlyInitialized() {
         if (_isInitialized == 0) revert NotInitialized();
-        _;
-    }
-
-    modifier onlyOnce() {
-        address userAddress_ = _msgSender();
-        if (_userIndex[userAddress_] == 0) {
-            _addUser(userAddress_, 0);
-        }
-        UserState storage user_ = _userList[_userIndex[userAddress_] - 1];
-        if (block.number == user_.lastBlock)
-            revert OnlyOneTransaction(userAddress_);
-        user_.lastBlock = block.number;
         _;
     }
 
@@ -231,6 +221,18 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         );
     }
 
+    function _checkUser(address user_) private {
+        if (user_ == address(0)) revert ZeroAddress();
+        if (_userIndex[user_] == 0) {
+            _addUser(user_, 0);
+        }
+        UserState storage userState_ = _userList[_userIndex[user_] - 1];
+        if (!userState_.isAllowed) revert UserNotAllowed(user_);
+        if (block.number == userState_.lastBlock)
+            revert OnlyOneTransaction(user_);
+        userState_.lastBlock = block.number;
+    }
+
     function _checkDuplicateTokens(
         address[] memory tokens,
         bool[] memory check_,
@@ -262,7 +264,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256[] memory minReceiveAmounts
     )
         private
-        onlyOnce
         nonReentrant
         returns (uint256[] memory receiveAmounts, uint256 feeAmount)
     {
@@ -414,9 +415,15 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     )
         public
         onlyInitialized
-        onlyAllowed
         returns (uint256[] memory receiveAmounts, uint256 feeAmount)
     {
+        if (_tradingPaused) revert TradingPaused();
+
+        address sender = _msgSender();
+        // Check user
+        {
+            _checkUser(sender);
+        }
         // Check lengths
         {
             if (payTokens.length == 0) revert ZeroLength();
@@ -465,8 +472,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             }
         }
 
-        address sender = _msgSender();
-
         (receiveAmounts, feeAmount) = _multiswap(
             sender,
             payTokens,
@@ -495,9 +500,11 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     )
         public
         onlyInitialized
-        onlyAllowed
         returns (uint256 receiveAmount, uint256 feeAmount)
     {
+        if (_tradingPaused) revert TradingPaused();
+        address sender = _msgSender();
+        _checkUser(sender);
         if (payToken == address(0)) revert ZeroAddress();
         if (receiveToken == address(0)) revert ZeroAddress();
         if (payToken == address(this))
@@ -515,7 +522,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             _assetState[payToken].balance / _assetState[payToken].conversion
         ) revert TooLarge(payAmount);
 
-        address sender = _msgSender();
         {
             address[] memory payTokens = new address[](1);
             uint256[] memory amounts = new uint256[](1);
@@ -560,9 +566,11 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     )
         public
         onlyInitialized
-        onlyAllowed
         returns (uint256 receiveAmount, uint256 feeAmount)
     {
+        if (_tradingPaused) revert TradingPaused();
+        address sender = _msgSender();
+        _checkUser(sender);
         if (payToken == address(0)) revert ZeroAddress();
         if (payToken == address(this)) revert InvalidStake(payToken);
         if (_assetState[payToken].token != payToken)
@@ -572,7 +580,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             _assetState[payToken].balance / _assetState[payToken].conversion
         ) revert TooLarge(payAmount);
 
-        address sender = _msgSender();
         {
             address[] memory payTokens = new address[](1);
             uint256[] memory amounts = new uint256[](1);
@@ -609,9 +616,11 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     )
         public
         onlyInitialized
-        onlyAllowed
         returns (uint256 receiveAmount, uint256 feeAmount)
     {
+        if (_tradingPaused) revert TradingPaused();
+        address sender = _msgSender();
+        _checkUser(sender);
         if (receiveToken == address(0)) revert ZeroAddress();
         if (receiveToken == address(this)) revert InvalidUnstake(receiveToken);
         if (_assetState[receiveToken].token != receiveToken)
@@ -630,8 +639,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         receiveTokens[0] = receiveToken;
         allocations[0] = 1e18;
         minReceiveAmounts[0] = minReceiveAmount;
-
-        address sender = _msgSender();
 
         (receiveAmounts, feeAmount) = _multiswap(
             sender,
@@ -660,18 +667,18 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     )
         public
         onlyInitialized
-        onlyAllowed
-        onlyOnce
         nonReentrant
         returns (uint256[] memory payAmounts)
     {
+        if (_tradingPaused) revert TradingPaused();
+        address sender = _msgSender();
+        _checkUser(sender);
         if (receiveAmount == 0) revert ZeroAmount();
 
         _txCount++;
 
         AssetState storage assetIn;
         payAmounts = new uint256[](_assetAddress.length);
-        address sender = _msgSender();
 
         uint256 g = (_poolState.balance + receiveAmount).divWadUp(
             _poolState.balance
@@ -766,13 +773,28 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         if (_userIndex[user_] == 0) revert UserNotFound(user_);
         _userList[_userIndex[user_] - 1].isAllowed = isAllowed_;
         if (!isAllowed_ && _assetAddress.length > 0) {
-            uint256 balance = balanceOf(user_);
-            if (balance > 0)
-                _removeLiquidity(
-                    user_,
-                    balance,
-                    new uint256[](_assetAddress.length)
-                );
+            address associate;
+            uint256 balance;
+            address[] memory associates_ = _userList[_userIndex[user_] - 1]
+                .associates;
+            for (uint256 i; i < associates_.length; i++) {
+                associate = associates_[i];
+                balance = balanceOf(associate);
+                if (balance > 0)
+                    _removeLiquidity(
+                        associate,
+                        balance,
+                        new uint256[](_assetAddress.length)
+                    );
+            }
         }
+    }
+
+    function pauseTrading() public onlyOwner {
+        _tradingPaused = true;
+    }
+
+    function resumeTrading() public onlyOwner {
+        _tradingPaused = false;
     }
 }

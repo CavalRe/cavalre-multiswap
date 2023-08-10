@@ -30,17 +30,6 @@ contract LPToken is ILPToken, Ownable, Users {
     uint256 private _protocolFee;
     address private _protocolFeeRecipient;
 
-    bool internal _tradingPaused;
-
-    modifier onlyAllowed() {
-        if (_tradingPaused) revert TradingPaused();
-        address user_ = _msgSender();
-        if (
-            _userIndex[user_] > 0 && !_userList[_userIndex[user_] - 1].isAllowed
-        ) revert UserNotAllowed(user_);
-        _;
-    }
-
     constructor(string memory name_, string memory symbol_) {
         _name = name_;
         _symbol = symbol_;
@@ -76,14 +65,8 @@ contract LPToken is ILPToken, Ownable, Users {
         return _virtualBalances[account].mulWadUp(_ratio);
     }
 
-    function transfer(
-        address to,
-        uint256 amount
-    ) public onlyAllowed returns (bool) {
-        if (_userIndex[to] == 0) revert UserNotFound(to);
-        if (!_userList[_userIndex[to] - 1].isAllowed) revert UserNotAllowed(to);
+    function transfer(address to, uint256 amount) public returns (bool) {
         address owner = _msgSender();
-        amount = amount.divWadUp(_ratio);
         _transfer(owner, to, amount);
         return true;
     }
@@ -112,11 +95,6 @@ contract LPToken is ILPToken, Ownable, Users {
         address to,
         uint256 amount
     ) public returns (bool) {
-        if (_userIndex[from] == 0) revert UserNotFound(from);
-        if (!_userList[_userIndex[from] - 1].isAllowed)
-            revert UserNotAllowed(from);
-        if (_userIndex[to] == 0) revert UserNotFound(to);
-        if (!_userList[_userIndex[to] - 1].isAllowed) revert UserNotAllowed(to);
         address spender = _msgSender();
         _spendAllowance(from, spender, amount);
         _transfer(from, to, amount);
@@ -153,6 +131,11 @@ contract LPToken is ILPToken, Ownable, Users {
         require(from != address(0), "ERC20: transfer from the zero address");
         require(to != address(0), "ERC20: transfer to the zero address");
 
+        if (_userIndex[to] == 0) {
+            _addUser(to, 0);
+        } else if (!_userList[_userIndex[to] - 1].isAllowed)
+            revert UserNotAllowed(to);
+
         uint256 virtualAmount = amount.divWadUp(_ratio);
         uint256 fromVirtualBalance = _virtualBalances[from];
         require(
@@ -169,7 +152,7 @@ contract LPToken is ILPToken, Ownable, Users {
         emit Transfer(from, to, amount);
     }
 
-    function _mint(address account, uint256 amount) internal onlyAllowed {
+    function _mint(address account, uint256 amount) internal {
         require(account != address(0), "ERC20: mint to the zero address");
 
         _totalSupply += amount;
@@ -238,14 +221,6 @@ contract LPToken is ILPToken, Ownable, Users {
         _ratio = _totalSupply.divWadUp(_virtualSupply);
 
         emit DistributeFee(lpAmount, protocolAmount);
-    }
-
-    function pauseTrading() public onlyOwner {
-        _tradingPaused = true;
-    }
-
-    function resumeTrading() public onlyOwner {
-        _tradingPaused = false;
     }
 
     function protocolFee() public view returns (uint256) {

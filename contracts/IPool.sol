@@ -124,6 +124,8 @@ interface IPool is ILPToken {
 
     error TooSmall(uint256 size);
 
+    error TradingPaused();
+
     error ZeroAllocation();
 
     error ZeroAmount();
@@ -189,4 +191,8 @@ interface IPool is ILPToken {
     ) external returns (uint256[] memory receiveAmounts, uint256 feeAmount);
 
     function setAllowed(address user_, bool isAllowed_) external;
+
+    function pauseTrading() external;
+
+    function resumeTrading() external;
 }

@@ -77,7 +77,6 @@ contract LPTokenTest is Test {
         vm.assume((amount > 1e17) && (amount < 1e50));
 
         address alice = address(1);
-        address bob = address(2);
 
         pool.addUser(alice, 0);
 
@@ -86,18 +85,6 @@ contract LPTokenTest is Test {
         pool.mint_(amount);
         assertEq(pool.balanceOf(alice), amount, "Balance of alice after minting.");
         assertEq(pool.totalSupply(), amount, "Total supply after minting.");
-
-        vm.stopPrank();
-
-        pool.addUser(bob, 0);
-        pool.setAllowed(bob, false);
-
-        vm.startPrank(bob);
-
-        vm.expectRevert(
-            abi.encodeWithSelector(ILPToken.UserNotAllowed.selector, bob)
-        );
-        pool.mint_(amount);
     }
 
     function testLPToken_burn(uint256 amount) public {
@@ -148,6 +135,8 @@ contract LPTokenTest is Test {
         address bob = address(2);
 
         pool.addUser(alice, 0);
+        pool.addUser(bob, 0);
+        pool.setAllowed(bob, false);
 
         vm.startPrank(alice);
 
@@ -156,13 +145,13 @@ contract LPTokenTest is Test {
         assertEq(pool.totalSupply(), amount, "Total supply after minting.");
 
         vm.expectRevert(
-            abi.encodeWithSelector(IUsers.UserNotFound.selector, bob)
+            abi.encodeWithSelector(ILPToken.UserNotAllowed.selector, bob)
         );
         pool.transfer(bob, amount);
 
         vm.stopPrank();
 
-        pool.addUser(bob, 0);
+        pool.setAllowed(bob, true);
 
         vm.startPrank(alice);
 
@@ -179,6 +168,8 @@ contract LPTokenTest is Test {
         address carol = address(3);
 
         pool.addUser(alice, 0);
+        pool.addUser(carol, 0);
+        pool.setAllowed(carol, false);
 
         vm.startPrank(alice);
 
@@ -193,30 +184,17 @@ contract LPTokenTest is Test {
         vm.startPrank(bob);
 
         vm.expectRevert(
-            abi.encodeWithSelector(IUsers.UserNotFound.selector, carol)
+            abi.encodeWithSelector(ILPToken.UserNotAllowed.selector, carol)
         );
         pool.transferFrom(alice, carol, amount);
 
         vm.stopPrank();
 
-        pool.addUser(carol, 0);
+        pool.setAllowed(carol, true);
 
         vm.startPrank(bob);
 
         pool.transferFrom(alice, carol, amount);
-
-        vm.stopPrank();
-
-        pool.setAllowed(alice, false);
-
-        vm.startPrank(bob);
-
-        vm.expectRevert(
-            abi.encodeWithSelector(ILPToken.UserNotAllowed.selector, alice)
-        );
-        pool.transferFrom(alice, carol, amount);
-
-        vm.stopPrank();
     }
 
     function testLPToken_fee(uint256 amount) public {
