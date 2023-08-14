@@ -2,10 +2,10 @@
 pragma solidity 0.8.19;
 
 import {IUsers, UserState} from "@cavalre/IUsers.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {FixedPointMathLib} from "solady/utils/FixedPointMathLib.sol";
 
-contract Users is IUsers, Ownable {
+contract Users is IUsers, Ownable2Step {
     using FixedPointMathLib for uint256;
 
     uint256 internal constant ONE = 1e18;

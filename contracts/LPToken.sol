@@ -11,9 +11,8 @@ pragma solidity 0.8.19;
 
 import {ILPToken} from "@cavalre/ILPToken.sol";
 import {Users, UserState, FixedPointMathLib} from "@cavalre/Users.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract LPToken is ILPToken, Ownable, Users {
+contract LPToken is ILPToken, Users {
     using FixedPointMathLib for uint256;
 
     mapping(address => uint256) private _virtualBalances;
