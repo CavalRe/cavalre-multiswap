@@ -100,6 +100,9 @@ contract StakeTest is TestRoot {
 
         uint256 balance = pool.balanceOf(alice);
 
+        vm.expectRevert(
+            abi.encodeWithSelector(IPool.ZeroAmount.selector)
+        );
         pool.stake(address(payToken), 0, 0);
         assertEq(pool.balanceOf(alice), balance);
     }

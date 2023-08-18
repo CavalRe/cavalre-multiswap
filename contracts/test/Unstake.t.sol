@@ -179,6 +179,9 @@ contract UnstakeTest is TestRoot {
         uint256 receiveBalance = receiveToken.balanceOf(alice);
         uint256 poolBalance = pool.balanceOf(alice);
 
+        vm.expectRevert(
+            abi.encodeWithSelector(IPool.ZeroAmount.selector)
+        );
         pool.unstake(address(receiveToken), 0, 0);
         assertEq(pool.balanceOf(alice), poolBalance);
         assertEq(receiveToken.balanceOf(alice), receiveBalance);
