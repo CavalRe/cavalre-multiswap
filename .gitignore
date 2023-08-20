@@ -11,3 +11,5 @@ artifacts
 broadcast
 
 olympext.vsix
+
+contracts/Pool.flattened.sol
