@@ -407,7 +407,7 @@ contract BetaTest is Test {
         showPool(pool);
         emit log("");
         emit log_named_uint("amountIn", oneAmount[0]);
-        emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
+        emit log_named_uint("balance", pool.info().balance);
         emit log("");
         pool.addLiquidity(oneAmount[0], allMaxs);
         emit log("=================");
