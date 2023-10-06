@@ -229,8 +229,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         }
         UserState storage userState_ = _userList[_userIndex[user_] - 1];
         if (!userState_.isAllowed) revert UserNotAllowed(user_);
-        if (block.number == userState_.lastBlock)
-            revert OnlyOneTransaction(user_);
         userState_.lastBlock = block.number;
     }
 
