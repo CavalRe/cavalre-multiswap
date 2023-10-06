@@ -118,8 +118,6 @@ interface IPool is ILPToken {
 
     error NotInitialized();
 
-    error OnlyOneTransaction(address user_);
-
     error TooLarge(uint256 size);
 
     error TooSmall(uint256 size);
