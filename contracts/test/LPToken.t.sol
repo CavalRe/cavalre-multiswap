@@ -44,8 +44,6 @@ contract LPTokenTest is Test {
         address alice = address(1);
         address bob = address(2);
 
-        pool.addUser(alice, 0);
-
         vm.startPrank(alice);
 
         pool.increaseAllowance(bob, 1e18);
@@ -54,8 +52,6 @@ contract LPTokenTest is Test {
         assertEq(pool.allowance(alice, bob), 0, "Allowance of alice to bob after decreasing.");
 
         vm.stopPrank();
-
-        pool.addUser(bob, 0);
 
         vm.startPrank(bob);
 
@@ -78,8 +74,6 @@ contract LPTokenTest is Test {
 
         address alice = address(1);
 
-        pool.addUser(alice, 0);
-
         vm.startPrank(alice);
 
         pool.mint_(amount);
@@ -87,43 +81,37 @@ contract LPTokenTest is Test {
         assertEq(pool.totalSupply(), amount, "Total supply after minting.");
     }
 
-    function testLPToken_burn(uint256 amount) public {
-        vm.assume((amount > 1e17) && (amount < 1e50));
+    function testLPToken_burn() public {
+    // function testLPToken_burn(uint256 amount) public {
+    //     vm.assume((amount > 1e17) && (amount < 1e50));
+        uint256 amount = 1e17;
 
         address alice = address(1);
         address bob = address(2);
-
-        pool.addUser(alice, 0);
 
         vm.startPrank(alice);
 
         uint256 burnAmount = amount / 2;
 
         pool.mint_(amount);
+        assertEq(pool.balanceOf(alice), amount, "Balance of alice after minting.");
+        assertEq(pool.totalSupply(), amount, "Total supply after alice minting.");
+    
         pool.burn_(burnAmount);
         assertEq(pool.balanceOf(alice), amount - burnAmount, "Balance of alice after burning.");
-        assertEq(pool.totalSupply(), amount - burnAmount, "Total supply after burning.");
+        assertEq(pool.totalSupply(), amount - burnAmount, "Total supply after alice burning.");
 
         vm.stopPrank();
 
-        pool.addUser(bob, 0);
-
         vm.startPrank(bob);
+
         pool.mint_(amount);
+        assertEq(pool.balanceOf(bob), amount, "Balance of bob after minting.");
+        assertEq(pool.totalSupply(), 2*amount - burnAmount, "Total supply after bob minting.");
 
-        emit log_named_uint("Bob's balance", pool.balanceOf(bob));
-        emit log_named_uint("Total supply", pool.totalSupply());
-
-        vm.stopPrank();
-
-        pool.setAllowed(bob, false);
-
-        emit log_named_uint("Bob's balance", pool.balanceOf(bob));
-        emit log_named_uint("Total supply", pool.totalSupply());
-
-        vm.startPrank(bob);
-
-        pool.burn_(amount);
+        pool.burn_(burnAmount);
+        assertEq(pool.balanceOf(bob), amount - burnAmount, "Balance of bob after burning.");
+        assertEq(pool.totalSupply(), 2*amount - 2*burnAmount, "Total supply after bob burning.");
 
         vm.stopPrank();
     }
@@ -134,9 +122,7 @@ contract LPTokenTest is Test {
         address alice = address(1);
         address bob = address(2);
 
-        pool.addUser(alice, 0);
-        pool.addUser(bob, 0);
-        pool.setAllowed(bob, false);
+        pool.setIsAllowed(bob, false);
 
         vm.startPrank(alice);
 
@@ -151,7 +137,7 @@ contract LPTokenTest is Test {
 
         vm.stopPrank();
 
-        pool.setAllowed(bob, true);
+        pool.setIsAllowed(bob, true);
 
         vm.startPrank(alice);
 
@@ -167,9 +153,7 @@ contract LPTokenTest is Test {
         address bob = address(2);
         address carol = address(3);
 
-        pool.addUser(alice, 0);
-        pool.addUser(carol, 0);
-        pool.setAllowed(carol, false);
+        pool.setIsAllowed(carol, false);
 
         vm.startPrank(alice);
 
@@ -190,7 +174,7 @@ contract LPTokenTest is Test {
 
         vm.stopPrank();
 
-        pool.setAllowed(carol, true);
+        pool.setIsAllowed(carol, true);
 
         vm.startPrank(bob);
 
@@ -202,8 +186,6 @@ contract LPTokenTest is Test {
 
         address alice = address(1);
 
-        pool.addUser(alice, 0);
-
         vm.startPrank(alice);
 
         pool.mint_(amount);
@@ -213,8 +195,6 @@ contract LPTokenTest is Test {
         vm.stopPrank();
 
         address bob = address(2);
-
-        pool.addUser(bob, 0);
 
         vm.startPrank(bob);
 

@@ -440,7 +440,6 @@ contract BetaTest is Test {
     }
 
     function testDiscount() public {
-        pool.addUser(bob, 0);
         pool.setDiscount(bob, ONE);
 
         vm.startPrank(bob);

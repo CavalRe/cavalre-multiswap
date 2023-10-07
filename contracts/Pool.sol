@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {IPool, PoolState, AssetState} from "@cavalre/IPool.sol";
-import {LPToken, UserState, FixedPointMathLib} from "@cavalre/LPToken.sol";
+import {LPToken, FixedPointMathLib} from "@cavalre/LPToken.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -44,8 +44,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         _poolState.symbol = symbol;
         _poolState.decimals = 18;
         _poolState.w = int256(ONE - tau);
-
-        _addUser(_msgSender(), 0);
     }
 
     function addAsset(
@@ -222,14 +220,9 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         );
     }
 
-    function _checkUser(address user_) private {
+    function _checkUser(address user_) private view {
         if (user_ == address(0)) revert ZeroAddress();
-        if (_userIndex[user_] == 0) {
-            _addUser(user_, 0);
-        }
-        UserState storage userState_ = _userList[_userIndex[user_] - 1];
-        if (!userState_.isAllowed) revert UserNotAllowed(user_);
-        userState_.lastBlock = block.number;
+        if (_isBlocked[user_]) revert UserNotAllowed(user_);
     }
 
     function _checkDuplicateTokens(
@@ -279,7 +272,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                         _assetState[receiveTokens[i]].fee
                     );
                 }
-                uint256 discount_ = user(sender).discount;
+                uint256 discount_ = _discount[sender];
                 if (fee > 0 && discount_ > 0) {
                     fee = fee.mulWadUp(ONE - discount_);
                 }
@@ -416,7 +409,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         onlyInitialized
         returns (uint256[] memory receiveAmounts, uint256 feeAmount)
     {
-        if (_tradingPaused) revert TradingPaused();
+        if (_tradingPaused) revert TradingPausedError();
 
         address sender = _msgSender();
         // Check user
@@ -506,7 +499,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         onlyInitialized
         returns (uint256 receiveAmount, uint256 feeAmount)
     {
-        if (_tradingPaused) revert TradingPaused();
+        if (_tradingPaused) revert TradingPausedError();
         address sender = _msgSender();
         _checkUser(sender);
         if (payToken == address(0)) revert ZeroAddress();
@@ -572,7 +565,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         onlyInitialized
         returns (uint256 receiveAmount, uint256 feeAmount)
     {
-        if (_tradingPaused) revert TradingPaused();
+        if (_tradingPaused) revert TradingPausedError();
         address sender = _msgSender();
         _checkUser(sender);
         if (payToken == address(0)) revert ZeroAddress();
@@ -623,7 +616,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         onlyInitialized
         returns (uint256 receiveAmount, uint256 feeAmount)
     {
-        if (_tradingPaused) revert TradingPaused();
+        if (_tradingPaused) revert TradingPausedError();
         address sender = _msgSender();
         _checkUser(sender);
         if (receiveToken == address(0)) revert ZeroAddress();
@@ -676,7 +669,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         nonReentrant
         returns (uint256[] memory payAmounts)
     {
-        if (_tradingPaused) revert TradingPaused();
+        if (_tradingPaused) revert TradingPausedError();
         if (_assetAddress.length != maxPayAmounts.length)
             revert LengthMismatch(_assetAddress.length, maxPayAmounts.length);
         if (receiveAmount == 0) revert ZeroAmount();
@@ -783,32 +776,28 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         );
     }
 
-    function setAllowed(address user_, bool isAllowed_) public onlyOwner {
-        if (_userIndex[user_] == 0) revert UserNotFound(user_);
-        _userList[_userIndex[user_] - 1].isAllowed = isAllowed_;
-        if (!isAllowed_ && _assetAddress.length > 0) {
-            address associate;
-            uint256 balance;
-            address[] memory associates_ = _userList[_userIndex[user_] - 1]
-                .associates;
-            for (uint256 i; i < associates_.length; i++) {
-                associate = associates_[i];
-                balance = balanceOf(associate);
-                if (balance > 0)
-                    _removeLiquidity(
-                        associate,
-                        balance,
-                        new uint256[](_assetAddress.length)
-                    );
+    function setIsAllowed(address user_, bool isAllowed_) public onlyOwner {
+        _isBlocked[user_] = !isAllowed_;
+        if (!isAllowed_) {
+            uint256 balance = balanceOf(user_);
+            if (balance > 0) {
+                _removeLiquidity(
+                    user_,
+                    balance,
+                    new uint256[](_assetAddress.length)
+                );
             }
+            emit UserRemoved(user_);
         }
     }
 
     function pauseTrading() public onlyOwner {
         _tradingPaused = true;
+        emit TradingPaused();
     }
 
     function resumeTrading() public onlyOwner {
         _tradingPaused = false;
+        emit TradingResumed();
     }
 }
