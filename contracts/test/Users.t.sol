@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
+import "@cavalre/Users.sol";
 import "@cavalre/test/Pool.t.sol";
 
 contract UsersTest is PoolTest {
@@ -47,7 +48,7 @@ contract UsersTest is PoolTest {
         );
 
         vm.expectRevert(
-            abi.encodeWithSelector(IPool.CannotBlock.selector, alice)
+            abi.encodeWithSelector(IUsers.CannotModify.selector, alice)
         );
         pool.setIsAllowed(alice, false);
 
