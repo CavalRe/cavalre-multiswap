@@ -7,38 +7,50 @@ contract UsersTest is PoolTest {
     Pool private pool;
     Token[] private tokens;
 
-    uint256 amount;
-
     function setUp() public {
         vm.startPrank(alice);
 
         (pool, tokens) = setUpPool();
 
         assertEq(pool.owner(), alice, "Owner of pool.");
-
-        USDC.mint(1e24);
-        (amount,) = pool.stake(address(USDC), 1e24, 0);
     }
 
     function testUsers_isAllowed() public {
-        assertTrue(
-            pool.isAllowed(alice),
-            "Alice is allowed."
-        );
+        assertTrue(pool.isAllowed(alice), "Alice is allowed.");
     }
 
-    function testUsers_setisAllowed() public {
-        pool.setIsAllowed(alice, false);
+    function testUsers_setIsAllowed() public {
+        vm.startPrank(bob);
+
+        uint256 amount = USDC.balanceOf(address(pool)) / 10;
+        USDC.mint(amount);
+        USDC.increaseAllowance(address(pool), amount);
+        pool.stake(address(USDC), amount, 0);
+
+        assertGt(pool.balanceOf(bob), 0, "Bob's balance is greater than 0.");
+
+        vm.stopPrank();
+
+        vm.startPrank(alice);
+
+        pool.setIsAllowed(bob, false);
 
         assertFalse(
-            pool.isAllowed(alice),
-            "Alice is not allowed after being disappowed."
+            pool.isAllowed(bob),
+            "Bob is not allowed after being disappowed."
         );
 
         assertEq(
-            pool.balanceOf(alice),
+            pool.balanceOf(bob),
             0,
-            "Alice's balance is 0 after being disallowed."
+            "Bob's balance is 0 after being disallowed."
         );
+
+        vm.expectRevert(
+            abi.encodeWithSelector(IPool.CannotBlock.selector, alice)
+        );
+        pool.setIsAllowed(alice, false);
+
+        vm.stopPrank();
     }
 }

@@ -233,6 +233,8 @@ contract LPToken is ILPToken, Users {
     }
 
     function setProtocolFeeRecipient(address recipient) public onlyOwner {
+        if (recipient == address(0)) revert ZeroAddress();
+        if (_isBlocked[recipient]) revert UserNotAllowed(recipient);
         _protocolFeeRecipient = recipient;
         _isBlocked[recipient] = false;
     }
