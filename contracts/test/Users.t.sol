@@ -1,24 +1,23 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import "@cavalre/Pool.sol";
-import "@cavalre/Users.sol";
-import "forge-std/Test.sol";
+import "@cavalre/test/Pool.t.sol";
 
-contract UsersTest is Test {
-    Users internal users;
-
-    address alice = address(1);
-    address bob = address(2);
-    address carol = address(3);
-
+contract UsersTest is PoolTest {
     Pool private pool;
+    Token[] private tokens;
+
+    uint256 amount;
 
     function setUp() public {
         vm.startPrank(alice);
-        vm.roll(1);
 
-        pool = new Pool("Pool", "P", 1e16);
+        (pool, tokens) = setUpPool();
+
+        assertEq(pool.owner(), alice, "Owner of pool.");
+
+        USDC.mint(1e24);
+        (amount,) = pool.stake(address(USDC), 1e24, 0);
     }
 
     function testUsers_isAllowed() public {
@@ -34,6 +33,12 @@ contract UsersTest is Test {
         assertFalse(
             pool.isAllowed(alice),
             "Alice is not allowed after being disappowed."
+        );
+
+        assertEq(
+            pool.balanceOf(alice),
+            0,
+            "Alice's balance is 0 after being disallowed."
         );
     }
 }
