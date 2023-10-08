@@ -780,7 +780,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     function setIsAllowed(address user_, bool isAllowed_) public onlyOwner {
         _isBlocked[user_] = !isAllowed_;
         if (!isAllowed_) {
-            if (user_ == owner() || user_ == protocolFeeRecipient()) revert CannotBlock(user_);
+            if (user_ == owner() || user_ == protocolFeeRecipient()) revert CannotModify(user_);
             uint256 balance = balanceOf(user_);
             if (balance > 0) {
                 _removeLiquidity(
