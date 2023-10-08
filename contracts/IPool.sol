@@ -92,6 +92,12 @@ interface IPool is ILPToken {
         uint256 feeAmount
     );
 
+    event UserRemoved(address indexed user);
+
+    event TradingPaused();
+
+    event TradingResumed();
+
     error AlreadyInitialized();
 
     error AssetNotFound(address asset);
@@ -118,13 +124,11 @@ interface IPool is ILPToken {
 
     error NotInitialized();
 
-    error OnlyOneTransaction(address user_);
-
     error TooLarge(uint256 size);
 
     error TooSmall(uint256 size);
 
-    error TradingPaused();
+    error TradingPausedError();
 
     error ZeroAllocation();
 
@@ -190,7 +194,7 @@ interface IPool is ILPToken {
         uint256[] memory minReceiveAmounts
     ) external returns (uint256[] memory receiveAmounts, uint256 feeAmount);
 
-    function setAllowed(address user_, bool isAllowed_) external;
+    function setIsAllowed(address user_, bool isAllowed_) external;
 
     function pauseTrading() external;
 

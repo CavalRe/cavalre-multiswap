@@ -29,32 +29,14 @@ pragma solidity 0.8.19;
 // (8) 0xdbda1821b80551c9d65939329250298aa3472ba22feea921c0cf5d620ea67b97
 // (9) 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
 
-import "@cavalre/Pool.sol";
-import "@cavalre/test/Token.t.sol";
+import "@cavalre/test/Pool.t.sol";
 import "@cavalre/Users.sol";
-import "forge-std/Test.sol";
 
-contract BetaTest is Test {
+contract BetaTest is PoolTest {
     using FixedPointMathLib for uint256;
 
-    uint256 private constant NTOKENS = 10;
-
-    mapping(string => Token) private tokens;
-    string[] private symbols = new string[](NTOKENS);
-    Pool private pool;
-    address private alice = address(1);
-    address private bob = address(2);
-    address private carol = address(3);
-
-    uint256[] private fees = new uint256[](NTOKENS);
-    uint256[] private prices = new uint256[](NTOKENS);
-    uint256[] private conversions = new uint256[](NTOKENS);
-
-    uint256 private constant ONE = 1e18;
-    uint256 private tau = 1e16;
-    uint256 private bps = 1e14;
-
-    uint256 private marketCap = 1e25;
+    Pool internal pool;
+    Token[] internal tokens;
 
     address[] private oneAsset = new address[](1);
     address[] private anotherAsset = new address[](1);
@@ -76,106 +58,17 @@ contract BetaTest is Test {
     uint256[] private allMaxs = new uint256[](NTOKENS);
 
     uint256 private amountOut;
-    uint256[] private receiveAmounts;
-    uint256 private feeAmount;
 
     function setUp() public {
-        vm.startPrank(alice);
-        vm.roll(1);
-
-        Token token;
-        token = new Token("Wrapped AVAX", "WAVAX", 18);
-        symbols[0] = token.symbol();
-        tokens[token.symbol()] = token;
-        token = new Token("USD Coin", "USDC", 6);
-        symbols[1] = token.symbol();
-        tokens[token.symbol()] = token;
-        token = new Token("TetherToken", "USDt", 6);
-        symbols[2] = token.symbol();
-        tokens[token.symbol()] = token;
-        token = new Token("Euro Coin", "EUROC", 6);
-        symbols[3] = token.symbol();
-        tokens[token.symbol()] = token;
-        token = new Token("Bridged USDC", "USDC.e", 6);
-        symbols[4] = token.symbol();
-        tokens[token.symbol()] = token;
-        token = new Token("Bridged USDt", "USDT.e", 6);
-        symbols[5] = token.symbol();
-        tokens[token.symbol()] = token;
-        token = new Token("Brdiged DAI", "DAI.e", 18);
-        symbols[6] = token.symbol();
-        tokens[token.symbol()] = token;
-        token = new Token("Bridged WETH", "WETH.e", 18);
-        symbols[7] = token.symbol();
-        tokens[token.symbol()] = token;
-        token = new Token("Bridged WBTC", "WBTC.e", 8);
-        symbols[8] = token.symbol();
-        tokens[token.symbol()] = token;
-        token = new Token("Bridged BTC", "BTC.b", 8);
-        symbols[9] = token.symbol();
-        tokens[token.symbol()] = token;
-
-        pool = new Pool("Pool", "P", tau);
-
-        fees[0] = 15 * bps;
-        fees[1] = 5 * bps;
-        fees[2] = 5 * bps;
-        fees[3] = 5 * bps;
-        fees[4] = 5 * bps;
-        fees[5] = 5 * bps;
-        fees[6] = 5 * bps;
-        fees[7] = 30 * bps;
-        fees[8] = 30 * bps;
-        fees[9] = 30 * bps;
-
-        prices[0] = 145e17;
-        prices[1] = 1e18;
-        prices[2] = 1e18;
-        prices[3] = 113e16;
-        prices[4] = 1e18;
-        prices[5] = 1e18;
-        prices[6] = 1e18;
-        prices[7] = 1908e18;
-        prices[8] = 30065e18;
-        prices[9] = 30065e18;
-
-        uint256 conversion;
-        uint256 balance;
-        for (uint256 i; i < NTOKENS; i++) {
-            token = tokens[symbols[i]];
-            conversion = 10 ** (18 - token.decimals());
-            conversions[i] = conversion;
-            balance = marketCap.divWadUp(prices[i]) / conversion;
-            token.mint(balance);
-            token.approve(address(pool), balance);
-            pool.addAsset(
-                address(token),
-                fees[i],
-                balance,
-                marketCap
-            );
-            // emit log("----------------");
-            // emit log_named_string("Symbol", token.symbol());
-            // emit log_named_uint("Conversion", conversion);
-            // emit log_named_uint("Balance", balance);
-            // emit log_named_string("Minted", token.symbol());
-            // emit log_named_string("Approved", token.symbol());
-            // emit log_named_string("Added", token.symbol());
-        }
-
-        pool.initialize();
+        (pool, tokens) = setUpPool();
 
         for (uint256 i; i < NTOKENS; i++) {
-            token = tokens[symbols[i]];
-            balance = token.balanceOf(address(pool));
-            token.mint(balance);
-            token.approve(address(pool), balance);
             allMaxs[i] = type(uint256).max;
         }
 
-        oneAsset[0] = address(tokens["USDC"]);
+        oneAsset[0] = address(USDC);
         oneConversion[0] = conversions[1];
-        anotherAsset[0] = address(tokens["BTC.b"]);
+        anotherAsset[0] = address(BTCb);
         anotherConversion[0] = conversions[9];
         onePool[0] = address(pool);
         oneAmount[0] = 1e24;
@@ -184,42 +77,42 @@ contract BetaTest is Test {
     }
 
     function testDecimals() public {
-        assertEq(tokens[symbols[0]].decimals(), 18);
-        assertEq(tokens[symbols[1]].decimals(), 6);
-        assertEq(tokens[symbols[2]].decimals(), 6);
-        assertEq(tokens[symbols[3]].decimals(), 6);
-        assertEq(tokens[symbols[4]].decimals(), 6);
-        assertEq(tokens[symbols[5]].decimals(), 6);
-        assertEq(tokens[symbols[6]].decimals(), 18);
-        assertEq(tokens[symbols[7]].decimals(), 18);
-        assertEq(tokens[symbols[8]].decimals(), 8);
-        assertEq(tokens[symbols[9]].decimals(), 8);
+        assertEq(tokens[0].decimals(), 18);
+        assertEq(tokens[1].decimals(), 6);
+        assertEq(tokens[2].decimals(), 6);
+        assertEq(tokens[3].decimals(), 6);
+        assertEq(tokens[4].decimals(), 6);
+        assertEq(tokens[5].decimals(), 6);
+        assertEq(tokens[6].decimals(), 18);
+        assertEq(tokens[7].decimals(), 18);
+        assertEq(tokens[8].decimals(), 8);
+        assertEq(tokens[9].decimals(), 8);
     }
 
     function testNames() public {
-        assertEq(tokens[symbols[0]].name(), "Wrapped AVAX");
-        assertEq(tokens[symbols[1]].name(), "USD Coin");
-        assertEq(tokens[symbols[2]].name(), "TetherToken");
-        assertEq(tokens[symbols[3]].name(), "Euro Coin");
-        assertEq(tokens[symbols[4]].name(), "Bridged USDC");
-        assertEq(tokens[symbols[5]].name(), "Bridged USDt");
-        assertEq(tokens[symbols[6]].name(), "Brdiged DAI");
-        assertEq(tokens[symbols[7]].name(), "Bridged WETH");
-        assertEq(tokens[symbols[8]].name(), "Bridged WBTC");
-        assertEq(tokens[symbols[9]].name(), "Bridged BTC");
+        assertEq(tokens[0].name(), "Wrapped AVAX");
+        assertEq(tokens[1].name(), "USD Coin");
+        assertEq(tokens[2].name(), "TetherToken");
+        assertEq(tokens[3].name(), "Euro Coin");
+        assertEq(tokens[4].name(), "Bridged USDC");
+        assertEq(tokens[5].name(), "Bridged USDt");
+        assertEq(tokens[6].name(), "Brdiged DAI");
+        assertEq(tokens[7].name(), "Bridged WETH");
+        assertEq(tokens[8].name(), "Bridged WBTC");
+        assertEq(tokens[9].name(), "Bridged BTC");
     }
 
     function testSymbols() public {
-        assertEq(tokens[symbols[0]].symbol(), "WAVAX");
-        assertEq(tokens[symbols[1]].symbol(), "USDC");
-        assertEq(tokens[symbols[2]].symbol(), "USDt");
-        assertEq(tokens[symbols[3]].symbol(), "EUROC");
-        assertEq(tokens[symbols[4]].symbol(), "USDC.e");
-        assertEq(tokens[symbols[5]].symbol(), "USDT.e");
-        assertEq(tokens[symbols[6]].symbol(), "DAI.e");
-        assertEq(tokens[symbols[7]].symbol(), "WETH.e");
-        assertEq(tokens[symbols[8]].symbol(), "WBTC.e");
-        assertEq(tokens[symbols[9]].symbol(), "BTC.b");
+        assertEq(tokens[0].symbol(), "WAVAX");
+        assertEq(tokens[1].symbol(), "USDC");
+        assertEq(tokens[2].symbol(), "USDt");
+        assertEq(tokens[3].symbol(), "EUROC");
+        assertEq(tokens[4].symbol(), "USDC.e");
+        assertEq(tokens[5].symbol(), "USDT.e");
+        assertEq(tokens[6].symbol(), "DAI.e");
+        assertEq(tokens[7].symbol(), "WETH.e");
+        assertEq(tokens[8].symbol(), "WBTC.e");
+        assertEq(tokens[9].symbol(), "BTC.b");
     }
 
     function testInit() public {
@@ -228,10 +121,10 @@ contract BetaTest is Test {
         assertEq(pool.info().balance, pool.totalSupply(), "Pool balance");
         assertEq(pool.info().scale, marketCap * NTOKENS, "Pool scale");
         for (uint256 i; i < NTOKENS; i++) {
-            assertEq(assets[i].symbol, symbols[i], "Asset symbol");
+            assertEq(assets[i].symbol, tokens[i].symbol(), "Asset symbol");
             assertEq(
                 assets[i].balance / assets[i].conversion,
-                tokens[symbols[i]].balanceOf(address(pool)),
+                tokens[i].balanceOf(address(pool)),
                 "Asset balance"
             );
             assertEq(assets[i].scale, marketCap, "Asset scale");
@@ -265,17 +158,15 @@ contract BetaTest is Test {
         emit log("-------");
         Token token;
         for (uint256 i; i < NTOKENS; i++) {
-            token = tokens[symbols[i]];
+            token = tokens[i];
             showAsset(pool.asset(address(token)));
         }
     }
 
     function testBetaSwap() public {
-        vm.startPrank(bob);
-
         uint256 amount = oneAmount[0] / oneConversion[0];
-        tokens["USDC"].mint(amount);
-        tokens["USDC"].approve(address(pool), amount);
+        USDC.mint(amount);
+        USDC.approve(address(pool), amount);
 
         emit log("Initial state");
         emit log("");
@@ -440,19 +331,13 @@ contract BetaTest is Test {
     }
 
     function testDiscount() public {
-        pool.addUser(bob, 0);
         pool.setDiscount(bob, ONE);
 
-        vm.startPrank(bob);
         uint256 amount = oneAmount[0] / oneConversion[0];
-        tokens["USDC"].mint(amount);
-        tokens["USDC"].approve(address(pool), amount);
+        USDC.mint(amount);
+        USDC.approve(address(pool), amount);
 
         pool.swap(oneAsset[0], anotherAsset[0], amount, oneMin[0]);
-
-        vm.stopPrank();
-
-        vm.startPrank(alice);
 
         vm.expectRevert(
             abi.encodeWithSelector(IUsers.InvalidDiscount.selector, 2 * ONE)

@@ -10,7 +10,8 @@
 pragma solidity 0.8.19;
 
 import {ILPToken} from "@cavalre/ILPToken.sol";
-import {Users, UserState, FixedPointMathLib} from "@cavalre/Users.sol";
+import {Users} from "@cavalre/Users.sol";
+import {FixedPointMathLib} from "solady/utils/FixedPointMathLib.sol";
 
 contract LPToken is ILPToken, Users {
     using FixedPointMathLib for uint256;
@@ -127,10 +128,7 @@ contract LPToken is ILPToken, Users {
         require(from != address(0), "ERC20: transfer from the zero address");
         require(to != address(0), "ERC20: transfer to the zero address");
 
-        if (_userIndex[to] == 0) {
-            _addUser(to, 0);
-        } else if (!_userList[_userIndex[to] - 1].isAllowed)
-            revert UserNotAllowed(to);
+        if (_isBlocked[to]) revert UserNotAllowed(to);
 
         uint256 virtualAmount = amount.divWadUp(_ratio);
         uint256 fromVirtualBalance = _virtualBalances[from];
@@ -150,6 +148,8 @@ contract LPToken is ILPToken, Users {
 
     function _mint(address account, uint256 amount) internal {
         require(account != address(0), "ERC20: mint to the zero address");
+
+        if (_isBlocked[account]) revert UserNotAllowed(account);
 
         _totalSupply += amount;
         uint256 virtualAmount = amount.divWadUp(_ratio);
@@ -234,9 +234,6 @@ contract LPToken is ILPToken, Users {
 
     function setProtocolFeeRecipient(address recipient) public onlyOwner {
         _protocolFeeRecipient = recipient;
-        if (_userIndex[recipient] == 0) {
-            _addUser(recipient, 0);
-        }
-        _userList[_userIndex[recipient] - 1].isAllowed = true;
+        _isBlocked[recipient] = false;
     }
 }
