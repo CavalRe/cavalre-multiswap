@@ -355,9 +355,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             }
         }
 
-        // Distribute fee
-        distributeFee(feeAmount);
-
         // Transfer tokens to the pool
         for (uint256 i; i < payTokens.length; i++) {
             address payToken = payTokens[i];
@@ -395,6 +392,10 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                 _updateAssetBalance(receiveToken, 0, receiveAmount);
             }
         }
+
+        // Distribute fee
+        distributeFee(feeAmount);
+
         _updatePoolBalance();
     }
 
@@ -779,6 +780,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     function setIsAllowed(address user_, bool isAllowed_) public onlyOwner {
         _isBlocked[user_] = !isAllowed_;
         if (!isAllowed_) {
+            if (user_ == owner() || user_ == protocolFeeRecipient()) revert CannotBlock(user_);
             uint256 balance = balanceOf(user_);
             if (balance > 0) {
                 _removeLiquidity(
