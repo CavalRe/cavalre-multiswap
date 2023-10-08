@@ -7,27 +7,30 @@ contract UsersTest is PoolTest {
     Pool private pool;
     Token[] private tokens;
 
-    uint256 amount;
-
     function setUp() public {
         vm.startPrank(alice);
 
         (pool, tokens) = setUpPool();
 
         assertEq(pool.owner(), alice, "Owner of pool.");
-
-        USDC.mint(1e24);
-        (amount,) = pool.stake(address(USDC), 1e24, 0);
     }
 
     function testUsers_isAllowed() public {
-        assertTrue(
-            pool.isAllowed(alice),
-            "Alice is allowed."
-        );
+        assertTrue(pool.isAllowed(alice), "Alice is allowed.");
     }
 
-    function testUsers_setisAllowed() public {
+    function testUsers_setIsAllowed() public {
+        uint256 usdcBalance = USDC.balanceOf(address(pool));
+
+        emit log("Before mint");
+        USDC.mint(usdcBalance/10);
+        emit log("After mint");
+
+        pool.stake(address(USDC), usdcBalance/10, 0);
+        emit log("After stake");
+
+        assertGt(pool.balanceOf(alice), 0, "Alice's balance is greater than 0.");
+
         pool.setIsAllowed(alice, false);
 
         assertFalse(
