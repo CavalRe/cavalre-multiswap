@@ -2,6 +2,8 @@
 pragma solidity 0.8.19;
 
 interface IUsers {
+    error CannotModify(address user);
+
     error InvalidDiscount(uint256 discount_);
 
     error ZeroAddress();

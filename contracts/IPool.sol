@@ -102,8 +102,6 @@ interface IPool is ILPToken {
 
     error AssetNotFound(address asset);
 
-    error CannotBlock(address user);
-
     error DuplicateToken(address payToken);
 
     error ExcessivePayAmount(uint256 expected, uint256 actual);
