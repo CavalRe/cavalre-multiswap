@@ -362,16 +362,25 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         for (uint256 i; i < payTokens.length; i++) {
             address payToken = payTokens[i];
             uint256 amount = amounts[i];
+            uint256 contractBalance = IERC20(payToken).balanceOf(address(this));
+            uint256 internalBalance = _assetState[payToken].balance /
+                _assetState[payToken].conversion; // Convert from canonical
             if (payToken == address(this)) {
-                _burn(sender, amount);
+                if (contractBalance < amount) {
+                    _burn(sender, amount - contractBalance);
+                    _burn(address(this), contractBalance);
+                } else {
+                    _burn(address(this), amount);
+                }
             } else {
-                SafeERC20.safeTransferFrom(
-                    IERC20(payToken),
-                    sender,
-                    address(this),
-                    amount
-                );
-
+                if (contractBalance < internalBalance + amount) {
+                    SafeERC20.safeTransferFrom(
+                        IERC20(payToken),
+                        sender,
+                        address(this),
+                        internalBalance + amount - contractBalance
+                    );
+                }
                 amount *= _assetState[payToken].conversion; // Convert to canonical
                 _updateAssetBalance(payToken, amount, 0);
             }
