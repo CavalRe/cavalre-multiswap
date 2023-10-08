@@ -20,28 +20,37 @@ contract UsersTest is PoolTest {
     }
 
     function testUsers_setIsAllowed() public {
-        uint256 usdcBalance = USDC.balanceOf(address(pool));
+        vm.startPrank(bob);
 
-        emit log("Before mint");
-        USDC.mint(usdcBalance/10);
-        emit log("After mint");
+        uint256 amount = USDC.balanceOf(address(pool)) / 10;
+        USDC.mint(amount);
+        USDC.increaseAllowance(address(pool), amount);
+        pool.stake(address(USDC), amount, 0);
 
-        pool.stake(address(USDC), usdcBalance/10, 0);
-        emit log("After stake");
+        assertGt(pool.balanceOf(bob), 0, "Bob's balance is greater than 0.");
 
-        assertGt(pool.balanceOf(alice), 0, "Alice's balance is greater than 0.");
+        vm.stopPrank();
 
-        pool.setIsAllowed(alice, false);
+        vm.startPrank(alice);
+
+        pool.setIsAllowed(bob, false);
 
         assertFalse(
-            pool.isAllowed(alice),
-            "Alice is not allowed after being disappowed."
+            pool.isAllowed(bob),
+            "Bob is not allowed after being disappowed."
         );
 
         assertEq(
-            pool.balanceOf(alice),
+            pool.balanceOf(bob),
             0,
-            "Alice's balance is 0 after being disallowed."
+            "Bob's balance is 0 after being disallowed."
         );
+
+        vm.expectRevert(
+            abi.encodeWithSelector(IPool.CannotBlock.selector, alice)
+        );
+        pool.setIsAllowed(alice, false);
+
+        vm.stopPrank();
     }
 }
