@@ -359,23 +359,24 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         for (uint256 i; i < payTokens.length; i++) {
             address payToken = payTokens[i];
             uint256 amount = amounts[i];
-            uint256 contractBalance = IERC20(payToken).balanceOf(address(this));
-            uint256 internalBalance = _assetState[payToken].balance /
-                _assetState[payToken].conversion; // Convert from canonical
             if (payToken == address(this)) {
-                if (contractBalance < amount) {
+                uint256 contractBalance = balanceOf(address(this));
+                if (contractBalance == 0) {
+                    _burn(sender, amount);
+                } else if (contractBalance < amount) {
                     _burn(sender, amount - contractBalance);
                     _burn(address(this), contractBalance);
-                } else {
-                    _burn(address(this), amount);
                 }
             } else {
-                if (contractBalance < internalBalance + amount) {
+                uint256 externalBalance = IERC20(payToken).balanceOf(address(this));
+                uint256 internalBalance = _assetState[payToken].balance /
+                    _assetState[payToken].conversion; // Convert from canonical
+                if (externalBalance < internalBalance + amount) {
                     SafeERC20.safeTransferFrom(
                         IERC20(payToken),
                         sender,
                         address(this),
-                        internalBalance + amount - contractBalance
+                        internalBalance + amount - externalBalance
                     );
                 }
                 amount *= _assetState[payToken].conversion; // Convert to canonical
@@ -789,7 +790,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     function setIsAllowed(address user_, bool isAllowed_) public onlyOwner {
         _isBlocked[user_] = !isAllowed_;
         if (!isAllowed_) {
-            if (user_ == owner() || user_ == protocolFeeRecipient()) revert CannotModify(user_);
+            if (user_ == owner() || user_ == protocolFeeRecipient())
+                revert CannotModify(user_);
             uint256 balance = balanceOf(user_);
             if (balance > 0) {
                 _removeLiquidity(
