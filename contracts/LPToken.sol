@@ -6,7 +6,8 @@
  * The original file is licensed under the MIT License, a copy of which can be found at:
  * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.9.0/LICENSE
  */
-
+ // Copyright (C) 2020-2023, CavalRe Inc. All rights reserved.
+// See the file LICENSE.md for licensing terms.
 pragma solidity 0.8.19;
 
 import {ILPToken} from "@cavalre/ILPToken.sol";
