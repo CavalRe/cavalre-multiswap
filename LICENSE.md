@@ -3,22 +3,16 @@ License text copyright (c) 2023 MariaDB plc, All Rights Reserved.
 
 Parameters
 
-Licensor:             MariaDB plc
+Licensor: CavalRe Inc.
 
-Licensed Work:        MariaDB MaxScale (TM) version 23.08.0
-                      The Licensed Work is (c) 2023 MariaDB plc
-                      
-Additional Use Grant: You may use the Licensed Work when your application
-                      uses the Licensed Work with a total of less than three
-                      server instances in production.
+Licensed Work: The Licensed Work is (c) 2023 CavalRe Inc.
 
-Change Date:          2027-09-19
+Change Date: 2027-09-01
 
-Change License:       Version 2 or later of the GNU General Public License as
-                      published by the Free Software Foundation.
+Change License: MIT
 
 For information about alternative licensing arrangements for the Software,
-please visit: https://mariadb.com/products/mariadb-enterprise
+please visit: https://caval.re/products/cavalre-enterprise
 
 Notice
 
