@@ -368,9 +368,13 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                 } else if (contractBalance < amount) {
                     _burn(sender, amount - contractBalance);
                     _burn(address(this), contractBalance);
+                } else {
+                    _burn(address(this), amount);
                 }
             } else {
-                uint256 externalBalance = IERC20(payToken).balanceOf(address(this));
+                uint256 externalBalance = IERC20(payToken).balanceOf(
+                    address(this)
+                );
                 uint256 internalBalance = _assetState[payToken].balance /
                     _assetState[payToken].conversion; // Convert from canonical
                 if (externalBalance < internalBalance + amount) {
@@ -802,6 +806,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                     new uint256[](_assetAddress.length)
                 );
             }
+            _discount[user_] = 0;
             emit UserRemoved(user_);
         }
     }

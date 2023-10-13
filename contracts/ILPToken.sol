@@ -25,8 +25,6 @@ interface ILPToken is IUsers {
 
     error InvalidProtocolFee(uint256 fee);
 
-    error UserNotAllowed(address user_);
-
     function name() external view returns (string memory);
 
     function symbol() external view returns (string memory);

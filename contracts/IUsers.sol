@@ -8,6 +8,8 @@ interface IUsers {
 
     error InvalidDiscount(uint256 discount_);
 
+    error UserNotAllowed(address user_);
+
     error ZeroAddress();
 
     function isAllowed(address user_) external view returns (bool);
