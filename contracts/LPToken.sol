@@ -6,7 +6,7 @@
  * The original file is licensed under the MIT License, a copy of which can be found at:
  * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.9.0/LICENSE
  */
- // Copyright (C) 2020-2023, CavalRe Inc. All rights reserved.
+// Copyright (C) 2020-2023, CavalRe Inc. All rights reserved.
 // See the file LICENSE.md for licensing terms.
 pragma solidity 0.8.19;
 
@@ -83,6 +83,7 @@ contract LPToken is ILPToken, Users {
     }
 
     function approve(address spender, uint256 amount) public returns (bool) {
+        if (_isBlocked[spender]) revert UserNotAllowed(spender);
         address owner = _msgSender();
         _approve(owner, spender, amount);
         return true;
@@ -94,6 +95,7 @@ contract LPToken is ILPToken, Users {
         uint256 amount
     ) public returns (bool) {
         address spender = _msgSender();
+        if (_isBlocked[spender]) revert UserNotAllowed(spender);
         _spendAllowance(from, spender, amount);
         _transfer(from, to, amount);
         return true;
@@ -237,6 +239,5 @@ contract LPToken is ILPToken, Users {
         if (recipient == address(0)) revert ZeroAddress();
         if (_isBlocked[recipient]) revert UserNotAllowed(recipient);
         _protocolFeeRecipient = recipient;
-        _isBlocked[recipient] = false;
     }
 }

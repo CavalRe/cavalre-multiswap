@@ -22,6 +22,7 @@ contract Users is IUsers, Ownable2Step {
     }
 
     function setDiscount(address user_, uint256 discount_) public onlyOwner {
+        if (_isBlocked[user_]) revert UserNotAllowed(user_);
         if (user_ == address(0)) revert ZeroAddress();
         if (discount_ > ONE) revert InvalidDiscount(discount_);
         _discount[user_] = discount_;

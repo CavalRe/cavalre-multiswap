@@ -131,7 +131,7 @@ contract LPTokenTest is Test {
         assertEq(pool.totalSupply(), amount, "Total supply after minting.");
 
         vm.expectRevert(
-            abi.encodeWithSelector(ILPToken.UserNotAllowed.selector, bob)
+            abi.encodeWithSelector(IUsers.UserNotAllowed.selector, bob)
         );
         pool.transfer(bob, amount);
 
@@ -168,7 +168,7 @@ contract LPTokenTest is Test {
         vm.startPrank(bob);
 
         vm.expectRevert(
-            abi.encodeWithSelector(ILPToken.UserNotAllowed.selector, carol)
+            abi.encodeWithSelector(IUsers.UserNotAllowed.selector, carol)
         );
         pool.transferFrom(alice, carol, amount);
 
