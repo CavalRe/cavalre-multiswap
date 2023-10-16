@@ -94,12 +94,6 @@ interface IPool is ILPToken {
         uint256 feeAmount
     );
 
-    event DistributeFee(
-        uint256 indexed txCount,
-        uint256 lpAmount,
-        uint256 protocolAmount
-    );
-
     event UserRemoved(address indexed user);
 
     event TradingPaused();

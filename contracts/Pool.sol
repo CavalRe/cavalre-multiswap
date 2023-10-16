@@ -250,11 +250,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     }
 
     function distributeFee(uint256 amount) internal {
-        uint256 lpAmount;
-        uint256 protocolAmount;
-        (lpAmount, protocolAmount) = _distributeFee(amount);
-
-        emit DistributeFee(_txCount, lpAmount, protocolAmount);
+        _distributeFee(_txCount, amount);
     }
 
     function _multiswap(
