@@ -18,7 +18,7 @@ interface ILPToken is IUsers {
         address indexed spender,
         uint256 value
     );
-    
+
     event DistributeFee(
         uint256 indexed txCount,
         uint256 lpAmount,
