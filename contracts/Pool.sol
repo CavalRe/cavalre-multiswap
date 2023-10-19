@@ -128,6 +128,22 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         _mint(_msgSender(), _poolState.scale);
     }
 
+    function isPaused() public view returns (bool) {
+        return _tradingPaused;
+    }
+
+    function isInitialized() public view returns (bool) {
+        return _isInitialized == 1;
+    }
+
+    function getAssetAddress() public view returns (address[] memory) {
+        return _assetAddress;
+    }
+
+    function txCount() public view returns (uint256) {
+        return _txCount;
+    }
+
     function info() public view returns (PoolState memory) {
         return _poolState;
     }
