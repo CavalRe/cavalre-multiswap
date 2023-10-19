@@ -19,7 +19,11 @@ interface ILPToken is IUsers {
         uint256 value
     );
 
-    event DistributeFee(uint256 lpAmount, uint256 protocolAmount);
+    event DistributeFee(
+        uint256 indexed txCount,
+        uint256 lpAmount,
+        uint256 protocolAmount
+    );
 
     event Transfer(address indexed from, address indexed to, uint256 value);
 

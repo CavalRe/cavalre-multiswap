@@ -249,6 +249,10 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         return isLP;
     }
 
+    function distributeFee(uint256 amount) internal {
+        _distributeFee(_txCount, amount);
+    }
+
     function _multiswap(
         address sender,
         address[] memory payTokens,

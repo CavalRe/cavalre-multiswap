@@ -212,14 +212,17 @@ contract LPToken is ILPToken, Users {
         }
     }
 
-    function distributeFee(uint256 amount) internal {
-        uint256 protocolAmount = amount.mulWadUp(_protocolFee);
-        uint256 lpAmount = amount - protocolAmount;
+    function _distributeFee(
+        uint256 txCount,
+        uint256 amount
+    ) internal returns (uint256 lpAmount, uint256 protocolAmount) {
+        protocolAmount = amount.mulWadUp(_protocolFee);
+        lpAmount = amount - protocolAmount;
         _totalSupply += lpAmount;
         _ratio = _totalSupply.divWadUp(_virtualSupply);
         if (protocolAmount > 0) _mint(_protocolFeeRecipient, protocolAmount);
 
-        emit DistributeFee(lpAmount, protocolAmount);
+        if (lpAmount > 0) emit DistributeFee(txCount, lpAmount, protocolAmount);
     }
 
     function protocolFee() public view returns (uint256) {
