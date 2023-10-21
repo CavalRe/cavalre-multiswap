@@ -94,7 +94,9 @@ interface IPool is ILPToken {
         uint256 feeAmount
     );
 
-    event UserRemoved(address indexed user);
+    event UserBlocked(address indexed user);
+
+    event UserBlockLifted(address indexed user);
 
     event TradingPaused();
 

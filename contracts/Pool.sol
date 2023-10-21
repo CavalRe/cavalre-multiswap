@@ -798,6 +798,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     }
 
     function setIsAllowed(address user_, bool isAllowed_) public onlyOwner {
+        if (_isBlocked[user_] && isAllowed_) emit UserBlockLifted(user_);
         _isBlocked[user_] = !isAllowed_;
         if (!isAllowed_) {
             if (user_ == owner() || user_ == protocolFeeRecipient())
@@ -811,7 +812,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                 );
             }
             _discount[user_] = 0;
-            emit UserRemoved(user_);
+            emit UserBlocked(user_);
         }
     }
 
