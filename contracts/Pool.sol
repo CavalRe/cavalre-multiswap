@@ -91,7 +91,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             0
         );
         _assetAddresses.push(token_);
-        emit AssetAdded(_txCount, token_, fee_, balance_, scale_);
+        emit AssetAdded(token_, fee_, balance_, scale_);
     }
 
     function removeAsset(address token) public onlyUninitialized onlyOwner {
@@ -121,7 +121,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         _assetAddresses.pop();
 
         delete _assetState[token];
-        emit AssetRemoved(_txCount, token);
+        emit AssetRemoved(token);
     }
 
     function initialize() public onlyUninitialized onlyOwner {
