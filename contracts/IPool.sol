@@ -34,6 +34,19 @@ struct AssetState {
 }
 
 interface IPool is ILPToken {
+    event AssetAdded(
+        address indexed token,
+        uint256 fee,
+        uint256 balance,
+        uint256 scale
+    );
+
+    event AssetRemoved(address indexed token);
+
+    event Initialized(
+        address indexed poolAddress
+    );
+
     event BalanceUpdate(
         uint256 indexed txCount,
         address indexed token,

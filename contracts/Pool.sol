@@ -21,7 +21,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     PoolState private _poolState;
 
     mapping(address => AssetState) private _assetState;
-    address[] private _assetAddress;
+    address[] private _assetAddresses;
 
     bool private _tradingPaused;
 
@@ -78,7 +78,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         balance_ *= conversion_; // Convert to canonical
         _assetState[token_] = AssetState(
             token_,
-            _assetAddress.length,
+            _assetAddresses.length,
             IERC20Metadata(token_).name(),
             IERC20Metadata(token_).symbol(),
             decimals_,
@@ -90,7 +90,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             scale_,
             0
         );
-        _assetAddress.push(token_);
+        _assetAddresses.push(token_);
+        emit AssetAdded(token_, fee_, balance_, scale_);
     }
 
     function removeAsset(address token) public onlyUninitialized onlyOwner {
@@ -111,21 +112,31 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         );
 
         uint256 index_ = asset_.index;
-        uint256 lastIndex_ = _assetAddress.length - 1;
+        uint256 lastIndex_ = _assetAddresses.length - 1;
 
         if (index_ != lastIndex_) {
-            _assetAddress[index_] = _assetAddress[lastIndex_];
-            _assetState[_assetAddress[index_]].index = index_;
+            _assetAddresses[index_] = _assetAddresses[lastIndex_];
+            _assetState[_assetAddresses[index_]].index = index_;
         }
-        _assetAddress.pop();
+        _assetAddresses.pop();
 
         delete _assetState[token];
+        emit AssetRemoved(token);
     }
 
     function initialize() public onlyUninitialized onlyOwner {
         _isInitialized = 1;
 
         _mint(_msgSender(), _poolState.scale);
+        emit Initialized(_poolState.token);
+    }
+
+    function txCount() public view returns (uint256) {
+        return _txCount;
+    }
+
+    function isInitialized() public view returns (bool) {
+        return _isInitialized == 1;
     }
 
     function info() public view returns (PoolState memory) {
@@ -133,19 +144,27 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     }
 
     function assets() public view returns (AssetState[] memory) {
-        AssetState[] memory assets_ = new AssetState[](_assetAddress.length);
+        AssetState[] memory assets_ = new AssetState[](_assetAddresses.length);
 
-        for (uint256 i; i < _assetAddress.length; i++) {
-            assets_[i] = asset(_assetAddress[i]);
+        for (uint256 i; i < _assetAddresses.length; i++) {
+            assets_[i] = asset(_assetAddresses[i]);
         }
 
         return assets_;
+    }
+
+    function assetAddresses() public view returns (address[] memory) {
+        return _assetAddresses;
     }
 
     function asset(address token) public view returns (AssetState memory) {
         if (token == address(0)) revert ZeroAddress();
         if (_assetState[token].token != token) revert AssetNotFound(token);
         return _assetState[token];
+    }
+
+    function isPaused() public view returns (bool) {
+        return _tradingPaused;
     }
 
     function _geometricMean(
@@ -454,7 +473,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         // Check duplicates
         {
             bool isLP;
-            bool[] memory check_ = new bool[](_assetAddress.length);
+            bool[] memory check_ = new bool[](_assetAddresses.length);
             isLP = _checkDuplicateTokens(payTokens, check_, isLP);
             isLP = _checkDuplicateTokens(receiveTokens, check_, isLP);
         }
@@ -691,8 +710,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         returns (uint256[] memory payAmounts)
     {
         if (_tradingPaused) revert TradingPausedError();
-        if (_assetAddress.length != maxPayAmounts.length)
-            revert LengthMismatch(_assetAddress.length, maxPayAmounts.length);
+        if (_assetAddresses.length != maxPayAmounts.length)
+            revert LengthMismatch(_assetAddresses.length, maxPayAmounts.length);
         if (receiveAmount == 0) revert ZeroAmount();
         address sender = _msgSender();
         _checkUser(sender);
@@ -700,13 +719,13 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         _txCount++;
 
         AssetState storage assetIn;
-        payAmounts = new uint256[](_assetAddress.length);
+        payAmounts = new uint256[](_assetAddresses.length);
 
         uint256 g = (_poolState.balance + receiveAmount).divWadUp(
             _poolState.balance
         );
-        for (uint256 i; i < _assetAddress.length; i++) {
-            assetIn = _assetState[_assetAddress[i]];
+        for (uint256 i; i < _assetAddresses.length; i++) {
+            assetIn = _assetState[_assetAddresses[i]];
             uint256 payAmount = (assetIn.balance.mulWadUp(g) -
                 assetIn.balance) / assetIn.conversion;
             if (payAmount > maxPayAmounts[i])
@@ -721,7 +740,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             );
 
             payAmount *= assetIn.conversion; // Convert to canonical
-            _updateAssetBalance(_assetAddress[i], payAmount, 0);
+            _updateAssetBalance(_assetAddresses[i], payAmount, 0);
         }
 
         _mint(sender, receiveAmount);
@@ -735,7 +754,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256 amount,
         uint256[] memory minReceiveAmounts
     ) internal returns (uint256[] memory receiveAmounts, uint256 feeAmount) {
-        uint256 n = _assetAddress.length;
+        uint256 n = _assetAddresses.length;
         address[] memory payTokens = new address[](1);
         uint256[] memory amounts = new uint256[](1);
         address[] memory receiveTokens = new address[](n);
@@ -744,12 +763,12 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
 
         payTokens[0] = address(this);
         amounts[0] = amount;
-        receiveTokens = _assetAddress;
+        receiveTokens = _assetAddresses;
         {
             uint256 allocation;
             uint256 totalAllocation;
             for (uint256 i; i < n - 1; i++) {
-                allocation = _assetState[_assetAddress[i]].scale.divWadUp(
+                allocation = _assetState[_assetAddresses[i]].scale.divWadUp(
                     _poolState.scale
                 );
                 allocations[i] = allocation;
@@ -784,9 +803,9 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         onlyInitialized
         returns (uint256[] memory receiveAmounts, uint256 feeAmount)
     {
-        if (_assetAddress.length != minReceiveAmounts.length)
+        if (_assetAddresses.length != minReceiveAmounts.length)
             revert LengthMismatch(
-                _assetAddress.length,
+                _assetAddresses.length,
                 minReceiveAmounts.length
             );
         if (amount == 0) revert ZeroAmount();
@@ -809,7 +828,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                 _removeLiquidity(
                     user_,
                     balance,
-                    new uint256[](_assetAddress.length)
+                    new uint256[](_assetAddresses.length)
                 );
             }
             _discount[user_] = 0;
