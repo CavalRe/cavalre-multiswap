@@ -272,20 +272,17 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         _distributeFee(_txCount, amount);
     }
 
-    function _multiswap(
+    function quote(
         address sender,
         address[] memory payTokens,
         uint256[] memory amounts,
         address[] memory receiveTokens,
-        uint256[] memory allocations,
-        uint256[] memory minReceiveAmounts
+        uint256[] memory allocations
     )
-        private
-        nonReentrant
+        public
+        view
         returns (uint256[] memory receiveAmounts, uint256 feeAmount)
     {
-        _txCount++;
-
         receiveAmounts = new uint256[](receiveTokens.length);
 
         {
@@ -370,12 +367,41 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                             ) /
                             assetOut.conversion; // Convert from canonical
                     }
-                    if (receiveAmounts[i] < minReceiveAmounts[i]) {
-                        revert InsufficientReceiveAmount(
-                            minReceiveAmounts[i],
-                            receiveAmounts[i]
-                        );
-                    }
+                }
+            }
+        }
+    }
+
+    function _multiswap(
+        address sender,
+        address[] memory payTokens,
+        uint256[] memory amounts,
+        address[] memory receiveTokens,
+        uint256[] memory allocations,
+        uint256[] memory minReceiveAmounts
+    )
+        private
+        nonReentrant
+        returns (uint256[] memory receiveAmounts, uint256 feeAmount)
+    {
+        _txCount++;
+
+        (receiveAmounts, feeAmount) = quote(
+            sender,
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations
+        );
+
+        // Check receiveAmounts
+        {
+            for (uint256 i; i < receiveTokens.length; i++) {
+                if (receiveAmounts[i] < minReceiveAmounts[i]) {
+                    revert InsufficientReceiveAmount(
+                        minReceiveAmounts[i],
+                        receiveAmounts[i]
+                    );
                 }
             }
         }
