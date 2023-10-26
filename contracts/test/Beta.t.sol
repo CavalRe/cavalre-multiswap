@@ -58,6 +58,10 @@ contract BetaTest is PoolTest {
     uint256[] private allMaxs = new uint256[](NTOKENS);
 
     uint256 private amountOut;
+    uint256 private amountQuote;
+    uint256 private feeQuote;
+    uint256[] private payAmountQuotes;
+    uint256[] private receiveAmountQuotes;
 
     function setUp() public {
         (pool, tokens) = setUpPool();
@@ -174,12 +178,19 @@ contract BetaTest is PoolTest {
         emit log("");
         emit log_named_uint("amountIn", amount);
         emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
+        (amountQuote, feeQuote) = pool.quoteSwap(
+            oneAsset[0],
+            anotherAsset[0],
+            amount
+        );
         (amountOut, feeAmount) = pool.swap(
             oneAsset[0],
             anotherAsset[0],
             amount,
             oneMin[0]
         );
+        assertEq(amountQuote, amountOut, "amountOut");
+        assertEq(feeQuote, feeAmount, "feeAmount");
         emit log("State after swap");
         emit log("");
         emit log_named_uint("amountIn", amount);
@@ -199,7 +210,10 @@ contract BetaTest is PoolTest {
         emit log("");
         emit log_named_uint("amountIn", amount);
         emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
+        (amountQuote, feeQuote) = pool.quoteStake(oneAsset[0], amount);
         (amountOut, feeAmount) = pool.stake(oneAsset[0], amount, oneMin[0]);
+        assertEq(amountQuote, amountOut, "amountOut");
+        assertEq(feeQuote, feeAmount, "feeAmount");
         emit log("State after stake");
         emit log("");
         emit log_named_uint("amountOut", amountOut);
@@ -216,11 +230,17 @@ contract BetaTest is PoolTest {
         emit log("");
         emit log_named_uint("amountIn", oneAmount[0]);
         emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
+        (amountQuote, feeQuote) = pool.quoteUnstake(
+            anotherAsset[0],
+            oneAmount[0]
+        );
         (amountOut, feeAmount) = pool.unstake(
             anotherAsset[0],
             oneAmount[0],
             oneMin[0]
         );
+        assertEq(amountQuote, amountOut, "amountOut");
+        assertEq(feeQuote, feeAmount, "feeAmount");
         emit log("State after stake");
         emit log("");
         emit log_named_uint("amountOut", amountOut);
@@ -244,6 +264,12 @@ contract BetaTest is PoolTest {
         emit log("");
         emit log_named_uint("amountIn", oneAmount[0]);
         emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
+        (receiveAmountQuotes, feeQuote) = pool.quoteMultiswap(
+            oneAsset,
+            amount,
+            twoTokens,
+            twoAmounts
+        );
         (receiveAmounts, feeAmount) = pool.multiswap(
             oneAsset,
             amount,
@@ -251,6 +277,9 @@ contract BetaTest is PoolTest {
             twoAmounts,
             twoMins
         );
+        assertEq(receiveAmountQuotes[0], receiveAmounts[0], "amountOut 1");
+        assertEq(receiveAmountQuotes[1], receiveAmounts[1], "amountOut 2");
+        assertEq(feeQuote, feeAmount, "feeAmount");
         emit log("State after stake");
         emit log("");
         emit log_named_uint("amountOut 1", receiveAmounts[0]);
@@ -274,6 +303,12 @@ contract BetaTest is PoolTest {
         emit log_named_uint("amountIn 1", twoAmounts[0]);
         emit log_named_uint("amountIn 2", twoAmounts[1]);
         emit log("");
+        (receiveAmountQuotes, feeQuote) = pool.quoteMultiswap(
+            twoTokens,
+            twoAmounts,
+            anotherAsset,
+            oneAllocation
+        );
         (receiveAmounts, feeAmount) = pool.multiswap(
             twoTokens,
             twoAmounts,
@@ -281,6 +316,8 @@ contract BetaTest is PoolTest {
             oneAllocation,
             oneMin
         );
+        assertEq(receiveAmountQuotes[0], receiveAmounts[0], "amountOut");
+        assertEq(feeQuote, feeAmount, "feeAmount");
         emit log("=================");
         emit log("State after stake");
         emit log("");
@@ -300,7 +337,11 @@ contract BetaTest is PoolTest {
         emit log_named_uint("amountIn", oneAmount[0]);
         emit log_named_uint("balance", pool.info().balance);
         emit log("");
-        pool.addLiquidity(oneAmount[0], allMaxs);
+        payAmountQuotes = pool.quoteAddLiquidity(oneAmount[0]);
+        payAmounts = pool.addLiquidity(oneAmount[0], allMaxs);
+        for (uint256 i; i < NTOKENS; i++) {
+            assertEq(payAmountQuotes[i], payAmounts[i], "payAmount");
+        }
         emit log("=================");
         emit log("State after addLiquidity");
         emit log("");
@@ -317,7 +358,12 @@ contract BetaTest is PoolTest {
         emit log_named_uint("amountIn", oneAmount[0]);
         emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
         emit log("");
+        (receiveAmountQuotes, feeQuote) = pool.quoteRemoveLiquidity(marketCap);
         (receiveAmounts, feeAmount) = pool.removeLiquidity(marketCap, allMins);
+        for (uint256 i; i < NTOKENS; i++) {
+            assertEq(receiveAmountQuotes[i], receiveAmounts[i], "receiveAmount");
+        }
+        assertEq(feeQuote, feeAmount, "feeAmount");
         emit log("=================");
         emit log("State after removeLiquidity");
         emit log("");

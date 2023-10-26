@@ -193,7 +193,7 @@ interface IPool is ILPToken {
     function quoteSwap(
         address payToken,
         address receiveToken,
-        uint256 payAmount,
+        uint256 payAmount
     ) external returns (uint256 receiveAmount, uint256 feeAmount);
 
     function swap(
@@ -205,7 +205,7 @@ interface IPool is ILPToken {
 
     function quoteStake(
         address payToken,
-        uint256 payAmount,
+        uint256 payAmount
     ) external returns (uint256 receiveAmount, uint256 feeAmount);
 
     function stake(
@@ -216,7 +216,7 @@ interface IPool is ILPToken {
 
     function quoteUnstake(
         address receiveToken,
-        uint256 payAmount,
+        uint256 payAmount
     ) external returns (uint256 receiveAmount, uint256 feeAmount);
 
     function unstake(
@@ -226,7 +226,7 @@ interface IPool is ILPToken {
     ) external returns (uint256 receiveAmount, uint256 feeAmount);
 
     function quoteAddLiquidity(
-        uint256 receiveAmount,
+        uint256 receiveAmount
     ) external returns (uint256[] memory payAmounts);
 
     function addLiquidity(
@@ -235,7 +235,7 @@ interface IPool is ILPToken {
     ) external returns (uint256[] memory payAmounts);
 
     function quoteRemoveLiquidity(
-        uint256 amount,
+        uint256 amount
     ) external returns (uint256[] memory receiveAmounts, uint256 feeAmount);
 
     function removeLiquidity(
