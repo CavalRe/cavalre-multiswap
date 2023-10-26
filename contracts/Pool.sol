@@ -272,12 +272,17 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         _distributeFee(_txCount, amount);
     }
 
-    function quoteMultiswap(
+    function _quoteMultiswap(
+        address sender,
         address[] memory payTokens,
         uint256[] memory amounts,
         address[] memory receiveTokens,
         uint256[] memory allocations
-    ) public view returns (uint256[] memory receiveAmounts, uint256 feeAmount) {
+    )
+        private
+        view
+        returns (uint256[] memory receiveAmounts, uint256 feeAmount)
+    {
         receiveAmounts = new uint256[](receiveTokens.length);
 
         {
@@ -288,6 +293,10 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                     fee += allocations[i].mulWadUp(
                         _assetState[receiveTokens[i]].fee
                     );
+                }
+                uint256 discount_ = _discount[sender];
+                if (fee > 0 && discount_ > 0) {
+                    fee = fee.mulWadUp(ONE - discount_);
                 }
             }
 
@@ -377,7 +386,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     {
         _txCount++;
 
-        (receiveAmounts, feeAmount) = quoteMultiswap(
+        (receiveAmounts, feeAmount) = _quoteMultiswap(
+            sender,
             payTokens,
             amounts,
             receiveTokens,
@@ -452,6 +462,21 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         distributeFee(feeAmount);
 
         _updatePoolBalance();
+    }
+
+    function quoteMultiswap(
+        address[] memory payTokens,
+        uint256[] memory amounts,
+        address[] memory receiveTokens,
+        uint256[] memory allocations
+    ) public view returns (uint256[] memory receiveAmounts, uint256 feeAmount) {
+        (receiveAmounts, feeAmount) = _quoteMultiswap(
+            _msgSender(),
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations
+        );
     }
 
     function multiswap(
@@ -561,7 +586,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         receiveTokens[0] = receiveToken;
         allocations[0] = 1e18;
 
-        (receiveAmounts, feeAmount) = quoteMultiswap(
+        (receiveAmounts, feeAmount) = _quoteMultiswap(
+            _msgSender(),
             payTokens,
             amounts,
             receiveTokens,
@@ -653,7 +679,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         receiveTokens[0] = address(this);
         allocations[0] = 1e18;
 
-        (receiveAmounts, feeAmount) = quoteMultiswap(
+        (receiveAmounts, feeAmount) = _quoteMultiswap(
+            _msgSender(),
             payTokens,
             amounts,
             receiveTokens,
@@ -729,7 +756,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         receiveTokens[0] = receiveToken;
         allocations[0] = 1e18;
 
-        (receiveAmounts, feeAmount) = quoteMultiswap(
+        (receiveAmounts, feeAmount) = _quoteMultiswap(
+            _msgSender(),
             payTokens,
             amounts,
             receiveTokens,
@@ -884,7 +912,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             allocations[n - 1] = 1e18 - totalAllocation;
         }
 
-        (receiveAmounts, feeAmount) = quoteMultiswap(
+        (receiveAmounts, feeAmount) = _quoteMultiswap(
+            _msgSender(),
             payTokens,
             amounts,
             receiveTokens,

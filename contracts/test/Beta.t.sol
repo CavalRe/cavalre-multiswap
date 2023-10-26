@@ -361,7 +361,11 @@ contract BetaTest is PoolTest {
         (receiveAmountQuotes, feeQuote) = pool.quoteRemoveLiquidity(marketCap);
         (receiveAmounts, feeAmount) = pool.removeLiquidity(marketCap, allMins);
         for (uint256 i; i < NTOKENS; i++) {
-            assertEq(receiveAmountQuotes[i], receiveAmounts[i], "receiveAmount");
+            assertEq(
+                receiveAmountQuotes[i],
+                receiveAmounts[i],
+                "receiveAmount"
+            );
         }
         assertEq(feeQuote, feeAmount, "feeAmount");
         emit log("=================");
@@ -376,14 +380,31 @@ contract BetaTest is PoolTest {
         emit log("");
     }
 
-    function testDiscount() public {
+    function testBetaDiscount() public {
         pool.setDiscount(bob, ONE);
+
+        vm.startPrank(bob);
 
         uint256 amount = oneAmount[0] / oneConversion[0];
         USDC.mint(amount);
         USDC.approve(address(pool), amount);
 
-        pool.swap(oneAsset[0], anotherAsset[0], amount, oneMin[0]);
+        (amountQuote, feeQuote) = pool.quoteSwap(
+            oneAsset[0],
+            anotherAsset[0],
+            amount
+        );
+        (amountOut, feeAmount) = pool.swap(
+            oneAsset[0],
+            anotherAsset[0],
+            amount,
+            oneMin[0]
+        );
+        assertEq(amountQuote, amountOut, "amountOut");
+        assertEq(feeQuote, feeAmount, "feeAmount");
+        assertEq(feeAmount, 0, "feeAmount");
+
+        vm.stopPrank();
 
         vm.expectRevert(
             abi.encodeWithSelector(IUsers.InvalidDiscount.selector, 2 * ONE)
