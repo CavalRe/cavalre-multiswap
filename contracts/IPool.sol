@@ -43,9 +43,7 @@ interface IPool is ILPToken {
 
     event AssetRemoved(address indexed token);
 
-    event Initialized(
-        address indexed poolAddress
-    );
+    event Initialized(address indexed poolAddress);
 
     event BalanceUpdate(
         uint256 indexed txCount,
@@ -173,6 +171,14 @@ interface IPool is ILPToken {
     function assets() external view returns (AssetState[] memory);
 
     function asset(address token) external view returns (AssetState memory);
+
+    function quote(
+        address sender,
+        address[] memory payTokens,
+        uint256[] memory amounts,
+        address[] memory receiveTokens,
+        uint256[] memory allocations
+    ) external view returns (uint256[] memory receiveAmounts, uint256 feeAmount);
 
     function multiswap(
         address[] memory payTokens,
