@@ -37,6 +37,7 @@ contract PoolTest is Test {
     Token internal WBTCe = new Token("Bridged WBTC", "WBTC.e", 8);
     Token internal BTCb = new Token("Bridged BTC", "BTC.b", 8);
 
+    uint256[] internal payAmounts;
     uint256[] internal receiveAmounts;
     uint256 internal feeAmount;
 

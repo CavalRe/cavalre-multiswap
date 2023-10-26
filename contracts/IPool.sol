@@ -43,9 +43,7 @@ interface IPool is ILPToken {
 
     event AssetRemoved(address indexed token);
 
-    event Initialized(
-        address indexed poolAddress
-    );
+    event Initialized(address indexed poolAddress);
 
     event BalanceUpdate(
         uint256 indexed txCount,
@@ -174,6 +172,27 @@ interface IPool is ILPToken {
 
     function asset(address token) external view returns (AssetState memory);
 
+    function _quoteMultiswap(
+        address sender,
+        address[] memory payTokens,
+        uint256[] memory amounts,
+        address[] memory receiveTokens,
+        uint256[] memory allocations
+    )
+        external
+        view
+        returns (uint256[] memory receiveAmounts, uint256 feeAmount);
+
+    function quoteMultiswap(
+        address[] memory payTokens,
+        uint256[] memory amounts,
+        address[] memory receiveTokens,
+        uint256[] memory allocations
+    )
+        external
+        view
+        returns (uint256[] memory receiveAmounts, uint256 feeAmount);
+
     function multiswap(
         address[] memory payTokens,
         uint256[] memory amounts,
@@ -182,11 +201,22 @@ interface IPool is ILPToken {
         uint256[] memory minReceiveAmounts
     ) external returns (uint256[] memory receiveAmounts, uint256 feeAmount);
 
+    function quoteSwap(
+        address payToken,
+        address receiveToken,
+        uint256 payAmount
+    ) external returns (uint256 receiveAmount, uint256 feeAmount);
+
     function swap(
         address payToken,
         address receiveToken,
         uint256 payAmount,
         uint256 minReceiveAmount
+    ) external returns (uint256 receiveAmount, uint256 feeAmount);
+
+    function quoteStake(
+        address payToken,
+        uint256 payAmount
     ) external returns (uint256 receiveAmount, uint256 feeAmount);
 
     function stake(
@@ -195,16 +225,29 @@ interface IPool is ILPToken {
         uint256 minReceiveAmount
     ) external returns (uint256 receiveAmount, uint256 feeAmount);
 
+    function quoteUnstake(
+        address receiveToken,
+        uint256 payAmount
+    ) external returns (uint256 receiveAmount, uint256 feeAmount);
+
     function unstake(
         address receiveToken,
         uint256 payAmount,
         uint256 minReceiveAmount
     ) external returns (uint256 receiveAmount, uint256 feeAmount);
 
+    function quoteAddLiquidity(
+        uint256 receiveAmount
+    ) external returns (uint256[] memory payAmounts);
+
     function addLiquidity(
         uint256 receiveAmount,
         uint256[] memory maxPayAmounts
     ) external returns (uint256[] memory payAmounts);
+
+    function quoteRemoveLiquidity(
+        uint256 amount
+    ) external returns (uint256[] memory receiveAmounts, uint256 feeAmount);
 
     function removeLiquidity(
         uint256 amount,
