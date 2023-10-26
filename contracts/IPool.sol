@@ -172,6 +172,17 @@ interface IPool is ILPToken {
 
     function asset(address token) external view returns (AssetState memory);
 
+    function _quoteMultiswap(
+        address sender,
+        address[] memory payTokens,
+        uint256[] memory amounts,
+        address[] memory receiveTokens,
+        uint256[] memory allocations
+    )
+        external
+        view
+        returns (uint256[] memory receiveAmounts, uint256 feeAmount);
+
     function quoteMultiswap(
         address[] memory payTokens,
         uint256[] memory amounts,
