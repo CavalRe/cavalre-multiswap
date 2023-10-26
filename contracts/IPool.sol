@@ -55,7 +55,8 @@ interface IPool is ILPToken {
 
     event Multiswap(
         uint256 indexed txCount,
-        address indexed user,
+        address indexed from,
+        address indexed to,
         address[] payTokens,
         address[] receiveTokens,
         uint256[] payAmounts,
@@ -65,7 +66,8 @@ interface IPool is ILPToken {
 
     event Swap(
         uint256 indexed txCount,
-        address indexed user,
+        address indexed from,
+        address indexed to,
         address payToken,
         address receiveToken,
         uint256 payAmount,
@@ -75,7 +77,8 @@ interface IPool is ILPToken {
 
     event Stake(
         uint256 indexed txCount,
-        address indexed user,
+        address indexed from,
+        address indexed to,
         address payToken,
         uint256 payAmount,
         uint256 receiveAmount
@@ -83,7 +86,8 @@ interface IPool is ILPToken {
 
     event Unstake(
         uint256 indexed txCount,
-        address indexed user,
+        address indexed from,
+        address indexed to,
         address receiveToken,
         uint256 payAmount,
         uint256 receiveAmount,
@@ -92,14 +96,16 @@ interface IPool is ILPToken {
 
     event AddLiquidity(
         uint256 indexed txCount,
-        address indexed user,
+        address indexed from,
+        address indexed to,
         uint256[] payAmounts,
         uint256 receiveAmount
     );
 
     event RemoveLiquidity(
         uint256 indexed txCount,
-        address indexed user,
+        address indexed from,
+        address indexed to,
         uint256 payAmount,
         uint256[] receiveAmounts,
         uint256 feeAmount
@@ -193,6 +199,15 @@ interface IPool is ILPToken {
         view
         returns (uint256[] memory receiveAmounts, uint256 feeAmount);
 
+    function multiswapTo(
+        address to,
+        address[] memory payTokens,
+        uint256[] memory amounts,
+        address[] memory receiveTokens,
+        uint256[] memory allocations,
+        uint256[] memory minReceiveAmounts
+    ) external returns (uint256[] memory receiveAmounts, uint256 feeAmount);
+
     function multiswap(
         address[] memory payTokens,
         uint256[] memory amounts,
@@ -207,6 +222,14 @@ interface IPool is ILPToken {
         uint256 payAmount
     ) external returns (uint256 receiveAmount, uint256 feeAmount);
 
+    function swapTo(
+        address to,
+        address payToken,
+        address receiveToken,
+        uint256 payAmount,
+        uint256 minReceiveAmount
+    ) external returns (uint256 receiveAmount, uint256 feeAmount);
+
     function swap(
         address payToken,
         address receiveToken,
@@ -217,6 +240,13 @@ interface IPool is ILPToken {
     function quoteStake(
         address payToken,
         uint256 payAmount
+    ) external returns (uint256 receiveAmount, uint256 feeAmount);
+
+    function stakeTo(
+        address to,
+        address payToken,
+        uint256 payAmount,
+        uint256 minReceiveAmount
     ) external returns (uint256 receiveAmount, uint256 feeAmount);
 
     function stake(
@@ -230,6 +260,13 @@ interface IPool is ILPToken {
         uint256 payAmount
     ) external returns (uint256 receiveAmount, uint256 feeAmount);
 
+    function unstakeTo(
+        address to,
+        address receiveToken,
+        uint256 payAmount,
+        uint256 minReceiveAmount
+    ) external returns (uint256 receiveAmount, uint256 feeAmount);
+
     function unstake(
         address receiveToken,
         uint256 payAmount,
@@ -240,6 +277,12 @@ interface IPool is ILPToken {
         uint256 receiveAmount
     ) external returns (uint256[] memory payAmounts);
 
+    function addLiquidityTo(
+        address to,
+        uint256 receiveAmount,
+        uint256[] memory maxPayAmounts
+    ) external returns (uint256[] memory payAmounts);
+
     function addLiquidity(
         uint256 receiveAmount,
         uint256[] memory maxPayAmounts
@@ -247,6 +290,12 @@ interface IPool is ILPToken {
 
     function quoteRemoveLiquidity(
         uint256 amount
+    ) external returns (uint256[] memory receiveAmounts, uint256 feeAmount);
+
+    function removeLiquidityTo(
+        address to,
+        uint256 amount,
+        uint256[] memory minReceiveAmounts
     ) external returns (uint256[] memory receiveAmounts, uint256 feeAmount);
 
     function removeLiquidity(

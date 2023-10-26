@@ -369,21 +369,22 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     }
 
     function _multiswap(
-        address sender,
+        address from,
+        address to,
         address[] memory payTokens,
         uint256[] memory amounts,
         address[] memory receiveTokens,
         uint256[] memory allocations,
         uint256[] memory minReceiveAmounts
     )
-        private
+        internal
         nonReentrant
         returns (uint256[] memory receiveAmounts, uint256 feeAmount)
     {
         _txCount++;
 
         (receiveAmounts, feeAmount) = _quoteMultiswap(
-            sender,
+            from,
             payTokens,
             amounts,
             receiveTokens,
@@ -409,9 +410,9 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             if (payToken == address(this)) {
                 uint256 contractBalance = balanceOf(address(this));
                 if (contractBalance == 0) {
-                    _burn(sender, amount);
+                    _burn(from, amount);
                 } else if (contractBalance < amount) {
-                    _burn(sender, amount - contractBalance);
+                    _burn(from, amount - contractBalance);
                     _burn(address(this), contractBalance);
                 } else {
                     _burn(address(this), amount);
@@ -425,7 +426,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                 if (externalBalance < internalBalance + amount) {
                     SafeERC20.safeTransferFrom(
                         IERC20(payToken),
-                        sender,
+                        from,
                         address(this),
                         internalBalance + amount - externalBalance
                     );
@@ -441,13 +442,9 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             uint256 receiveAmount = receiveAmounts[i];
             // Update _balance and asset balances.
             if (receiveToken == address(this)) {
-                _mint(sender, receiveAmount);
+                _mint(to, receiveAmount);
             } else {
-                SafeERC20.safeTransfer(
-                    IERC20(receiveToken),
-                    sender,
-                    receiveAmount
-                );
+                SafeERC20.safeTransfer(IERC20(receiveToken), to, receiveAmount);
 
                 receiveAmount *= _assetState[receiveToken].conversion; // Convert to canonical
                 _updateAssetBalance(receiveToken, 0, receiveAmount);
@@ -475,7 +472,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         );
     }
 
-    function multiswap(
+    function multiswapTo(
+        address to,
         address[] memory payTokens,
         uint256[] memory amounts,
         address[] memory receiveTokens,
@@ -488,10 +486,11 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     {
         if (_tradingPaused) revert TradingPausedError();
 
-        address sender = _msgSender();
+        address from = _msgSender();
         // Check user
         {
-            _checkUser(sender);
+            _checkUser(from);
+            _checkUser(to);
         }
         // Check lengths
         {
@@ -547,7 +546,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         }
 
         (receiveAmounts, feeAmount) = _multiswap(
-            sender,
+            from,
+            to,
             payTokens,
             amounts,
             receiveTokens,
@@ -557,12 +557,34 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
 
         emit Multiswap(
             _txCount,
-            sender,
+            from,
+            to,
             payTokens,
             receiveTokens,
             amounts,
             receiveAmounts,
             feeAmount
+        );
+    }
+
+    function multiswap(
+        address[] memory payTokens,
+        uint256[] memory amounts,
+        address[] memory receiveTokens,
+        uint256[] memory allocations,
+        uint256[] memory minReceiveAmounts
+    )
+        public
+        onlyInitialized
+        returns (uint256[] memory receiveAmounts, uint256 feeAmount)
+    {
+        (receiveAmounts, feeAmount) = multiswapTo(
+            _msgSender(),
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations,
+            minReceiveAmounts
         );
     }
 
@@ -593,7 +615,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         receiveAmount = receiveAmounts[0];
     }
 
-    function swap(
+    function swapTo(
+        address to,
         address payToken,
         address receiveToken,
         uint256 payAmount,
@@ -604,8 +627,9 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         returns (uint256 receiveAmount, uint256 feeAmount)
     {
         if (_tradingPaused) revert TradingPausedError();
-        address sender = _msgSender();
-        _checkUser(sender);
+        address from = _msgSender();
+        _checkUser(from);
+        _checkUser(to);
         if (payToken == address(0)) revert ZeroAddress();
         if (receiveToken == address(0)) revert ZeroAddress();
         if (payToken == address(this))
@@ -638,7 +662,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             minReceiveAmounts[0] = minReceiveAmount;
 
             (receiveAmounts, feeAmount) = _multiswap(
-                sender,
+                from,
+                to,
                 payTokens,
                 amounts,
                 receiveTokens,
@@ -651,12 +676,32 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
 
         emit Swap(
             _txCount,
-            sender,
+            from,
+            to,
             payToken,
             receiveToken,
             payAmount,
             receiveAmount,
             feeAmount
+        );
+    }
+
+    function swap(
+        address payToken,
+        address receiveToken,
+        uint256 payAmount,
+        uint256 minReceiveAmount
+    )
+        public
+        onlyInitialized
+        returns (uint256 receiveAmount, uint256 feeAmount)
+    {
+        (receiveAmount, feeAmount) = swapTo(
+            _msgSender(),
+            payToken,
+            receiveToken,
+            payAmount,
+            minReceiveAmount
         );
     }
 
@@ -686,7 +731,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         receiveAmount = receiveAmounts[0];
     }
 
-    function stake(
+    function stakeTo(
+        address to,
         address payToken,
         uint256 payAmount,
         uint256 minReceiveAmount
@@ -696,8 +742,9 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         returns (uint256 receiveAmount, uint256 feeAmount)
     {
         if (_tradingPaused) revert TradingPausedError();
-        address sender = _msgSender();
-        _checkUser(sender);
+        address from = _msgSender();
+        _checkUser(from);
+        _checkUser(to);
         if (payToken == address(0)) revert ZeroAddress();
         if (payToken == address(this)) revert InvalidStake(payToken);
         if (_assetState[payToken].token != payToken)
@@ -723,7 +770,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             minReceiveAmounts[0] = minReceiveAmount;
 
             (receiveAmounts, feeAmount) = _multiswap(
-                sender,
+                from,
+                to,
                 payTokens,
                 amounts,
                 receiveTokens,
@@ -734,7 +782,24 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             receiveAmount = receiveAmounts[0];
         }
 
-        emit Stake(_txCount, sender, payToken, payAmount, receiveAmount);
+        emit Stake(_txCount, from, to, payToken, payAmount, receiveAmount);
+    }
+
+    function stake(
+        address payToken,
+        uint256 payAmount,
+        uint256 minReceiveAmount
+    )
+        public
+        onlyInitialized
+        returns (uint256 receiveAmount, uint256 feeAmount)
+    {
+        (receiveAmount, feeAmount) = stakeTo(
+            _msgSender(),
+            payToken,
+            payAmount,
+            minReceiveAmount
+        );
     }
 
     function quoteUnstake(
@@ -763,7 +828,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         receiveAmount = receiveAmounts[0];
     }
 
-    function unstake(
+    function unstakeTo(
+        address to,
         address receiveToken,
         uint256 payAmount,
         uint256 minReceiveAmount
@@ -773,8 +839,9 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         returns (uint256 receiveAmount, uint256 feeAmount)
     {
         if (_tradingPaused) revert TradingPausedError();
-        address sender = _msgSender();
-        _checkUser(sender);
+        address from = _msgSender();
+        _checkUser(from);
+        _checkUser(to);
         if (receiveToken == address(0)) revert ZeroAddress();
         if (receiveToken == address(this)) revert InvalidUnstake(receiveToken);
         if (_assetState[receiveToken].token != receiveToken)
@@ -796,7 +863,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         minReceiveAmounts[0] = minReceiveAmount;
 
         (receiveAmounts, feeAmount) = _multiswap(
-            sender,
+            from,
+            to,
             payTokens,
             amounts,
             receiveTokens,
@@ -808,11 +876,29 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
 
         emit Unstake(
             _txCount,
-            sender,
+            from,
+            to,
             receiveToken,
             payAmount,
             receiveAmount,
             feeAmount
+        );
+    }
+
+    function unstake(
+        address receiveToken,
+        uint256 payAmount,
+        uint256 minReceiveAmount
+    )
+        public
+        onlyInitialized
+        returns (uint256 receiveAmount, uint256 feeAmount)
+    {
+        (receiveAmount, feeAmount) = unstakeTo(
+            _msgSender(),
+            receiveToken,
+            payAmount,
+            minReceiveAmount
         );
     }
 
@@ -832,7 +918,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         }
     }
 
-    function addLiquidity(
+    function addLiquidityTo(
+        address to,
         uint256 receiveAmount,
         uint256[] memory maxPayAmounts
     )
@@ -845,8 +932,9 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         if (_assetAddresses.length != maxPayAmounts.length)
             revert LengthMismatch(_assetAddresses.length, maxPayAmounts.length);
         if (receiveAmount == 0) revert ZeroAmount();
-        address sender = _msgSender();
-        _checkUser(sender);
+        address from = _msgSender();
+        _checkUser(from);
+        _checkUser(to);
 
         _txCount++;
 
@@ -866,7 +954,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
 
             SafeERC20.safeTransferFrom(
                 IERC20(assetIn.token),
-                sender,
+                from,
                 address(this),
                 payAmount
             );
@@ -875,10 +963,17 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             _updateAssetBalance(_assetAddresses[i], payAmount, 0);
         }
 
-        _mint(sender, receiveAmount);
+        _mint(to, receiveAmount);
         _updatePoolBalance();
 
-        emit AddLiquidity(_txCount, sender, payAmounts, receiveAmount);
+        emit AddLiquidity(_txCount, from, to, payAmounts, receiveAmount);
+    }
+
+    function addLiquidity(
+        uint256 receiveAmount,
+        uint256[] memory maxPayAmounts
+    ) public onlyInitialized returns (uint256[] memory payAmounts) {
+        payAmounts = addLiquidityTo(_msgSender(), receiveAmount, maxPayAmounts);
     }
 
     function quoteRemoveLiquidity(
@@ -918,7 +1013,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     }
 
     function _removeLiquidity(
-        address sender,
+        address from,
+        address to,
         uint256 amount,
         uint256[] memory minReceiveAmounts
     ) internal returns (uint256[] memory receiveAmounts, uint256 feeAmount) {
@@ -946,7 +1042,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         }
 
         (receiveAmounts, feeAmount) = _multiswap(
-            sender,
+            from,
+            to,
             payTokens,
             amounts,
             receiveTokens,
@@ -956,14 +1053,16 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
 
         emit RemoveLiquidity(
             _txCount,
-            sender,
+            from,
+            to,
             amount,
             receiveAmounts,
             feeAmount
         );
     }
 
-    function removeLiquidity(
+    function removeLiquidityTo(
+        address to,
         uint256 amount,
         uint256[] memory minReceiveAmounts
     )
@@ -978,6 +1077,22 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             );
         if (amount == 0) revert ZeroAmount();
         (receiveAmounts, feeAmount) = _removeLiquidity(
+            _msgSender(),
+            to,
+            amount,
+            minReceiveAmounts
+        );
+    }
+
+    function removeLiquidity(
+        uint256 amount,
+        uint256[] memory minReceiveAmounts
+    )
+        public
+        onlyInitialized
+        returns (uint256[] memory receiveAmounts, uint256 feeAmount)
+    {
+        (receiveAmounts, feeAmount) = removeLiquidityTo(
             _msgSender(),
             amount,
             minReceiveAmounts
@@ -994,6 +1109,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             uint256 balance = balanceOf(user_);
             if (balance > 0) {
                 _removeLiquidity(
+                    user_,
                     user_,
                     balance,
                     new uint256[](_assetAddresses.length)
