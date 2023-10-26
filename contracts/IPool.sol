@@ -178,7 +178,10 @@ interface IPool is ILPToken {
         uint256[] memory amounts,
         address[] memory receiveTokens,
         uint256[] memory allocations
-    ) external view returns (uint256[] memory receiveAmounts, uint256 feeAmount);
+    )
+        external
+        view
+        returns (uint256[] memory receiveAmounts, uint256 feeAmount);
 
     function multiswap(
         address[] memory payTokens,

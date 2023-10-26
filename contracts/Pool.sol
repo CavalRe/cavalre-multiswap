@@ -278,11 +278,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256[] memory amounts,
         address[] memory receiveTokens,
         uint256[] memory allocations
-    )
-        public
-        view
-        returns (uint256[] memory receiveAmounts, uint256 feeAmount)
-    {
+    ) public view returns (uint256[] memory receiveAmounts, uint256 feeAmount) {
         receiveAmounts = new uint256[](receiveTokens.length);
 
         {
