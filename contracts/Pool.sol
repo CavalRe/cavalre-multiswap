@@ -272,8 +272,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         _distributeFee(_txCount, amount);
     }
 
-    function quote(
-        address sender,
+    function quoteMultiswap(
         address[] memory payTokens,
         uint256[] memory amounts,
         address[] memory receiveTokens,
@@ -289,10 +288,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                     fee += allocations[i].mulWadUp(
                         _assetState[receiveTokens[i]].fee
                     );
-                }
-                uint256 discount_ = _discount[sender];
-                if (fee > 0 && discount_ > 0) {
-                    fee = fee.mulWadUp(ONE - discount_);
                 }
             }
 
@@ -382,8 +377,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     {
         _txCount++;
 
-        (receiveAmounts, feeAmount) = quote(
-            sender,
+        (receiveAmounts, feeAmount) = quoteMultiswap(
             payTokens,
             amounts,
             receiveTokens,
@@ -551,6 +545,32 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         );
     }
 
+    function quoteSwap(
+        address payToken,
+        address receiveToken,
+        uint256 payAmount
+    ) public view returns (uint256 receiveAmount, uint256 feeAmount) {
+        address[] memory payTokens = new address[](1);
+        uint256[] memory amounts = new uint256[](1);
+        address[] memory receiveTokens = new address[](1);
+        uint256[] memory allocations = new uint256[](1);
+        uint256[] memory receiveAmounts = new uint256[](1);
+
+        payTokens[0] = payToken;
+        amounts[0] = payAmount;
+        receiveTokens[0] = receiveToken;
+        allocations[0] = 1e18;
+
+        (receiveAmounts, feeAmount) = quoteMultiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations
+        );
+
+        receiveAmount = receiveAmounts[0];
+    }
+
     function swap(
         address payToken,
         address receiveToken,
@@ -618,6 +638,31 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         );
     }
 
+    function quoteStake(
+        address payToken,
+        uint256 payAmount
+    ) public view returns (uint256 receiveAmount, uint256 feeAmount) {
+        address[] memory payTokens = new address[](1);
+        uint256[] memory amounts = new uint256[](1);
+        address[] memory receiveTokens = new address[](1);
+        uint256[] memory allocations = new uint256[](1);
+        uint256[] memory receiveAmounts = new uint256[](1);
+
+        payTokens[0] = payToken;
+        amounts[0] = payAmount;
+        receiveTokens[0] = address(this);
+        allocations[0] = 1e18;
+
+        (receiveAmounts, feeAmount) = quoteMultiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations
+        );
+
+        receiveAmount = receiveAmounts[0];
+    }
+
     function stake(
         address payToken,
         uint256 payAmount,
@@ -667,6 +712,31 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         }
 
         emit Stake(_txCount, sender, payToken, payAmount, receiveAmount);
+    }
+
+    function quoteUnstake(
+        address receiveToken,
+        uint256 payAmount
+    ) public view returns (uint256 receiveAmount, uint256 feeAmount) {
+        address[] memory payTokens = new address[](1);
+        uint256[] memory amounts = new uint256[](1);
+        address[] memory receiveTokens = new address[](1);
+        uint256[] memory allocations = new uint256[](1);
+        uint256[] memory receiveAmounts = new uint256[](1);
+
+        payTokens[0] = address(this);
+        amounts[0] = payAmount;
+        receiveTokens[0] = receiveToken;
+        allocations[0] = 1e18;
+
+        (receiveAmounts, feeAmount) = quoteMultiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations
+        );
+
+        receiveAmount = receiveAmounts[0];
     }
 
     function unstake(
@@ -722,6 +792,22 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         );
     }
 
+    function quoteAddLiquidity(
+        uint256 receiveAmount
+    ) public view returns (uint256[] memory payAmounts) {
+        payAmounts = new uint256[](_assetAddresses.length);
+
+        uint256 g = (_poolState.balance + receiveAmount).divWadUp(
+            _poolState.balance
+        );
+        for (uint256 i; i < _assetAddresses.length; i++) {
+            AssetState memory assetIn = _assetState[_assetAddresses[i]];
+            uint256 payAmount = (assetIn.balance.mulWadUp(g) -
+                assetIn.balance) / assetIn.conversion;
+            payAmounts[i] = payAmount;
+        }
+    }
+
     function addLiquidity(
         uint256 receiveAmount,
         uint256[] memory maxPayAmounts
@@ -769,6 +855,41 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         _updatePoolBalance();
 
         emit AddLiquidity(_txCount, sender, payAmounts, receiveAmount);
+    }
+
+    function quoteRemoveLiquidity(
+        uint256 amount
+    ) public view returns (uint256[] memory receiveAmounts, uint256 feeAmount) {
+        receiveAmounts = new uint256[](_assetAddresses.length);
+
+        uint256 n = _assetAddresses.length;
+        address[] memory payTokens = new address[](1);
+        uint256[] memory amounts = new uint256[](1);
+        address[] memory receiveTokens = new address[](n);
+        uint256[] memory allocations = new uint256[](n);
+
+        payTokens[0] = address(this);
+        amounts[0] = amount;
+        receiveTokens = _assetAddresses;
+        {
+            uint256 allocation;
+            uint256 totalAllocation;
+            for (uint256 i; i < n - 1; i++) {
+                allocation = _assetState[_assetAddresses[i]].scale.divWadUp(
+                    _poolState.scale
+                );
+                allocations[i] = allocation;
+                totalAllocation += allocation;
+            }
+            allocations[n - 1] = 1e18 - totalAllocation;
+        }
+
+        (receiveAmounts, feeAmount) = quoteMultiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations
+        );
     }
 
     function _removeLiquidity(
