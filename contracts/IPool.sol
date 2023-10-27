@@ -166,11 +166,19 @@ interface IPool is ILPToken {
 
     function initialize() external;
 
+    function txCount() external view returns (uint256);
+
+    function isInitialized() external view returns (bool);
+
     function info() external view returns (PoolState memory);
 
     function assets() external view returns (AssetState[] memory);
 
+    function assetAddresses() external view returns (address[] memory);
+
     function asset(address token) external view returns (AssetState memory);
+
+    function isPaused() external view returns (bool);
 
     function _quoteMultiswap(
         address sender,
