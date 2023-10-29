@@ -16,7 +16,7 @@ module.exports = {
       ],
       optimizer: {
         enabled: true,
-        runs: 400,
+        runs: 200,
       },
       //viaIR: true,
     },
@@ -31,7 +31,7 @@ module.exports = {
   },
   etherscan: {
     apiKey: {
-      avalanche: "Q9BPGDIQPJUSQJ1S2AB8E5SKDDE3584A5W", //process.env.ETHERSCAN_API_KEY,
+      avalanche: process.env.ETHERSCAN_API_KEY,
     },
   },
   paths: {
