@@ -12,5 +12,10 @@
     "@openzeppelin/contracts": "^4.9.2",
     "forge-std": "github:foundry-rs/forge-std#v1.6.0",
     "solady": "^0.0.110"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-foundry": "^1.1.1",
+    "@nomicfoundation/hardhat-verify": "^2.0.0",
+    "hardhat": "^2.18.3"
   }
 }
