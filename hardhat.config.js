@@ -1,4 +1,6 @@
-require("@nomicfoundation/hardhat-verify");
+require("@nomicfoundation/hardhat-ethers");
+require('dotenv').config();
+// import "@nomicfoundation/hardhat-verify";
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   defaultNetwork: "avax",
@@ -32,5 +34,6 @@ module.exports = {
     tests: "./test",
     cache: "./cache",
     artifacts: "./artifacts",
+    scripts: "./scripts",
   },
 };
