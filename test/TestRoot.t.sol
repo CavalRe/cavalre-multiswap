@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import "@cavalre/Pool.sol";
-import "@cavalre/test/Token.t.sol";
+import "../contracts/Pool.sol";
+import "./Token.t.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "forge-std/Test.sol";

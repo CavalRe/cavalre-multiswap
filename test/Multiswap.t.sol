@@ -3,8 +3,8 @@ pragma solidity 0.8.19;
 
 import "solady/utils/FixedPointMathLib.sol";
 import {console} from "forge-std/console.sol";
-import "@cavalre/test/TestRoot.t.sol";
-import "@cavalre/Pool.sol";
+import "./TestRoot.t.sol";
+import "../contracts/Pool.sol";
 
 struct State {
     AssetState[] assets;

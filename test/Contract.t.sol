@@ -5,8 +5,8 @@ import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "forge-std/Test.sol";
 
-import "@cavalre/test/Token.t.sol";
-import "@cavalre/Pool.sol";
+import "./Token.t.sol";
+import "../contracts/Pool.sol";
 
 contract ContractTest is Context, Test {
     using FixedPointMathLib for uint256;

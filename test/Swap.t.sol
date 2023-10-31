@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import "@cavalre/test/TestRoot.t.sol";
-import "@cavalre/Pool.sol";
-import "@cavalre/Users.sol";
+import "./TestRoot.t.sol";
+import "../contracts/Pool.sol";
+import "../contracts/Users.sol";
 
 contract SwapTest is TestRoot {
     /*

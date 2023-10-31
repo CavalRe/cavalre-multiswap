@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {console} from "forge-std/console.sol";
-import "@cavalre/test/TestRoot.t.sol";
+import "./TestRoot.t.sol";
 import "solady/utils/FixedPointMathLib.sol";
 
 contract StakeTest is TestRoot {

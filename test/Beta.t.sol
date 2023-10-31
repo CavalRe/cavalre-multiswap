@@ -29,8 +29,8 @@ pragma solidity 0.8.19;
 // (8) 0xdbda1821b80551c9d65939329250298aa3472ba22feea921c0cf5d620ea67b97
 // (9) 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
 
-import "@cavalre/test/Pool.t.sol";
-import "@cavalre/Users.sol";
+import "./Pool.t.sol";
+import "../contracts/Users.sol";
 
 contract BetaTest is PoolTest {
     using FixedPointMathLib for uint256;

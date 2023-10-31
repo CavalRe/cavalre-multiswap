@@ -10,7 +10,7 @@
 // See the file LICENSE.md for licensing terms.
 pragma solidity 0.8.19;
 
-import {IUsers} from "@cavalre/IUsers.sol";
+import {IUsers} from "./IUsers.sol";
 
 interface ILPToken is IUsers {
     event Approval(

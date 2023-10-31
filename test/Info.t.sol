@@ -2,8 +2,8 @@
 pragma solidity 0.8.19;
 
 import {console} from "forge-std/console.sol";
-import "@cavalre/test/TestRoot.t.sol";
-import "@cavalre/Pool.sol";
+import "./TestRoot.t.sol";
+import "../contracts/Pool.sol";
 
 contract InfoTest is TestRoot {
     /// @dev check number of tokens return is equal to the initial number of tokens

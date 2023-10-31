@@ -3,8 +3,8 @@
 // See the file LICENSE.md for licensing terms.
 pragma solidity 0.8.19;
 
-import {IPool, PoolState, AssetState} from "@cavalre/IPool.sol";
-import {LPToken, FixedPointMathLib} from "@cavalre/LPToken.sol";
+import {IPool, PoolState, AssetState} from "./IPool.sol";
+import {LPToken, FixedPointMathLib} from "./LPToken.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
