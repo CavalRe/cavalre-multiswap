@@ -1,5 +1,4 @@
 require("@nomicfoundation/hardhat-verify");
-require("@nomicfoundation/hardhat-foundry");
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   defaultNetwork: "avax",
@@ -7,12 +6,6 @@ module.exports = {
     version: "0.8.19",
     settings: {
       evmVersion: "london",
-      // remappings: [
-      //   "@openzeppelin/=node_modules/@openzeppelin/",
-      //   "ds-test/=contracts/libraries/ds-test/src/",
-      //   "forge-std/=node_modules/forge-std/src/",
-      //   "solady/=node_modules/solady/src/",
-      // ],
       optimizer: {
         enabled: true,
         runs: 200,
