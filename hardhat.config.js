@@ -19,11 +19,12 @@ module.exports = {
   networks: {
     avax: {
       url: "https://api.avax.network/ext/bc/C/rpc",
+      accounts: [process.env.PRIVATE_KEY]
     },
   },
   etherscan: {
     apiKey: {
-      avalanche: process.env.ETHERSCAN_API_KEY,
+      avalanche: process.env.SNOWTRACE_API_KEY,
     },
   },
   paths: {
