@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import "../contracts/Pool.sol";
 import "forge-std/Test.sol";
-import {FixedPointMathLib} from "solady/utils/FixedPointMathLib.sol";
+import {FixedPointMathLib} from "solady/src/utils/FixedPointMathLib.sol";
 
 contract TestPool is Pool {
     constructor(

@@ -1,4 +1,5 @@
 require("@nomicfoundation/hardhat-ethers");
+require("@nomicfoundation/hardhat-verify");
 require('dotenv').config();
 // import "@nomicfoundation/hardhat-verify";
 /** @type import('hardhat/config').HardhatUserConfig */
@@ -26,8 +27,18 @@ module.exports = {
   },
   etherscan: {
     apiKey: {
-      avalanche: process.env.SNOWTRACE_API_KEY,
+      avalanche: "avalanche", // apiKey is not required, just set a placeholder
     },
+    customChains: [
+      {
+        network: "avalanche",
+        chainId: 43114,
+        urls: {
+          apiURL: "https://api.routescan.io/v2/network/mainnet/evm/43114/etherscan",
+          browserURL: "https://avalanche.routescan.io"
+        }
+      }
+    ]
   },
   paths: {
     sources: "./contracts",

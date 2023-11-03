@@ -12,7 +12,7 @@ pragma solidity 0.8.19;
 
 import {ILPToken} from "./ILPToken.sol";
 import {Users} from "./Users.sol";
-import {FixedPointMathLib} from "../node_modules/solady/src/utils/FixedPointMathLib.sol";
+import {FixedPointMathLib} from "solady/src/utils/FixedPointMathLib.sol";
 
 contract LPToken is ILPToken, Users {
     using FixedPointMathLib for uint256;

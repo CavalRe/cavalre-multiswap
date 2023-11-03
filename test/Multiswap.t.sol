@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import "solady/utils/FixedPointMathLib.sol";
+import "solady/src/utils/FixedPointMathLib.sol";
 import {console} from "forge-std/console.sol";
 import "./TestRoot.t.sol";
 import "../contracts/Pool.sol";

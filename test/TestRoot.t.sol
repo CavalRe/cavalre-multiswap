@@ -6,7 +6,7 @@ import "./Token.t.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "forge-std/Test.sol";
-import "solady/utils/FixedPointMathLib.sol";
+import "solady/src/utils/FixedPointMathLib.sol";
 
 contract TestRoot is Test, Context {
     using FixedPointMathLib for uint256;

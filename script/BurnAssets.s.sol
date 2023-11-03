@@ -5,7 +5,7 @@ import "../contracts/Pool.sol";
 import "../test/Token.t.sol";
 import "forge-std/Script.sol";
 import "forge-std/Test.sol";
-import {FixedPointMathLib} from "solady/utils/FixedPointMathLib.sol";
+import {FixedPointMathLib} from "solady/src/utils/FixedPointMathLib.sol";
 
 contract BurnAssetsScript is Script, Test {
     using FixedPointMathLib for uint256;
