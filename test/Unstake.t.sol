@@ -108,7 +108,7 @@ contract UnstakeTest is TestRoot {
         );
 
         assertEq(
-            pool.balanceOf(alice),
+            pool.tokensOf(alice),
             poolBalance + amountOut,
             "Alice's pool balance after staking."
         );
@@ -132,14 +132,14 @@ contract UnstakeTest is TestRoot {
             assertEq(
                 receiveToken.balanceOf(alice),
                 receiveBalance + receiveAmount,
-                "Alice's pool balance after unstaking."
+                "Alice's receive token balance after unstaking."
             );
             assertApproxEqRel(
-                pool.balanceOf(alice),
+                pool.tokensOf(alice),
                 poolBalance +
                     feeAmount.fullMulDiv(
-                        pool.balanceOf(alice),
-                        pool.totalSupply()
+                        pool.tokensOf(alice),
+                        pool.totalTokens()
                     ),
                 1e10,
                 "Alice's pool balance after unstaking."

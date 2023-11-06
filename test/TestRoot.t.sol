@@ -132,7 +132,7 @@ contract TestRoot is Test, Context {
 
     function checkLP() public {
         assertApproxEqRel(
-            pool.totalSupply(),
+            pool.totalTokens(),
             pool.info().balance,
             1e8,
             "Pool total supply is not approximately equal to pool balance: "
@@ -141,7 +141,7 @@ contract TestRoot is Test, Context {
 
     function checkLP(uint256 amountIn, uint256 amountOut) public {
         assertApproxEqRel(
-            pool.totalSupply(),
+            pool.totalTokens(),
             pool.info().balance,
             1e8,
             string(

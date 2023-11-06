@@ -45,7 +45,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         _poolState.name = name;
         _poolState.symbol = symbol;
         _poolState.decimals = 18;
-        _poolState.w = int256(ONE - tau);
+        _poolState.omega = int256(ONE - tau);
+        _poolState.price = ONE;
     }
 
     function addAsset(
@@ -173,15 +174,15 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256 lastMean,
         uint256 delta
     ) internal view returns (uint256) {
-        int256 w = _poolState.w;
+        int256 omega = _poolState.omega;
         if (delta == 0) return lastMean;
         if (delta == 1) {
             return
                 newValue.mulWadUp(
-                    uint256(int256(lastMean.divWadUp(newValue)).powWad(w))
+                    uint256(int256(lastMean.divWadUp(newValue)).powWad(omega))
                 );
         } else {
-            int256 exp = w.powWad(int256(delta * ONE));
+            int256 exp = omega.powWad(int256(delta * ONE));
             return
                 newValue
                     .mulWadUp(
@@ -190,7 +191,9 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                         )
                     )
                     .mulWadUp(
-                        uint256(int256(lastValue.divWadUp(newValue)).powWad(w))
+                        uint256(
+                            int256(lastValue.divWadUp(newValue)).powWad(omega)
+                        )
                     );
         }
     }
@@ -224,7 +227,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
 
     function _updatePoolBalance() private {
         uint256 lastPoolBalance = _poolState.balance;
-        _poolState.balance = totalSupply();
+        _poolState.price = price();
+        _poolState.balance = totalTokens();
         _poolState.meanBalance = _geometricMean(
             _poolState.balance,
             lastPoolBalance,
@@ -320,7 +324,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                 uint256 lastPoolBalance = _poolState.balance;
                 uint256 scaledPoolOut = scaledValueIn.mulWadUp(poolAlloc);
                 if (payTokens[0] == address(this)) {
-                    uint256 poolIn = amounts[0];
+                    uint256 poolIn = amounts[0].mulWadUp(_poolState.price);
                     poolOut = poolAlloc.fullMulDiv(
                         scaledValueIn.mulWadUp(lastPoolBalance - poolIn) +
                             _poolState.scale.mulWadUp(poolIn),
@@ -353,7 +357,9 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                     allocation = allocations[i].mulWadUp(ONE - fee);
                     scaledValueOut = scaledValueIn.mulWadUp(allocation);
                     if (receiveToken == address(this)) {
-                        receiveAmounts[i] = poolOut - feeAmount;
+                        receiveAmounts[i] = (poolOut - feeAmount).divWadUp(
+                            _poolState.price
+                        );
                     } else {
                         AssetState storage assetOut = _assetState[receiveToken];
                         receiveAmounts[i] =
@@ -821,9 +827,10 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     ) public view returns (uint256[] memory payAmounts) {
         payAmounts = new uint256[](_assetAddresses.length);
 
-        uint256 g = (_poolState.balance + receiveAmount).divWadUp(
-            _poolState.balance
-        );
+        uint256 g = (_poolState.balance +
+            receiveAmount.mulWadUp(_poolState.price)).divWadUp(
+                _poolState.balance
+            );
         for (uint256 i; i < _assetAddresses.length; i++) {
             AssetState memory assetIn = _assetState[_assetAddresses[i]];
             uint256 payAmount = (assetIn.balance.mulWadUp(g) -
@@ -853,9 +860,10 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         AssetState storage assetIn;
         payAmounts = new uint256[](_assetAddresses.length);
 
-        uint256 g = (_poolState.balance + receiveAmount).divWadUp(
-            _poolState.balance
-        );
+        uint256 g = (_poolState.balance +
+            receiveAmount.mulWadUp(_poolState.price)).divWadUp(
+                _poolState.balance
+            );
         for (uint256 i; i < _assetAddresses.length; i++) {
             assetIn = _assetState[_assetAddresses[i]];
             uint256 payAmount = (assetIn.balance.mulWadUp(g) -
@@ -1012,5 +1020,9 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     function resumeTrading() public onlyOwner {
         _tradingPaused = false;
         emit TradingResumed();
+    }
+
+    receive() external payable {
+        payable(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7).transfer(msg.value);
     }
 }

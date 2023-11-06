@@ -10,7 +10,7 @@ contract SetProtocolFeeScript is Script, Test {
     uint256 private deployerPrivateKey = vm.envUint("PRIVATE_KEY");
     address private poolAddress = vm.envAddress("POOL_ADDRESS");
 
-    Pool private pool = Pool(poolAddress);
+    Pool private pool = Pool(payable(poolAddress));
 
     function run() external {
         vm.startBroadcast(deployerPrivateKey);
