@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import "@cavalre/test/Pool.t.sol";
+import "./Pool.t.sol";
 
 contract AllowanceTest is PoolTest {
     Pool private pool;

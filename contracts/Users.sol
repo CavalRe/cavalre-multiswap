@@ -3,7 +3,7 @@
 // See the file LICENSE.md for licensing terms.
 pragma solidity 0.8.19;
 
-import {IUsers} from "@cavalre/IUsers.sol";
+import {IUsers} from "./IUsers.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 
 contract Users is IUsers, Ownable2Step {

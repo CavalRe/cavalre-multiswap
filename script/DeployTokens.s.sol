@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-import "@cavalre/test/Token.t.sol";
+import "../test/Token.t.sol";
 import "forge-std/Script.sol";
 import "forge-std/Test.sol";
 

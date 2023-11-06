@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-import "@cavalre/Pool.sol";
-import "@cavalre/test/Token.t.sol";
+import "../contracts/Pool.sol";
+import "../test/Token.t.sol";
 import "forge-std/Script.sol";
 import "forge-std/Test.sol";
-import {FixedPointMathLib} from "solady/utils/FixedPointMathLib.sol";
+import {FixedPointMathLib} from "solady/src/utils/FixedPointMathLib.sol";
 
-contract MintAssetsScript is Script, Test {
+contract BurnAssetsScript is Script, Test {
     using FixedPointMathLib for uint256;
 
     uint256 private deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -34,9 +34,9 @@ contract MintAssetsScript is Script, Test {
 
         for (uint256 i = 0; i < tokens.length; i++) {
             Token token = Token(tokens[i]);
-            uint256 balance = token.balanceOf(address(pool));
+            uint256 balance = token.balanceOf(deployer);
             if (balance > 0) {
-                token.mint(balance / 10);
+                token.burn(balance);
             }
         }
     }

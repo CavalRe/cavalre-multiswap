@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import "@cavalre/test/TestRoot.t.sol";
+import "./TestRoot.t.sol";
 
 contract UnstakeTest is TestRoot {
     using FixedPointMathLib for uint256;

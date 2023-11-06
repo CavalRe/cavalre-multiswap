@@ -10,7 +10,14 @@
   "license": "",
   "dependencies": {
     "@openzeppelin/contracts": "^4.9.2",
+    "dotenv": "^16.3.1",
     "forge-std": "github:foundry-rs/forge-std#v1.6.0",
     "solady": "^0.0.110"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^3.0.4",
+    "@nomicfoundation/hardhat-verify": "^2.0.0",
+    "ethers": "^6.1.0",
+    "hardhat": "^2.18.3"
   }
 }

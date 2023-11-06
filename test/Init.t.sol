@@ -2,8 +2,8 @@
 pragma solidity 0.8.19;
 
 import "forge-std/Test.sol";
-import "@cavalre/Pool.sol";
-import "@cavalre/test/Token.t.sol";
+import "../contracts/Pool.sol";
+import "./Token.t.sol";
 
 contract InitTest is Test {
     function testInit() public {

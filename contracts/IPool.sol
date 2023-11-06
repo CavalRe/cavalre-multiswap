@@ -3,7 +3,7 @@
 // See the file LICENSE.md for licensing terms.
 pragma solidity 0.8.19;
 
-import {ILPToken} from "@cavalre/ILPToken.sol";
+import {ILPToken} from "./ILPToken.sol";
 
 struct PoolState {
     address token;

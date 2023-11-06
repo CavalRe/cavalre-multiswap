@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import "@cavalre/LPToken.sol";
-import "@cavalre/Pool.sol";
-import "@cavalre/Users.sol";
+import "../contracts/LPToken.sol";
+import "../contracts/Pool.sol";
+import "../contracts/Users.sol";
 import "forge-std/Test.sol";
 
 contract PoolMintable is Pool {
