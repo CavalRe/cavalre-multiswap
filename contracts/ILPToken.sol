@@ -13,60 +13,19 @@ pragma solidity 0.8.19;
 import {IUsers} from "./IUsers.sol";
 
 interface ILPToken is IUsers {
-    event Approval(
-        address indexed owner,
-        address indexed spender,
-        uint256 value
-    );
-
     event DistributeFee(
         uint256 indexed txCount,
         uint256 lpAmount,
         uint256 protocolAmount
     );
 
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
     error InvalidProtocolFee(uint256 fee);
 
-    function name() external view returns (string memory);
+    function totalTokens() external view returns (uint256);
 
-    function symbol() external view returns (string memory);
+    function price() external view returns (uint256);
 
-    function decimals() external pure returns (uint8);
-
-    function totalSupply() external view returns (uint256);
-
-    function virtualSupply() external view returns (uint256);
-
-    function ratio() external view returns (uint256);
-
-    function balanceOf(address account) external view returns (uint256);
-
-    function transfer(address to, uint256 amount) external returns (bool);
-
-    function allowance(
-        address owner,
-        address spender
-    ) external view returns (uint256);
-
-    function approve(address spender, uint256 amount) external returns (bool);
-
-    function transferFrom(
-        address from,
-        address to,
-        uint256 amount
-    ) external returns (bool);
-
-    function increaseAllowance(
-        address spender,
-        uint256 addedValue
-    ) external returns (bool);
-
-    function decreaseAllowance(
-        address spender,
-        uint256 subtractedValue
-    ) external returns (bool);
+    function tokensOf(address account) external view returns (uint256);
 
     function protocolFee() external view returns (uint256);
 

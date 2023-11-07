@@ -16,7 +16,7 @@ contract BurnAssetsScript is Script, Test {
     address[] private tokens = new address[](10);
 
     function setUp() public {
-        pool = Pool(vm.envAddress("POOL_ADDRESS"));
+        pool = Pool(payable(vm.envAddress("POOL_ADDRESS")));
         tokens[0] = vm.envAddress("WAVAX_ADDRESS");
         tokens[1] = vm.envAddress("USDC_ADDRESS");
         tokens[2] = vm.envAddress("USDt_ADDRESS");

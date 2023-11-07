@@ -189,8 +189,8 @@ contract LPTokenTest is Test {
         vm.startPrank(alice);
 
         pool.mint_(amount);
-        assertEq(pool.balanceOf(alice), amount, "Balance of alice after minting.");
-        assertEq(pool.totalSupply(), amount, "Total supply after minting.");
+        assertEq(pool.tokensOf(alice), amount, "Balance of alice after minting.");
+        assertEq(pool.totalTokens(), amount, "Total supply after minting.");
 
         vm.stopPrank();
 
@@ -199,15 +199,15 @@ contract LPTokenTest is Test {
         vm.startPrank(bob);
 
         pool.mint_(amount);
-        assertEq(pool.balanceOf(bob), amount, "Balance of bob after minting.");
-        assertEq(pool.totalSupply(), 2 * amount, "Total supply after second minting.");
+        assertEq(pool.tokensOf(bob), amount, "Balance of bob after minting.");
+        assertEq(pool.totalTokens(), 2 * amount, "Total supply after second minting.");
 
         vm.stopPrank();
 
         pool.distributeFee_(2 * amount);
 
-        assertEq(pool.balanceOf(alice), 2 * amount, "Balance of alice after fee distribution.");
-        assertEq(pool.balanceOf(bob), 2 * amount, "Balance of bob after fee distribution.");
-        assertEq(pool.totalSupply(), 4 * amount, "Total supply after fee distribution.");
+        assertEq(pool.tokensOf(alice), 2 * amount, "Balance of alice after fee distribution.");
+        assertEq(pool.tokensOf(bob), 2 * amount, "Balance of bob after fee distribution.");
+        assertEq(pool.totalTokens(), 4 * amount, "Total supply after fee distribution.");
     }
 }

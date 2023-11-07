@@ -10,8 +10,9 @@ struct PoolState {
     string name;
     string symbol;
     uint8 decimals;
-    int256 w;
-    uint256 balance;
+    int256 omega;
+    uint256 price; // LP token price per share
+    uint256 balance; // # of LP tokens
     uint256 meanBalance;
     uint256 scale;
     uint256 meanScale;
