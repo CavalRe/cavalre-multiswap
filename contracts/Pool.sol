@@ -20,9 +20,10 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     uint256 private _isInitialized;
 
     PoolState private _poolState;
-    address public WRAPPEDNATIVE;
     mapping(address => AssetState) private _assetState;
     address[] private _assetAddresses;
+
+    address public _wrappedNative;
 
     bool private _tradingPaused;
 
@@ -49,7 +50,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         _poolState.decimals = 18;
         _poolState.omega = int256(ONE - tau);
         _poolState.price = ONE;
-        WRAPPEDNATIVE = wrappedNative;
+        _wrappedNative = wrappedNative;
     }
 
     function addAsset(
@@ -1036,15 +1037,15 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     }
 
     function _wrap(uint256 amount) internal {
-        IWrappedNative(WRAPPEDNATIVE).deposit{value: amount}();
+        IWrappedNative(_wrappedNative).deposit{value: amount}();
     }
 
     function _unwrap(uint256 amount) internal {
-        _approveTokenIfNeeded(WRAPPEDNATIVE, WRAPPEDNATIVE, amount);
-        IWrappedNative(WRAPPEDNATIVE).withdraw(amount);
+        _approveTokenIfNeeded(_wrappedNative, _wrappedNative, amount);
+        IWrappedNative(_wrappedNative).withdraw(amount);
     }
 
     receive() external payable {
-        payable(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7).transfer(msg.value);
+        _wrap(msg.value);
     }
 }
