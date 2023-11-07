@@ -8,6 +8,7 @@ import {LPToken, FixedPointMathLib} from "./LPToken.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IWrappedNative} from "./IWrappedNative.sol";
 
 contract Pool is IPool, LPToken, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -19,7 +20,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     uint256 private _isInitialized;
 
     PoolState private _poolState;
-
+    address public WRAPPEDNATIVE;
     mapping(address => AssetState) private _assetState;
     address[] private _assetAddresses;
 
@@ -38,7 +39,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     constructor(
         string memory name,
         string memory symbol,
-        uint256 tau
+        uint256 tau,
+        address wrappedNative
     ) LPToken(name, symbol) {
         if (tau >= ONE) revert TooLarge(tau);
         _poolState.token = address(this);
@@ -47,6 +49,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         _poolState.decimals = 18;
         _poolState.omega = int256(ONE - tau);
         _poolState.price = ONE;
+        WRAPPEDNATIVE = wrappedNative;
     }
 
     function addAsset(
@@ -1020,6 +1023,25 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     function resumeTrading() public onlyOwner {
         _tradingPaused = false;
         emit TradingResumed();
+    }
+
+    function _approveTokenIfNeeded(
+        address token,
+        address _to,
+        uint256 _amount
+    ) private {
+        if (IERC20(token).allowance(address(this), _to) < _amount) {
+            IERC20(token).approve(_to, type(uint256).max);
+        }
+    }
+
+    function _wrap(uint256 amount) internal {
+        IWrappedNative(WRAPPEDNATIVE).deposit{value: amount}();
+    }
+
+    function _unwrap(uint256 amount) internal {
+        _approveTokenIfNeeded(WRAPPEDNATIVE, WRAPPEDNATIVE, amount);
+        IWrappedNative(WRAPPEDNATIVE).withdraw(amount);
     }
 
     receive() external payable {
