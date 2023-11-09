@@ -26,7 +26,7 @@ contract PoolTest is Test {
 
     uint256 internal marketCap = 1e25;
 
-    Token internal WAVAX = new Token("Wrapped AVAX", "WAVAX", 18);
+    Token internal WAVAX = new Token("Avalanche", "AVAX", 18);
     Token internal USDC = new Token("USD Coin", "USDC", 6);
     Token internal USDt = new Token("TetherToken", "USDt", 6);
     Token internal EUROC = new Token("Euro Coin", "EUROC", 6);
@@ -41,8 +41,10 @@ contract PoolTest is Test {
     uint256[] internal receiveAmounts;
     uint256 internal feeAmount;
 
+    address internal wrappedNative = vm.envAddress("WRAPPED_NATIVE_TOKEN");
+
     function setUpPool() public returns (Pool pool, Token[] memory tokens) {
-        pool = new Pool("Pool", "P", tau);
+        pool = new Pool("Pool", "P", tau, wrappedNative);
         tokens = new Token[](NTOKENS);
 
         tokens[0] = WAVAX;
@@ -86,14 +88,23 @@ contract PoolTest is Test {
             conversion = 10 ** (18 - token.decimals());
             conversions[i] = conversion;
             balance = marketCap.divWadUp(prices[i]) / conversion;
-            token.mint(balance);
-            token.approve(address(pool), balance);
-            pool.addAsset(address(token), fees[i], balance, marketCap);
+            if (i == 0) {
+                pool.addAsset{value: balance}(
+                    wrappedNative,
+                    fees[i],
+                    balance,
+                    marketCap
+                );
+            } else {
+                token.mint(balance);
+                token.approve(address(pool), balance);
+                pool.addAsset(address(token), fees[i], balance, marketCap);
+            }
         }
 
         pool.initialize();
 
-        for (uint256 i; i < NTOKENS; i++) {
+        for (uint256 i = 1; i < NTOKENS; i++) {
             token = tokens[i];
             balance = token.balanceOf(address(pool));
             token.mint(balance);

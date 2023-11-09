@@ -10,7 +10,9 @@ import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/ERC20.
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IWrappedNative} from "./IWrappedNative.sol";
 
-contract Pool is IPool, LPToken, ReentrancyGuard {
+import "forge-std/Test.sol";
+
+contract Pool is IPool, LPToken, ReentrancyGuard, Test {
     using SafeERC20 for IERC20;
     using FixedPointMathLib for uint256;
     using FixedPointMathLib for int256;
@@ -49,7 +51,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         _poolState.symbol = symbol;
         _poolState.decimals = 18;
         _poolState.omega = int256(ONE - tau);
-        _poolState.price = ONE;
+        _poolState.tokensPerShare = ONE;
         _wrappedNative = wrappedNative;
     }
 
@@ -58,21 +60,35 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256 fee_, // 18 decimals
         uint256 balance_, // Token decimals
         uint256 scale_ // 18 decimals
-    ) public onlyUninitialized onlyOwner {
+    ) public payable onlyUninitialized onlyOwner {
         if (token_ == address(0)) revert ZeroAddress();
         if (_assetState[token_].token == token_) revert DuplicateToken(token_);
         if (balance_ == 0) revert ZeroBalance();
         if (scale_ == 0) revert ZeroScale();
         if (fee_ >= ONE) revert TooLarge(fee_);
-        uint8 decimals_ = IERC20Metadata(token_).decimals();
-        if (decimals_ > 18) revert TooLarge(decimals_); // Contract supports 18 decimals or fewer
 
-        SafeERC20.safeTransferFrom(
-            IERC20(token_),
-            _msgSender(),
-            address(this),
-            balance_ // Convert from canonical
-        );
+        string memory name_;
+        string memory symbol_;
+        uint8 decimals_;
+
+        if (token_ == _wrappedNative) {
+            if (balance_ != msg.value)
+                revert IncorrectAmount(balance_, msg.value);
+            name_ = "Avalanche";
+            symbol_ = "AVAX";
+            decimals_ = 18;
+        } else {
+            name_ = IERC20Metadata(token_).name();
+            symbol_ = IERC20Metadata(token_).symbol();
+            decimals_ = IERC20Metadata(token_).decimals();
+            if (decimals_ > 18) revert TooLarge(decimals_); // Contract supports 18 decimals or fewer
+            SafeERC20.safeTransferFrom(
+                IERC20(token_),
+                _msgSender(),
+                address(this),
+                balance_ // Convert from canonical
+            );
+        }
 
         _poolState.balance += scale_;
         _poolState.meanBalance += scale_;
@@ -84,8 +100,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         _assetState[token_] = AssetState(
             token_,
             _assetAddresses.length,
-            IERC20Metadata(token_).name(),
-            IERC20Metadata(token_).symbol(),
+            name_,
+            symbol_,
             decimals_,
             10 ** (18 - decimals_),
             fee_,
@@ -110,11 +126,18 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         _poolState.scale -= scale_;
         _poolState.meanScale -= scale_;
 
-        SafeERC20.safeTransfer(
-            IERC20(token),
-            owner(),
-            asset_.balance / asset_.conversion // Convert from canonical
-        );
+        if (token == _wrappedNative) {
+            (bool success, ) = payable(owner()).call{
+                value: address(this).balance
+            }("");
+            require(success, "Transfer failed");
+        } else {
+            SafeERC20.safeTransfer(
+                IERC20(token),
+                owner(),
+                asset_.balance / asset_.conversion // Convert from canonical
+            );
+        }
 
         uint256 index_ = asset_.index;
         uint256 lastIndex_ = _assetAddresses.length - 1;
@@ -127,6 +150,11 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
 
         delete _assetState[token];
         emit AssetRemoved(token);
+    }
+
+    function setOmega(uint256 tau) public onlyUninitialized onlyOwner {
+        if (tau >= ONE) revert TooLarge(tau);
+        _poolState.omega = int256(ONE - tau);
     }
 
     function initialize() public onlyUninitialized onlyOwner {
@@ -220,19 +248,23 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             _txCount - asset_.lastUpdated
         );
         asset_.lastUpdated = _txCount;
+        address sender = _msgSender();
+        uint256 userBalance = token == _wrappedNative
+            ? address(sender).balance
+            : IERC20(token).balanceOf(sender);
         emit BalanceUpdate(
             _txCount,
             token,
             asset_.balance,
             asset_.meanBalance,
-            IERC20(token).balanceOf(_msgSender())
+            userBalance
         );
     }
 
     function _updatePoolBalance() private {
         uint256 lastPoolBalance = _poolState.balance;
-        _poolState.price = price();
-        _poolState.balance = totalTokens();
+        _poolState.tokensPerShare = _tokensPerShare;
+        _poolState.balance = _totalTokens;
         _poolState.meanBalance = _geometricMean(
             _poolState.balance,
             lastPoolBalance,
@@ -277,7 +309,19 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     }
 
     function distributeFee(uint256 amount) internal {
-        _distributeFee(_txCount, amount);
+        uint256 totalShares = totalSupply();
+        if (totalShares == 0) return; // Last LP token has been burned
+        uint256 protocolAmount = amount.mulWadUp(_protocolFee);
+        uint256 lpAmount = amount - protocolAmount;
+        _totalTokens += amount;
+        if (protocolAmount == 0) return;
+        _allocateShares(
+            _protocolFeeRecipient,
+            protocolAmount.divWadUp(_tokensPerShare)
+        );
+        _tokensPerShare = _totalTokens.divWadUp(totalSupply());
+
+        emit DistributeFee(_txCount, lpAmount, protocolAmount);
     }
 
     function _quoteMultiswap(
@@ -288,6 +332,21 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256[] memory allocations
     ) public view returns (uint256[] memory receiveAmounts, uint256 feeAmount) {
         receiveAmounts = new uint256[](receiveTokens.length);
+
+        if (payTokens[0] == address(this) && amounts[0] == totalSupply()) {
+            for (uint256 i; i < _assetAddresses.length; i++) {
+                address token = _assetAddresses[i];
+                uint256 balance;
+                if (token == _wrappedNative) {
+                    balance = payable(address(this)).balance;
+                } else {
+                    balance = IERC20(token).balanceOf(address(this));
+                }
+                receiveAmounts[i] = balance;
+            }
+            feeAmount = 0;
+            return (receiveAmounts, feeAmount);
+        }
 
         {
             // Compute fee
@@ -328,7 +387,9 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                 uint256 lastPoolBalance = _poolState.balance;
                 uint256 scaledPoolOut = scaledValueIn.mulWadUp(poolAlloc);
                 if (payTokens[0] == address(this)) {
-                    uint256 poolIn = amounts[0].mulWadUp(_poolState.price);
+                    uint256 poolIn = amounts[0].mulWadUp(
+                        _poolState.tokensPerShare
+                    );
                     poolOut = poolAlloc.fullMulDiv(
                         scaledValueIn.mulWadUp(lastPoolBalance - poolIn) +
                             _poolState.scale.mulWadUp(poolIn),
@@ -362,7 +423,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                     scaledValueOut = scaledValueIn.mulWadUp(allocation);
                     if (receiveToken == address(this)) {
                         receiveAmounts[i] = (poolOut - feeAmount).divWadUp(
-                            _poolState.price
+                            _poolState.tokensPerShare
                         );
                     } else {
                         AssetState storage assetOut = _assetState[receiveToken];
@@ -378,6 +439,58 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         }
     }
 
+    function _disable(
+        address receiver
+    ) private returns (uint256[] memory receiveAmounts, uint256 feeAmount) {
+        receiveAmounts = new uint256[](_assetAddresses.length);
+
+        // Burn all LP tokens
+        _burn(receiver, totalSupply());
+        emit BalanceUpdate(_txCount, address(this), 0, 0, 0);
+
+        for (uint256 i; i < _assetAddresses.length; i++) {
+            address token = _assetAddresses[i];
+            uint256 balance;
+            if (token == _wrappedNative) {
+                balance = payable(address(this)).balance;
+                if (balance > 0) {
+                    (bool success, ) = payable(receiver).call{value: balance}(
+                        ""
+                    );
+                    require(success, "Transfer failed");
+                }
+            } else {
+                balance = IERC20(token).balanceOf(address(this));
+                if (balance > 0) {
+                    SafeERC20.safeTransfer(IERC20(token), receiver, balance);
+                }
+            }
+            delete _assetState[token];
+            receiveAmounts[i] = balance;
+            emit BalanceUpdate(_txCount, token, 0, 0, 0);
+        }
+
+        _txCount = 0;
+        _isInitialized = 0;
+        _poolState.token = address(0);
+        _poolState.name = "";
+        _poolState.symbol = "";
+        _poolState.decimals = 0;
+        _poolState.omega = 0;
+        _poolState.tokensPerShare = 0;
+        _poolState.balance = 0;
+        _poolState.meanBalance = 0;
+        _poolState.scale = 0;
+        _poolState.meanScale = 0;
+        _poolState.lastUpdated = 0;
+        delete _assetAddresses;
+        _tradingPaused = false;
+        feeAmount = 0;
+        renounceOwnership();
+
+        emit PoolDisabled(_txCount, address(this));
+    }
+
     function _multiswap(
         address sender,
         address[] memory payTokens,
@@ -390,6 +503,10 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         nonReentrant
         returns (uint256[] memory receiveAmounts, uint256 feeAmount)
     {
+        if (payTokens[0] == address(this) && amounts[0] == totalSupply()) {
+            return _disable(sender);
+        }
+
         _txCount++;
 
         (receiveAmounts, feeAmount) = _quoteMultiswap(
@@ -415,6 +532,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         // Transfer tokens to the pool
         for (uint256 i; i < payTokens.length; i++) {
             address payToken = payTokens[i];
+            if (payToken == _wrappedNative) continue;
             uint256 amount = amounts[i];
             if (payToken == address(this)) {
                 _burn(sender, amount);
@@ -436,7 +554,12 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             uint256 receiveAmount = receiveAmounts[i];
             // Update _balance and asset balances.
             if (receiveToken == address(this)) {
-                _mint(sender, receiveAmount);
+                _allocateShares(sender, receiveAmount);
+            } else if (receiveToken == _wrappedNative) {
+                (bool success, ) = payable(sender).call{value: receiveAmount}(
+                    ""
+                );
+                require(success, "Transfer failed");
             } else {
                 SafeERC20.safeTransfer(
                     IERC20(receiveToken),
@@ -478,6 +601,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256[] memory minReceiveAmounts
     )
         public
+        payable
         onlyInitialized
         returns (uint256[] memory receiveAmounts, uint256 feeAmount)
     {
@@ -513,6 +637,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         {
             for (uint256 i; i < amounts.length; i++) {
                 if (amounts[i] == 0) revert ZeroAmount();
+                if (payTokens[i] == _wrappedNative && amounts[i] != msg.value)
+                    revert IncorrectAmount(amounts[i], msg.value);
             }
         }
         // Check allocations
@@ -523,7 +649,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                 totalAllocation += allocations[i];
             }
             if (totalAllocation != 1e18)
-                revert IncorrectAllocation(1e18, totalAllocation);
+                revert IncorrectAmount(1e18, totalAllocation);
         }
         // Check size
         {
@@ -595,6 +721,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256 minReceiveAmount
     )
         public
+        payable
         onlyInitialized
         returns (uint256 receiveAmount, uint256 feeAmount)
     {
@@ -613,6 +740,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         if (_assetState[receiveToken].token != receiveToken)
             revert AssetNotFound(receiveToken);
         if (payAmount == 0) revert ZeroAmount();
+        if (payToken == _wrappedNative && payAmount != msg.value)
+            revert IncorrectAmount(payAmount, msg.value);
         if (
             payAmount * 3 >
             _assetState[payToken].balance / _assetState[payToken].conversion
@@ -687,6 +816,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256 minReceiveAmount
     )
         public
+        payable
         onlyInitialized
         returns (uint256 receiveAmount, uint256 feeAmount)
     {
@@ -698,6 +828,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         if (_assetState[payToken].token != payToken)
             revert AssetNotFound(payToken);
         if (payAmount == 0) revert ZeroAmount();
+        if (payToken == _wrappedNative && payAmount != msg.value)
+            revert IncorrectAmount(payAmount, msg.value);
         if (
             payAmount * 3 >
             _assetState[payToken].balance / _assetState[payToken].conversion
@@ -817,7 +949,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         payAmounts = new uint256[](_assetAddresses.length);
 
         uint256 g = (_poolState.balance +
-            receiveAmount.mulWadUp(_poolState.price)).divWadUp(
+            receiveAmount.mulWadUp(_poolState.tokensPerShare)).divWadUp(
                 _poolState.balance
             );
         for (uint256 i; i < _assetAddresses.length; i++) {
@@ -833,6 +965,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256[] memory maxPayAmounts
     )
         public
+        payable
         onlyInitialized
         nonReentrant
         returns (uint256[] memory payAmounts)
@@ -850,7 +983,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         payAmounts = new uint256[](_assetAddresses.length);
 
         uint256 g = (_poolState.balance +
-            receiveAmount.mulWadUp(_poolState.price)).divWadUp(
+            receiveAmount.mulWadUp(_poolState.tokensPerShare)).divWadUp(
                 _poolState.balance
             );
         for (uint256 i; i < _assetAddresses.length; i++) {
@@ -861,12 +994,24 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                 revert ExcessivePayAmount(maxPayAmounts[i], payAmount);
             payAmounts[i] = payAmount;
 
-            SafeERC20.safeTransferFrom(
-                IERC20(assetIn.token),
-                sender,
-                address(this),
-                payAmount
-            );
+            if (_assetAddresses[i] == _wrappedNative) {
+                uint256 nativeAmount = msg.value;
+                if (nativeAmount < payAmount)
+                    revert IncorrectAmount(payAmount, nativeAmount);
+                if (nativeAmount > payAmount) {
+                    (bool success, ) = payable(sender).call{
+                        value: nativeAmount - payAmount
+                    }("");
+                    require(success, "Transfer failed");
+                }
+            } else {
+                SafeERC20.safeTransferFrom(
+                    IERC20(assetIn.token),
+                    sender,
+                    address(this),
+                    payAmount
+                );
+            }
 
             payAmount *= assetIn.conversion; // Convert to canonical
             _updateAssetBalance(_assetAddresses[i], payAmount, 0);

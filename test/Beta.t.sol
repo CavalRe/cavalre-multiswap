@@ -64,6 +64,13 @@ contract BetaTest is PoolTest {
     uint256[] private receiveAmountQuotes;
 
     function setUp() public {
+        uint256 startBalance = type(uint256).max / 2;
+        vm.deal(alice, startBalance);
+        vm.deal(bob, startBalance);
+        vm.deal(carol, startBalance);
+
+        vm.startPrank(alice);
+
         (pool, tokens) = setUpPool();
 
         for (uint256 i; i < NTOKENS; i++) {
@@ -94,7 +101,7 @@ contract BetaTest is PoolTest {
     }
 
     function testNames() public {
-        assertEq(tokens[0].name(), "Wrapped AVAX");
+        assertEq(tokens[0].name(), "Avalanche");
         assertEq(tokens[1].name(), "USD Coin");
         assertEq(tokens[2].name(), "TetherToken");
         assertEq(tokens[3].name(), "Euro Coin");
@@ -107,7 +114,7 @@ contract BetaTest is PoolTest {
     }
 
     function testSymbols() public {
-        assertEq(tokens[0].symbol(), "WAVAX");
+        assertEq(tokens[0].symbol(), "AVAX");
         assertEq(tokens[1].symbol(), "USDC");
         assertEq(tokens[2].symbol(), "USDt");
         assertEq(tokens[3].symbol(), "EUROC");
@@ -119,16 +126,20 @@ contract BetaTest is PoolTest {
         assertEq(tokens[9].symbol(), "BTC.b");
     }
 
-    function testInit() public {
+    function testBetaInit() public {
         AssetState[] memory assets = pool.assets();
         assertEq(assets.length, NTOKENS, "Number of assets in pool");
         assertEq(pool.info().balance, pool.totalSupply(), "Pool balance");
+        emit log_named_uint("Pool balance", pool.info().balance);
         assertEq(pool.info().scale, marketCap * NTOKENS, "Pool scale");
+        emit log_named_uint("Pool scale", pool.info().scale);
         for (uint256 i; i < NTOKENS; i++) {
             assertEq(assets[i].symbol, tokens[i].symbol(), "Asset symbol");
             assertEq(
                 assets[i].balance / assets[i].conversion,
-                tokens[i].balanceOf(address(pool)),
+                assets[i].token == wrappedNative
+                    ? payable(pool).balance
+                    : tokens[i].balanceOf(address(pool)),
                 "Asset balance"
             );
             assertEq(assets[i].scale, marketCap, "Asset scale");
@@ -151,19 +162,14 @@ contract BetaTest is PoolTest {
         emit log("Pool Info");
         emit log("=========");
         pool_ = _pool.info();
-        // emit log("Name:",poolName);
-        // emit log("Symbol:",poolSymbol);
-        // emit log_named_uint("Decimals", poolDecimals);
-        // emit log_named_uint("totalSupply", pool.totalSupply());
         emit log_named_uint("balance", pool_.balance);
         emit log_named_uint("scale", pool_.scale);
         emit log("");
         emit log("Assets:");
         emit log("-------");
-        Token token;
+        AssetState[] memory assets_ = _pool.assets();
         for (uint256 i; i < NTOKENS; i++) {
-            token = tokens[i];
-            showAsset(pool.asset(address(token)));
+            showAsset(assets_[i]);
         }
     }
 
@@ -172,10 +178,10 @@ contract BetaTest is PoolTest {
         USDC.mint(amount);
         USDC.approve(address(pool), amount);
 
-        emit log("Initial state");
-        emit log("");
-        showPool(pool);
-        emit log("");
+        // emit log("Initial state");
+        // emit log("");
+        // showPool(pool);
+        // emit log("");
         emit log_named_uint("amountIn", amount);
         emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
         (amountQuote, feeQuote) = pool.quoteSwap(
@@ -198,6 +204,38 @@ contract BetaTest is PoolTest {
         emit log_named_uint("feeAmount", feeAmount);
         emit log("");
         showPool(pool);
+        emit log("");
+    }
+
+    function testBetaNativeSwap() public {
+        uint256 amount = oneAmount[0] / oneConversion[0];
+
+        // emit log("Initial state");
+        // emit log("");
+        // showPool(pool);
+        // emit log("");
+        emit log_named_uint("amountIn", amount);
+        emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
+        (amountQuote, feeQuote) = pool.quoteSwap(
+            wrappedNative,
+            anotherAsset[0],
+            amount
+        );
+        (amountOut, feeAmount) = pool.swap{value: amount}(
+            wrappedNative,
+            anotherAsset[0],
+            amount,
+            oneMin[0]
+        );
+        assertEq(amountQuote, amountOut, "amountOut");
+        assertEq(feeQuote, feeAmount, "feeAmount");
+        emit log("State after swap");
+        emit log("");
+        emit log_named_uint("amountIn", amount);
+        emit log_named_uint("amountOut", amountOut);
+        emit log_named_uint("feeAmount", feeAmount);
+        emit log("");
+        // showPool(pool);
         emit log("");
     }
 
@@ -350,16 +388,20 @@ contract BetaTest is PoolTest {
     }
 
     function testBetaRemoveLiquidity() public {
-        emit log("=============");
-        emit log("Initial state");
-        emit log("");
-        showPool(pool);
-        emit log("");
-        emit log_named_uint("amountIn", oneAmount[0]);
-        emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
-        emit log("");
-        (receiveAmountQuotes, feeQuote) = pool.quoteRemoveLiquidity(marketCap);
-        (receiveAmounts, feeAmount) = pool.removeLiquidity(marketCap, allMins);
+        vm.startPrank(alice);
+        // emit log("=============");
+        // emit log("Initial state");
+        // emit log("");
+        // showPool(pool);
+        // emit log("");
+        uint256 amount = pool.balanceOf(alice);
+        (receiveAmountQuotes, feeQuote) = pool.quoteRemoveLiquidity(
+            amount
+        );
+        (receiveAmounts, feeAmount) = pool.removeLiquidity(
+            amount,
+            allMins
+        );
         for (uint256 i; i < NTOKENS; i++) {
             assertEq(
                 receiveAmountQuotes[i],
@@ -368,20 +410,44 @@ contract BetaTest is PoolTest {
             );
         }
         assertEq(feeQuote, feeAmount, "feeAmount");
-        emit log("=================");
-        emit log("State after removeLiquidity");
-        emit log("");
+
+        setUp();
+
+        amount = pool.balanceOf(alice) / 2;
+        (receiveAmountQuotes, feeQuote) = pool.quoteRemoveLiquidity(
+            amount
+        );
+        (receiveAmounts, feeAmount) = pool.removeLiquidity(
+            amount,
+            allMins
+        );
         for (uint256 i; i < NTOKENS; i++) {
-            emit log_named_uint("amountOut", receiveAmounts[i]);
+            assertEq(
+                receiveAmountQuotes[i],
+                receiveAmounts[i],
+                "receiveAmount"
+            );
         }
-        emit log_named_uint("feeAmount", feeAmount);
-        emit log("");
-        showPool(pool);
-        emit log("");
+        assertEq(feeQuote, feeAmount, "feeAmount");
+
+        // emit log("=================");
+        // emit log("State after removeLiquidity");
+        // emit log("");
+        // for (uint256 i; i < NTOKENS; i++) {
+        //     emit log_named_uint("amountOut", receiveAmounts[i]);
+        // }
+        // emit log_named_uint("feeAmount", feeAmount);
+        // emit log("");
+        // showPool(pool);
+        // emit log("");
     }
 
     function testBetaDiscount() public {
+        vm.startPrank(alice);
+
         pool.setDiscount(bob, ONE);
+
+        vm.stopPrank();
 
         vm.startPrank(bob);
 
@@ -394,17 +460,21 @@ contract BetaTest is PoolTest {
             anotherAsset[0],
             amount
         );
+
         (amountOut, feeAmount) = pool.swap(
             oneAsset[0],
             anotherAsset[0],
             amount,
             oneMin[0]
         );
+
         assertEq(amountQuote, amountOut, "amountOut");
         assertEq(feeQuote, feeAmount, "feeAmount");
         assertEq(feeAmount, 0, "feeAmount");
 
         vm.stopPrank();
+
+        vm.startPrank(alice);
 
         vm.expectRevert(
             abi.encodeWithSelector(IUsers.InvalidDiscount.selector, 2 * ONE)

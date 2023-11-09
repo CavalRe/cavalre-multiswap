@@ -64,6 +64,7 @@ contract StakeTest is TestRoot {
         } else {
             (amountOut, ) = pool.stake(address(payToken), amount, 0);
 
+            console.log("Check self financing");
             checkSF(address(payToken), address(pool), amount, amountOut);
 
             assertGt(

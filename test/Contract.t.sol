@@ -50,7 +50,6 @@ contract ContractTest is Context, Test {
         vm.startPrank(alice);
         vm.roll(1);
 
-        pool = new Pool("Pool", "P", 1e16);
         tokens = new Token[](NTOKENS);
 
         addresses = new address[](NTOKENS);
@@ -74,8 +73,6 @@ contract ContractTest is Context, Test {
             symbol = string(abi.encodePacked("T", Strings.toString(i + 1)));
             token = new Token(name, symbol, 18);
             token.mint(balance);
-            token.approve(address(pool), balance);
-            pool.addAsset(address(token), fee, balance, scale);
 
             tokens[i] = token;
 
@@ -83,6 +80,21 @@ contract ContractTest is Context, Test {
             amounts[i] = amount;
             fees[i] = fee;
             scales[i] = scale;
+        }
+
+        pool = new Pool(
+            "Pool",
+            "P",
+            1e16,
+            vm.envAddress("WRAPPED_NATIVE_TOKEN")
+        );
+
+        for (uint256 i; i < NTOKENS; i++) {
+            amount = (i + 1) * 1e27;
+            balance = 100 * amount;
+            scale = balance;
+            tokens[i].approve(address(pool), balance);
+            pool.addAsset(address(tokens[i]), fee, balance, scale);
         }
 
         pool.initialize();

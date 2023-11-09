@@ -22,20 +22,17 @@ contract LPToken is ILPToken, ERC20, Users {
 
     mapping(address => mapping(address => uint256)) private _allowances;
 
-    uint256 private _totalTokens;
-    uint256 private _price; // shares -> assets
+    uint256 internal _totalTokens;
+    uint256 internal _tokensPerShare;
 
-    string private _name;
-    string private _symbol;
-
-    uint256 private _protocolFee;
-    address private _protocolFeeRecipient;
+    uint256 internal _protocolFee;
+    address internal _protocolFeeRecipient;
 
     constructor(
         string memory name_,
         string memory symbol_
     ) ERC20(name_, symbol_) {
-        _price = 1e18;
+        _tokensPerShare = 1e18;
         _protocolFeeRecipient = _msgSender();
     }
 
@@ -43,65 +40,80 @@ contract LPToken is ILPToken, ERC20, Users {
         return _totalTokens;
     }
 
-    function price() public view returns (uint256) {
-        return _price;
+    function tokensPerShare() public view returns (uint256) {
+        return _tokensPerShare;
     }
 
     function tokensOf(address account) public view returns (uint256) {
-        return balanceOf(account).mulWadUp(_price);
+        return balanceOf(account).mulWadUp(_tokensPerShare);
     }
 
     function approve(
         address spender,
-        uint256 amount
+        uint256 shares
     ) public override returns (bool) {
         if (_isBlocked[spender]) revert UserNotAllowed(spender);
-        return super.approve(spender, amount);
+        return super.approve(spender, shares);
     }
 
     function transferFrom(
         address from,
         address to,
-        uint256 amount
+        uint256 shares
     ) public override returns (bool) {
         address spender = _msgSender();
         if (_isBlocked[spender]) revert UserNotAllowed(spender);
-        return super.transferFrom(from, to, amount);
+        return super.transferFrom(from, to, shares);
     }
 
     function _transfer(
         address from,
         address to,
-        uint256 amount
+        uint256 shares
     ) internal override {
         if (_isBlocked[to]) revert UserNotAllowed(to);
-        return super._transfer(from, to, amount);
+        return super._transfer(from, to, shares);
     }
 
-    function _mint(address account, uint256 amount) internal override {
+    function _mint(address account, uint256 shares) internal override {
         if (_isBlocked[account]) revert UserNotAllowed(account);
-        super._mint(account, amount);
-        _totalTokens = totalSupply().mulWadUp(_price);
+        super._mint(account, shares);
+        _totalTokens = totalSupply().mulWadUp(_tokensPerShare);
     }
 
-    function _burn(address account, uint256 amount) internal override {
-        super._burn(account, amount);
-        _totalTokens = totalSupply().mulWadUp(_price);
+    function _burn(address account, uint256 shares) internal override {
+        super._burn(account, shares);
+        _totalTokens = totalSupply().mulWadUp(_tokensPerShare);
     }
 
-    function _distributeFee(
-        uint256 txCount,
-        uint256 amount
-    ) internal returns (uint256 lpAmount, uint256 protocolAmount) {
-        protocolAmount = amount.mulWadUp(_protocolFee);
-        lpAmount = amount - protocolAmount;
+    function _distributeTokens(
+        uint256 amount // tokens
+    ) internal {
         _totalTokens += amount;
-        _price = _totalTokens.divWadUp(totalSupply());
-        if (protocolAmount > 0)
-            _mint(_protocolFeeRecipient, protocolAmount.divWadUp(_price));
-
-        emit DistributeFee(txCount, lpAmount, protocolAmount);
+        _tokensPerShare = _totalTokens.divWadUp(totalSupply());
     }
+
+    function _allocateShares(address recipient, uint256 shares) internal {
+        super._mint(recipient, shares);
+        _tokensPerShare = _totalTokens.divWadUp(totalSupply());
+    }
+
+    // function _distributeFee(
+    //     uint256 txCount,
+    //     uint256 amount
+    // ) internal returns (uint256 lpAmount, uint256 protocolAmount) {
+    //     protocolAmount = amount.mulWadUp(_protocolFee);
+    //     lpAmount = amount - protocolAmount;
+    //     _totalTokens += amount;
+    //     _tokensPerShare = _totalTokens.divWadUp(totalSupply());
+    //     if (protocolAmount > 0)
+    //         _mint(
+    //             _protocolFeeRecipient,
+    //             protocolAmount.divWadUp(_tokensPerShare)
+    //         );
+
+    //     emit DistributeFee(txCount, lpAmount, protocolAmount);
+    // }
 
     function protocolFee() public view returns (uint256) {
         return _protocolFee;

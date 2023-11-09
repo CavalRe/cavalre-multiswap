@@ -75,7 +75,12 @@ contract DeployPoolScript is Script, Test {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        pool = new Pool("Pool", "P", tau);
+        pool = new Pool(
+            "Pool",
+            "P",
+            tau,
+            vm.envAddress("WRAPPED_NATIVE_TOKEN")
+        );
 
         emit log_named_address("pool address", address(pool));
         emit log_named_address("pool owner", address(pool.owner()));

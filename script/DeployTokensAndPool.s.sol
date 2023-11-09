@@ -13,7 +13,7 @@ contract DeployTokensAndPoolScript is Script, Test {
 
     Pool private pool;
     uint256 private tau = 1e16;
-    uint256 private bps = 1e14;    
+    uint256 private bps = 1e14;
     uint256 private marketCap = 1e25;
 
     Token[] private tokens = new Token[](10);
@@ -51,10 +51,7 @@ contract DeployTokensAndPoolScript is Script, Test {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        pool = new Pool("Pool", "P", tau);
 
-        emit log_named_address("pool owner", address(pool.owner()));
-        emit log_named_address("sender", msg.sender);
 
         tokens[0] = new Token("Wrapped AVAX", "WAVAX", 18);
         tokens[1] = new Token("USD Coin", "USDC", 6);
@@ -67,6 +64,15 @@ contract DeployTokensAndPoolScript is Script, Test {
         tokens[8] = new Token("Bridged WBTC", "WBTC.e", 8);
         tokens[9] = new Token("Bridged BTC", "BTC.b", 8);
 
+        pool = new Pool(
+            "Pool",
+            "P",
+            tau,
+            vm.envAddress("WRAPPED_NATIVE_TOKEN")
+        );
+
+        emit log_named_address("pool owner", address(pool.owner()));
+        emit log_named_address("sender", msg.sender);
         uint256 balance;
         uint256 conversion;
         for (uint256 i; i < 10; i++) {

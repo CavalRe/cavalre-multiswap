@@ -10,7 +10,7 @@ contract TestPool is Pool {
         string memory name_,
         string memory symbol_,
         uint256 tau_
-    ) Pool(name_, symbol_, tau_) {}
+    ) Pool(name_, symbol_, tau_, address(1234)) {}
 
     function geometricMean(
         uint256 newValue,

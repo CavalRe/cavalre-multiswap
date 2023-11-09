@@ -23,7 +23,7 @@ interface ILPToken is IUsers {
 
     function totalTokens() external view returns (uint256);
 
-    function price() external view returns (uint256);
+    function tokensPerShare() external view returns (uint256);
 
     function tokensOf(address account) external view returns (uint256);
 

@@ -10,10 +10,15 @@ contract InitTest is Test {
         address alice = address(1);
 
         vm.startPrank(alice);
-        Pool pool = new Pool("Pool", "P", 1e16);
 
         Token tokenA = new Token("Foo", "FOOA", 18);
         Token tokenB = new Token("Foo", "FOOB", 18);
+        Pool pool = new Pool(
+            "Pool",
+            "P",
+            1e16,
+            vm.envAddress("WRAPPED_NATIVE_TOKEN")
+        );
         uint256 amount = 1e27;
         uint256 minReceiveAmount = 0;
 
@@ -47,7 +52,10 @@ contract InitTest is Test {
         assertEq(tokenA.balanceOf(alice) - balanceBefore, amount);
 
         vm.expectRevert(
-            abi.encodeWithSelector(IPool.AssetNotFound.selector, address(tokenA))
+            abi.encodeWithSelector(
+                IPool.AssetNotFound.selector,
+                address(tokenA)
+            )
         );
         pool.removeAsset(address(tokenA));
 
@@ -90,7 +98,12 @@ contract InitTest is Test {
         address bob = address(2);
 
         vm.startPrank(alice);
-        Pool pool = new Pool("Pool", "P", 1e16);
+        Pool pool = new Pool(
+            "Pool",
+            "P",
+            1e16,
+            vm.envAddress("WRAPPED_NATIVE_TOKEN")
+        );
         vm.stopPrank();
 
         vm.startPrank(bob);
@@ -102,13 +115,14 @@ contract InitTest is Test {
         address alice = address(1);
         address bob = address(2);
 
+        Token tokenA = new Token("Foo", "FOOA", 18);
+
         vm.startPrank(alice);
-        Pool pool = new Pool("Pool", "P", 1e16);
+        Pool pool = new Pool("Pool", "P", 1e16, address(tokenA));
         vm.stopPrank();
 
         vm.startPrank(bob);
         uint256 amount = 1e18;
-        Token tokenA = new Token("Foo", "FOOA", 18);
         tokenA.mint(amount);
         tokenA.approve(address(pool), amount);
         pool.addAsset(address(tokenA), 1e15, amount, 1e18);

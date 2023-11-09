@@ -11,7 +11,7 @@ struct PoolState {
     string symbol;
     uint8 decimals;
     int256 omega;
-    uint256 price; // LP token price per share
+    uint256 tokensPerShare; // LP token price per share
     uint256 balance; // # of LP tokens
     uint256 meanBalance;
     uint256 scale;
@@ -114,6 +114,8 @@ interface IPool is ILPToken {
 
     event TradingResumed();
 
+    event PoolDisabled(uint256 indexed txCount, address indexed poolAddress);
+
     error AlreadyInitialized();
 
     error AssetNotFound(address asset);
@@ -122,7 +124,7 @@ interface IPool is ILPToken {
 
     error ExcessivePayAmount(uint256 expected, uint256 actual);
 
-    error IncorrectAllocation(uint256 expected, uint256 actual);
+    error IncorrectAmount(uint256 expected, uint256 actual);
 
     error IncorrectDecimals(uint256 expected, uint256 actual);
 
@@ -161,9 +163,11 @@ interface IPool is ILPToken {
         uint256 fee_, // 18 decimals
         uint256 balance_, // Token decimals
         uint256 scale_ // 18 decimals
-    ) external;
+    ) external payable;
 
     function removeAsset(address token) external;
+
+    function setOmega(uint256 tau) external;
 
     function initialize() external;
 
@@ -208,7 +212,10 @@ interface IPool is ILPToken {
         address[] memory receiveTokens,
         uint256[] memory allocations,
         uint256[] memory minReceiveAmounts
-    ) external returns (uint256[] memory receiveAmounts, uint256 feeAmount);
+    )
+        external
+        payable
+        returns (uint256[] memory receiveAmounts, uint256 feeAmount);
 
     function quoteSwap(
         address payToken,
@@ -221,7 +228,7 @@ interface IPool is ILPToken {
         address receiveToken,
         uint256 payAmount,
         uint256 minReceiveAmount
-    ) external returns (uint256 receiveAmount, uint256 feeAmount);
+    ) external payable returns (uint256 receiveAmount, uint256 feeAmount);
 
     function quoteStake(
         address payToken,
@@ -232,7 +239,7 @@ interface IPool is ILPToken {
         address payToken,
         uint256 payAmount,
         uint256 minReceiveAmount
-    ) external returns (uint256 receiveAmount, uint256 feeAmount);
+    ) external payable returns (uint256 receiveAmount, uint256 feeAmount);
 
     function quoteUnstake(
         address receiveToken,
@@ -252,7 +259,7 @@ interface IPool is ILPToken {
     function addLiquidity(
         uint256 receiveAmount,
         uint256[] memory maxPayAmounts
-    ) external returns (uint256[] memory payAmounts);
+    ) external payable returns (uint256[] memory payAmounts);
 
     function quoteRemoveLiquidity(
         uint256 amount
