@@ -10,9 +10,7 @@ import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/ERC20.
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IWrappedNative} from "./IWrappedNative.sol";
 
-import "forge-std/Test.sol";
-
-contract Pool is IPool, LPToken, ReentrancyGuard, Test {
+contract Pool is IPool, LPToken, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using FixedPointMathLib for uint256;
     using FixedPointMathLib for int256;
@@ -42,10 +40,12 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
     constructor(
         string memory name,
         string memory symbol,
+        uint256 protocolFee,
         uint256 tau,
         address wrappedNative
     ) LPToken(name, symbol) {
         if (tau >= ONE) revert TooLarge(tau);
+        _protocolFee = protocolFee;
         _poolState.token = address(this);
         _poolState.name = name;
         _poolState.symbol = symbol;
@@ -314,11 +314,12 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
         uint256 protocolAmount = amount.mulWadUp(_protocolFee);
         uint256 lpAmount = amount - protocolAmount;
         _totalTokens += amount;
-        if (protocolAmount == 0) return;
-        _allocateShares(
-            _protocolFeeRecipient,
-            protocolAmount.divWadUp(_tokensPerShare)
-        );
+        if (protocolAmount != 0) {
+            _allocateShares(
+                _protocolFeeRecipient,
+                protocolAmount.divWadUp(_tokensPerShare)
+            );
+        }
         _tokensPerShare = _totalTokens.divWadUp(totalSupply());
 
         emit DistributeFee(_txCount, lpAmount, protocolAmount);
@@ -554,7 +555,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
             uint256 receiveAmount = receiveAmounts[i];
             // Update _balance and asset balances.
             if (receiveToken == address(this)) {
-                _allocateShares(sender, receiveAmount);
+                _mint(sender, receiveAmount);
             } else if (receiveToken == _wrappedNative) {
                 (bool success, ) = payable(sender).call{value: receiveAmount}(
                     ""

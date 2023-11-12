@@ -367,24 +367,24 @@ contract BetaTest is PoolTest {
     }
 
     function testBetaAddLiquidity() public {
-        emit log("=============");
-        emit log("Initial state");
-        emit log("");
-        showPool(pool);
-        emit log("");
-        emit log_named_uint("amountIn", oneAmount[0]);
-        emit log_named_uint("balance", pool.info().balance);
-        emit log("");
+        // emit log("=============");
+        // emit log("Initial state");
+        // emit log("");
+        // showPool(pool);
+        // emit log("");
+        // emit log_named_uint("amountIn", oneAmount[0]);
+        // emit log_named_uint("balance", pool.info().balance);
+        // emit log("");
         payAmountQuotes = pool.quoteAddLiquidity(oneAmount[0]);
-        payAmounts = pool.addLiquidity(oneAmount[0], allMaxs);
+        payAmounts = pool.addLiquidity{value: payAmountQuotes[0]}(oneAmount[0], allMaxs);
         for (uint256 i; i < NTOKENS; i++) {
             assertEq(payAmountQuotes[i], payAmounts[i], "payAmount");
         }
-        emit log("=================");
-        emit log("State after addLiquidity");
-        emit log("");
-        showPool(pool);
-        emit log("");
+        // emit log("=================");
+        // emit log("State after addLiquidity");
+        // emit log("");
+        // showPool(pool);
+        // emit log("");
     }
 
     function testBetaRemoveLiquidity() public {

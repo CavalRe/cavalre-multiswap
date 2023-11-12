@@ -9,8 +9,9 @@ contract TestPool is Pool {
     constructor(
         string memory name_,
         string memory symbol_,
+        uint256 protocolFee_,
         uint256 tau_
-    ) Pool(name_, symbol_, tau_, address(1234)) {}
+    ) Pool(name_, symbol_, protocolFee_, tau_, address(1234)) {}
 
     function geometricMean(
         uint256 newValue,
@@ -29,12 +30,13 @@ contract TestMath is Test {
     uint256 internal constant ONE = 1e18;
     uint256 internal constant HALF = 5e17;
 
+    uint256 private protocolFee = 2e17;
     uint256 private tau = 1e16;
 
     TestPool private pool;
 
     function setUp() public {
-        pool = new TestPool("Pool", "P", tau);
+        pool = new TestPool("Pool", "P", protocolFee, tau);
     }
 
     function testSquareRoot() public {

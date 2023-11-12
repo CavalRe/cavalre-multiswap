@@ -13,6 +13,7 @@ contract DeployPoolScript is Script, Test {
     uint256 public deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
     Pool private pool;
+    uint256 private protocolFee = 5e17;
     uint256 private tau = 1e16;
     uint256 private bps = 1e14;
     uint256 private marketCap = 1e26;
@@ -78,6 +79,7 @@ contract DeployPoolScript is Script, Test {
         pool = new Pool(
             "Pool",
             "P",
+            protocolFee,
             tau,
             vm.envAddress("WRAPPED_NATIVE_TOKEN")
         );

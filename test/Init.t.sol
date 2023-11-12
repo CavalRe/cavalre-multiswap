@@ -16,6 +16,7 @@ contract InitTest is Test {
         Pool pool = new Pool(
             "Pool",
             "P",
+            2e17,
             1e16,
             vm.envAddress("WRAPPED_NATIVE_TOKEN")
         );
@@ -101,6 +102,7 @@ contract InitTest is Test {
         Pool pool = new Pool(
             "Pool",
             "P",
+            2e17,
             1e16,
             vm.envAddress("WRAPPED_NATIVE_TOKEN")
         );
@@ -118,7 +120,7 @@ contract InitTest is Test {
         Token tokenA = new Token("Foo", "FOOA", 18);
 
         vm.startPrank(alice);
-        Pool pool = new Pool("Pool", "P", 1e16, address(tokenA));
+        Pool pool = new Pool("Pool", "P", 2e17, 1e16, address(tokenA));
         vm.stopPrank();
 
         vm.startPrank(bob);

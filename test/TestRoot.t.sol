@@ -50,9 +50,13 @@ contract TestRoot is Test, Context {
             addresses[i] = address(token);
         }
 
+        uint256 protocolFee;
+        // protocolFee = 2e17;
+
         pool = new Pool(
             "Pool",
             "P",
+            protocolFee,
             1e16,
             vm.envAddress("WRAPPED_NATIVE_TOKEN")
         );

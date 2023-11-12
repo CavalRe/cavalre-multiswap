@@ -7,6 +7,7 @@ import "forge-std/Test.sol";
 
 contract DeployEmptyPoolScript is Script, Test {
     Pool private pool;
+    uint256 private protocolFee = 5e17;
     uint256 private tau = 1e16;
 
     function run() external {
@@ -17,6 +18,7 @@ contract DeployEmptyPoolScript is Script, Test {
         pool = new Pool(
             "Multiswap",
             unicode"β",
+            protocolFee,
             tau,
             vm.envAddress("WRAPPED_NATIVE_TOKEN")
         );

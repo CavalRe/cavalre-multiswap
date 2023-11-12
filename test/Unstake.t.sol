@@ -85,10 +85,14 @@ contract UnstakeTest is TestRoot {
         uint256 receiveAmount;
         uint256 feeAmount;
 
+        emit log_named_uint("Protocol fee", pool.protocolFee());
+
         vm.assume(
             (amount > 1e17) && (amount < 1e50) && (3 * amount < assetBalance)
         );
+        emit log_named_uint("Alice's receive balance before minting.", receiveToken.balanceOf(alice));
         receiveToken.mint(amount);
+        emit log_named_uint("Alice's receive after before minting.", receiveToken.balanceOf(alice));
 
         assertEq(
             receiveToken.balanceOf(alice),
@@ -99,7 +103,9 @@ contract UnstakeTest is TestRoot {
         receiveToken.approve(address(pool), amount);
 
         uint256 amountOut;
+        emit log_named_uint("Alice's pool balance before staking.", pool.tokensOf(alice));
         (amountOut, ) = pool.stake(address(receiveToken), amount, 0);
+        emit log_named_uint("Alice's pool balance after staking.", pool.tokensOf(alice));
 
         assertEq(
             receiveToken.balanceOf(alice),
@@ -134,6 +140,7 @@ contract UnstakeTest is TestRoot {
                 receiveBalance + receiveAmount,
                 "Alice's receive token balance after unstaking."
             );
+            emit log_named_uint("Alice's pool balance after unstaking.", pool.tokensOf(alice));
             assertApproxEqRel(
                 pool.tokensOf(alice),
                 poolBalance +

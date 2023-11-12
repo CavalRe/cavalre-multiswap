@@ -85,6 +85,7 @@ contract ContractTest is Context, Test {
         pool = new Pool(
             "Pool",
             "P",
+            2e17,
             1e16,
             vm.envAddress("WRAPPED_NATIVE_TOKEN")
         );

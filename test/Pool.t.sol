@@ -22,6 +22,7 @@ contract PoolTest is Test {
     uint256 internal constant PCT = 1e16;
     uint256 internal constant BPS = 1e14;
 
+    uint256 internal protocolFee = 2e17;
     uint256 internal tau = 1e16;
 
     uint256 internal marketCap = 1e25;
@@ -44,7 +45,7 @@ contract PoolTest is Test {
     address internal wrappedNative = vm.envAddress("WRAPPED_NATIVE_TOKEN");
 
     function setUpPool() public returns (Pool pool, Token[] memory tokens) {
-        pool = new Pool("Pool", "P", tau, wrappedNative);
+        pool = new Pool("Pool", "P", protocolFee, tau, wrappedNative);
         tokens = new Token[](NTOKENS);
 
         tokens[0] = WAVAX;
