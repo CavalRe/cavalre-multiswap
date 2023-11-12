@@ -55,6 +55,26 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         _wrappedNative = wrappedNative;
     }
 
+    function _payNative(
+        address sender,
+        uint256 amount
+    ) private {
+        uint256 nativeBalance = msg.value;
+        if (nativeBalance < amount) {
+            SafeERC20.safeTransferFrom(
+                IERC20(_wrappedNative),
+                sender,
+                address(this),
+                amount - nativeBalance
+            );
+            _unwrap(amount - nativeBalance);
+        }
+        if (nativeBalance > amount) {
+            (bool success, ) = payable(sender).call{value: nativeBalance - amount}("");
+            require(success, "Transfer failed");
+        }
+    }
+
     function addAsset(
         address token_,
         uint256 fee_, // 18 decimals
@@ -72,11 +92,10 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint8 decimals_;
 
         if (token_ == _wrappedNative) {
-            if (balance_ != msg.value)
-                revert IncorrectAmount(balance_, msg.value);
             name_ = "Avalanche";
             symbol_ = "AVAX";
             decimals_ = 18;
+            _payNative(_msgSender(), balance_);
         } else {
             name_ = IERC20Metadata(token_).name();
             symbol_ = IERC20Metadata(token_).symbol();
@@ -86,7 +105,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                 IERC20(token_),
                 _msgSender(),
                 address(this),
-                balance_ // Convert from canonical
+                balance_
             );
         }
 
@@ -538,12 +557,16 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             if (payToken == address(this)) {
                 _burn(sender, amount);
             } else {
-                SafeERC20.safeTransferFrom(
-                    IERC20(payToken),
-                    sender,
-                    address(this),
-                    amount
-                );
+                if (payToken == _wrappedNative) {
+                    _payNative(sender, amount);
+                } else {
+                    SafeERC20.safeTransferFrom(
+                        IERC20(payToken),
+                        sender,
+                        address(this),
+                        amount
+                    );
+                }
                 amount *= _assetState[payToken].conversion; // Convert to canonical
                 _updateAssetBalance(payToken, amount, 0);
             }
@@ -638,8 +661,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         {
             for (uint256 i; i < amounts.length; i++) {
                 if (amounts[i] == 0) revert ZeroAmount();
-                if (payTokens[i] == _wrappedNative && amounts[i] != msg.value)
-                    revert IncorrectAmount(amounts[i], msg.value);
             }
         }
         // Check allocations
@@ -741,8 +762,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         if (_assetState[receiveToken].token != receiveToken)
             revert AssetNotFound(receiveToken);
         if (payAmount == 0) revert ZeroAmount();
-        if (payToken == _wrappedNative && payAmount != msg.value)
-            revert IncorrectAmount(payAmount, msg.value);
         if (
             payAmount * 3 >
             _assetState[payToken].balance / _assetState[payToken].conversion
@@ -829,8 +848,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         if (_assetState[payToken].token != payToken)
             revert AssetNotFound(payToken);
         if (payAmount == 0) revert ZeroAmount();
-        if (payToken == _wrappedNative && payAmount != msg.value)
-            revert IncorrectAmount(payAmount, msg.value);
         if (
             payAmount * 3 >
             _assetState[payToken].balance / _assetState[payToken].conversion
@@ -996,15 +1013,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             payAmounts[i] = payAmount;
 
             if (_assetAddresses[i] == _wrappedNative) {
-                uint256 nativeAmount = msg.value;
-                if (nativeAmount < payAmount)
-                    revert IncorrectAmount(payAmount, nativeAmount);
-                if (nativeAmount > payAmount) {
-                    (bool success, ) = payable(sender).call{
-                        value: nativeAmount - payAmount
-                    }("");
-                    require(success, "Transfer failed");
-                }
+                _payNative(sender, payAmount);
             } else {
                 SafeERC20.safeTransferFrom(
                     IERC20(assetIn.token),
