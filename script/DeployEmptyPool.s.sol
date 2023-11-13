@@ -20,7 +20,8 @@ contract DeployEmptyPoolScript is Script, Test {
             unicode"β",
             protocolFee,
             tau,
-            vm.envAddress("WRAPPED_NATIVE_TOKEN")
+            vm.envAddress("WRAPPED_NATIVE_TOKEN"),
+            false
         );
 
         emit log_named_address("pool address", address(pool));

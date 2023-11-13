@@ -58,7 +58,8 @@ contract TestRoot is Test, Context {
             "P",
             protocolFee,
             1e16,
-            vm.envAddress("WRAPPED_NATIVE_TOKEN")
+            vm.envAddress("WRAPPED_NATIVE_TOKEN"),
+            false
         );
 
         for (uint256 i; i < NTOKENS; i++) {

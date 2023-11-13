@@ -22,12 +22,9 @@ contract PoolTest is Test {
     uint256 internal constant PCT = 1e16;
     uint256 internal constant BPS = 1e14;
 
-    uint256 internal protocolFee = 2e17;
-    uint256 internal tau = 1e16;
-
     uint256 internal marketCap = 1e25;
 
-    Token internal WAVAX = new Token("Avalanche", "AVAX", 18);
+    Token internal WAVAX = new Token("Wrapped AVAX", "WAVAX", 18);
     Token internal USDC = new Token("USD Coin", "USDC", 6);
     Token internal USDt = new Token("TetherToken", "USDt", 6);
     Token internal EUROC = new Token("Euro Coin", "EUROC", 6);
@@ -42,10 +39,22 @@ contract PoolTest is Test {
     uint256[] internal receiveAmounts;
     uint256 internal feeAmount;
 
-    address internal wrappedNative = vm.envAddress("WRAPPED_NATIVE_TOKEN");
-
-    function setUpPool() public returns (Pool pool, Token[] memory tokens) {
-        pool = new Pool("Pool", "P", protocolFee, tau, wrappedNative);
+    function setUpPool(
+        string memory name,
+        string memory symbol,
+        uint256 protocolFee,
+        uint tau,
+        bool storeNative
+    ) public returns (Pool pool, Token[] memory tokens) {
+        console.log("Setting up pool");
+        pool = new Pool(
+            name,
+            symbol,
+            protocolFee,
+            tau,
+            address(WAVAX),
+            storeNative
+        );
         tokens = new Token[](NTOKENS);
 
         tokens[0] = WAVAX;
@@ -89,9 +98,9 @@ contract PoolTest is Test {
             conversion = 10 ** (18 - token.decimals());
             conversions[i] = conversion;
             balance = marketCap.divWadUp(prices[i]) / conversion;
-            if (i == 0) {
+            if (storeNative && i == 0) {
                 pool.addAsset{value: balance}(
-                    wrappedNative,
+                    address(WAVAX),
                     fees[i],
                     balance,
                     marketCap
@@ -105,7 +114,8 @@ contract PoolTest is Test {
 
         pool.initialize();
 
-        for (uint256 i = 1; i < NTOKENS; i++) {
+        uint256 i0 = storeNative ? 1 : 0;
+        for (uint256 i = i0; i < NTOKENS; i++) {
             token = tokens[i];
             balance = token.balanceOf(address(pool));
             token.mint(balance);

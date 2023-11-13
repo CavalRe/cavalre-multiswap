@@ -33,7 +33,7 @@ contract MintAssetsScript is Script, Test {
         vm.startBroadcast(deployerPrivateKey);
 
         for (uint256 i = 0; i < tokens.length; i++) {
-            Token token = Token(tokens[i]);
+            Token token = Token(payable(tokens[i]));
             uint256 balance = token.balanceOf(address(pool));
             if (balance > 0) {
                 token.mint(balance / 10);

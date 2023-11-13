@@ -20,7 +20,7 @@ contract UsersTest is PoolTest {
 
         vm.startPrank(alice);
 
-        (pool, tokens) = setUpPool();
+        (pool, tokens) = setUpPool("Pool", "P", 2e17, 1e16, false);
 
         assertEq(pool.owner(), alice, "Owner of pool.");
     }

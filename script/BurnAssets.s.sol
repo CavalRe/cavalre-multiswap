@@ -33,7 +33,7 @@ contract BurnAssetsScript is Script, Test {
         vm.startBroadcast(deployerPrivateKey);
 
         for (uint256 i = 0; i < tokens.length; i++) {
-            Token token = Token(tokens[i]);
+            Token token = Token(payable(tokens[i]));
             uint256 balance = token.balanceOf(deployer);
             if (balance > 0) {
                 token.burn(balance);

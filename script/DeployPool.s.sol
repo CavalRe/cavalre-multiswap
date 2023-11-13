@@ -81,7 +81,8 @@ contract DeployPoolScript is Script, Test {
             "P",
             protocolFee,
             tau,
-            vm.envAddress("WRAPPED_NATIVE_TOKEN")
+            vm.envAddress("WRAPPED_NATIVE_TOKEN"),
+            false
         );
 
         emit log_named_address("pool address", address(pool));
@@ -92,7 +93,7 @@ contract DeployPoolScript is Script, Test {
         uint256 balance;
         uint256 conversion;
         for (uint256 i; i < 10; i++) {
-            token = Token(tokens[i]);
+            token = Token(payable(tokens[i]));
             conversion = 10 ** (18 - token.decimals());
             value = marketCap.mulWadUp(weights[i]);
             balance = value.divWadUp(prices[i]) / conversion;

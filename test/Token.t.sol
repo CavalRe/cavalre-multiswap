@@ -6,6 +6,9 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 contract Token is ERC20 {
     uint8 private _decimals;
 
+    event Deposit(address indexed dst, uint256 wad);
+    event Withdrawal(address indexed src, uint256 wad);
+
     constructor(
         string memory name_,
         string memory symbol_,
@@ -25,59 +28,20 @@ contract Token is ERC20 {
     function decimals() public view virtual override returns (uint8) {
         return _decimals;
     }
-}
 
-contract TokenFactory {
-    mapping(address => uint256) private _index;
-    Token[] private _tokens;
-
-    error LengthMismatch(uint256 expected, uint256 actual);
-
-    function tokens() public view returns (Token[] memory) {
-        return _tokens;
+    receive() external payable {
+        deposit();
     }
 
-    function create(
-        string[] memory names,
-        string[] memory symbols
-    ) public returns (Token[] memory) {
-        if (names.length != symbols.length)
-            revert LengthMismatch(names.length, symbols.length);
-
-        for (uint256 i; i < names.length; i++) {
-            Token token = new Token(names[i], symbols[i], 18);
-            _index[address(token)] = _tokens.length;
-            _tokens.push(token);
-        }
-        return _tokens;
+    function deposit() public payable {
+        _mint(_msgSender(), msg.value);
+        emit Deposit(_msgSender(), msg.value);
     }
 
-    function mint(address[] memory addresses, uint256[] memory amounts) public {
-        if (addresses.length != amounts.length)
-            revert LengthMismatch(addresses.length, amounts.length);
-        for (uint256 i; i < addresses.length; i++) {
-            _tokens[_index[addresses[i]]].mint(amounts[i]);
-        }
-    }
-
-    function burn(address[] memory addresses, uint256[] memory amounts) public {
-        if (addresses.length != amounts.length)
-            revert LengthMismatch(addresses.length, amounts.length);
-        for (uint256 i; i < addresses.length; i++) {
-            _tokens[_index[addresses[i]]].burn(amounts[i]);
-        }
-    }
-
-    function approve(
-        address spender,
-        address[] memory addresses,
-        uint256[] memory amounts
-    ) public {
-        if (addresses.length != amounts.length)
-            revert LengthMismatch(addresses.length, amounts.length);
-        for (uint256 i; i < addresses.length; i++) {
-            _tokens[_index[addresses[i]]].approve(spender, 0);
-            _tokens[_index[addresses[i]]].approve(spender, amounts[i]);
-        }
+    function withdraw(uint256 wad) public {
+        require(balanceOf(_msgSender()) >= wad);
+        _burn(_msgSender(), wad);
+        payable(_msgSender()).transfer(wad);
+        emit Withdrawal(_msgSender(), wad);
     }
 }
