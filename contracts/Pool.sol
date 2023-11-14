@@ -10,7 +10,9 @@ import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/ERC20.
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IWrappedNative} from "./IWrappedNative.sol";
 
-contract Pool is IPool, LPToken, ReentrancyGuard {
+import "forge-std/Test.sol";
+
+contract Pool is IPool, LPToken, ReentrancyGuard, Test {
     using SafeERC20 for IERC20;
     using FixedPointMathLib for uint256;
     using FixedPointMathLib for int256;
@@ -23,9 +25,10 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     mapping(address => AssetState) private _assetState;
     address[] private _assetAddresses;
 
-    address public _wrappedNative;
-
+    address public _wrappedNativeAddress;
     bool private _storeNative;
+    string private _nativeName;
+    string private _nativeSymbol;
 
     bool private _tradingPaused;
 
@@ -45,7 +48,9 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256 protocolFee,
         uint256 tau,
         address wrappedNative_,
-        bool storeNative_
+        bool storeNative_,
+        string memory nativeName_,
+        string memory nativeSymbol_
     ) LPToken(name, symbol) {
         if (tau >= ONE) revert TooLarge(tau);
         _protocolFee = protocolFee;
@@ -55,8 +60,10 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         _poolState.decimals = 18;
         _poolState.omega = int256(ONE - tau);
         _poolState.tokensPerShare = ONE;
-        _wrappedNative = wrappedNative_;
+        _wrappedNativeAddress = wrappedNative_;
         _storeNative = storeNative_;
+        _nativeName = nativeName_;
+        _nativeSymbol = nativeSymbol_;
     }
 
     function _payNative(address sender, uint256 amount) private {
@@ -65,7 +72,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         if (nativeBalance < amount) {
             wrappedBalance = amount - nativeBalance;
             SafeERC20.safeTransferFrom(
-                IERC20(_wrappedNative),
+                IERC20(_wrappedNativeAddress),
                 sender,
                 address(this),
                 wrappedBalance
@@ -91,7 +98,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256 balance_, // Token decimals
         uint256 scale_ // 18 decimals
     ) public payable onlyUninitialized onlyOwner {
-        if (token_ == address(0)) revert ZeroAddress();
         if (_assetState[token_].token == token_) revert DuplicateToken(token_);
         if (balance_ == 0) revert ZeroBalance();
         if (scale_ == 0) revert ZeroScale();
@@ -101,17 +107,19 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         string memory symbol_;
         uint8 decimals_;
 
-        if (token_ == _wrappedNative) {
+        if (token_ == address(0)) {
+            if (balance_ != msg.value)
+                revert IncorrectAmount(msg.value, balance_);
             if (_storeNative) {
-                name_ = "Avalanche";
-                symbol_ = "AVAX";
+                name_ = _nativeName;
+                symbol_ = _nativeSymbol;
                 decimals_ = 18;
             } else {
-                name_ = IERC20Metadata(token_).name();
-                symbol_ = IERC20Metadata(token_).symbol();
-                decimals_ = IERC20Metadata(token_).decimals();
+                _wrap(balance_);
+                name_ = IERC20Metadata(_wrappedNativeAddress).name();
+                symbol_ = IERC20Metadata(_wrappedNativeAddress).symbol();
+                decimals_ = 18;
             }
-            _payNative(_msgSender(), balance_);
         } else {
             name_ = IERC20Metadata(token_).name();
             symbol_ = IERC20Metadata(token_).symbol();
@@ -123,6 +131,12 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                 address(this),
                 balance_
             );
+            if (token_ == _wrappedNativeAddress && _storeNative) {
+                _unwrap(balance_);
+                name_ = _nativeName;
+                symbol_ = _nativeSymbol;
+                decimals_ = 18;
+            }
         }
 
         _poolState.balance += scale_;
@@ -151,7 +165,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     }
 
     function removeAsset(address token) public onlyUninitialized onlyOwner {
-        if (token == address(0)) revert ZeroAddress();
         AssetState storage asset_ = _assetState[token];
         if (asset_.token != token) revert AssetNotFound(token);
 
@@ -161,12 +174,16 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         _poolState.scale -= scale_;
         _poolState.meanScale -= scale_;
 
-        if (_storeNative && token == _wrappedNative) {
+        if (token == address(0)) {
+            if (!_storeNative) _unwrap(asset_.balance);
             (bool success, ) = payable(owner()).call{
                 value: address(this).balance
             }("");
             require(success, "Transfer failed");
         } else {
+            if (_storeNative && token == _wrappedNativeAddress) {
+                _wrap(asset_.balance / asset_.conversion); // Convert from canonical
+            }
             SafeERC20.safeTransfer(
                 IERC20(token),
                 owner(),
@@ -187,9 +204,21 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         emit AssetRemoved(token);
     }
 
-    function setOmega(uint256 tau) public onlyUninitialized onlyOwner {
+    function setTau(uint256 tau) public onlyUninitialized onlyOwner {
         if (tau >= ONE) revert TooLarge(tau);
         _poolState.omega = int256(ONE - tau);
+    }
+
+    function setNativeName(
+        string memory nativeName_
+    ) public onlyUninitialized onlyOwner {
+        _nativeName = nativeName_;
+    }
+
+    function setNativeSymbol(
+        string memory nativeSymbol_
+    ) public onlyUninitialized onlyOwner {
+        _nativeSymbol = nativeSymbol_;
     }
 
     function initialize() public onlyUninitialized onlyOwner {
@@ -226,7 +255,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     }
 
     function wrappedNative() public view returns (address) {
-        return _wrappedNative;
+        return _wrappedNativeAddress;
     }
 
     function storeNative() public view returns (bool) {
@@ -234,7 +263,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     }
 
     function asset(address token) public view returns (AssetState memory) {
-        if (token == address(0)) revert ZeroAddress();
         if (_assetState[token].token != token) revert AssetNotFound(token);
         return _assetState[token];
     }
@@ -278,7 +306,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256 increaseAmount,
         uint256 decreaseAmount
     ) private {
-        if (token == address(0)) revert ZeroAddress();
         AssetState storage asset_ = _assetState[token];
         if (asset_.token != token) revert AssetNotFound(token);
         uint256 lastBalance = asset_.balance;
@@ -292,7 +319,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         );
         asset_.lastUpdated = _txCount;
         address sender = _msgSender();
-        uint256 userBalance = _storeNative && token == _wrappedNative
+        uint256 userBalance = _storeNative && token == _wrappedNativeAddress
             ? address(sender).balance
             : IERC20(token).balanceOf(sender);
         emit BalanceUpdate(
@@ -336,7 +363,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     ) private view returns (bool) {
         for (uint256 i; i < tokens.length; i++) {
             address token = tokens[i];
-            if (token == address(0)) revert ZeroAddress();
             if (address(this) == token) {
                 if (isLP) revert DuplicateToken(token);
                 if (i != 0) revert LPTokenFirst();
@@ -381,7 +407,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             for (uint256 i; i < _assetAddresses.length; i++) {
                 address token = _assetAddresses[i];
                 uint256 balance;
-                if (_storeNative && token == _wrappedNative) {
+                if (_storeNative && token == _wrappedNativeAddress) {
                     balance = payable(address(this)).balance;
                 } else {
                     balance = IERC20(token).balanceOf(address(this));
@@ -495,7 +521,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         for (uint256 i; i < _assetAddresses.length; i++) {
             address token = _assetAddresses[i];
             uint256 balance;
-            if (_storeNative && token == _wrappedNative) {
+            if (_storeNative && token == _wrappedNativeAddress) {
                 balance = payable(address(this)).balance;
                 if (balance > 0) {
                     (bool success, ) = payable(receiver).call{value: balance}(
@@ -562,6 +588,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         );
 
         // Check receiveAmounts
+        console.log("Check receiveAmounts");
         {
             for (uint256 i; i < receiveTokens.length; i++) {
                 if (receiveAmounts[i] < minReceiveAmounts[i]) {
@@ -574,13 +601,16 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         }
 
         // Transfer tokens to the pool
+        console.log("Transfer tokens to the pool");
         for (uint256 i; i < payTokens.length; i++) {
             address payToken = payTokens[i];
             uint256 amount = amounts[i];
             if (payToken == address(this)) {
                 _burn(sender, amount);
             } else {
-                if (payToken == _wrappedNative) {
+                if (
+                    payToken == _wrappedNativeAddress || payToken == address(0)
+                ) {
                     _payNative(sender, amount);
                 } else {
                     SafeERC20.safeTransferFrom(
@@ -596,32 +626,41 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         }
 
         // Transfer tokens to the receiving address
+        console.log("Transfer tokens to the receiving address");
         for (uint256 i; i < receiveTokens.length; i++) {
             address receiveToken = receiveTokens[i];
             uint256 receiveAmount = receiveAmounts[i];
             // Update _balance and asset balances.
             if (receiveToken == address(this)) {
                 _mint(sender, receiveAmount);
-            } else if (_storeNative && receiveToken == _wrappedNative) {
-                (bool success, ) = payable(sender).call{value: receiveAmount}(
-                    ""
-                );
-                require(success, "Transfer failed");
             } else {
-                SafeERC20.safeTransfer(
-                    IERC20(receiveToken),
-                    sender,
-                    receiveAmount
-                );
-
+                if (receiveToken == address(0)) {
+                    if (!_storeNative) _unwrap(receiveAmount);
+                    (bool success, ) = payable(sender).call{value: receiveAmount}(
+                        ""
+                    );
+                    require(success, "Transfer failed");
+                } else {
+                    if (_storeNative && receiveToken == _wrappedNativeAddress)
+                        _wrap(receiveAmount);
+                    SafeERC20.safeTransfer(
+                        IERC20(receiveToken),
+                        sender,
+                        receiveAmount
+                    );
+                }
                 receiveAmount *= _assetState[receiveToken].conversion; // Convert to canonical
+                console.log("Update asset balance");
                 _updateAssetBalance(receiveToken, 0, receiveAmount);
             }
         }
 
         // Distribute fee
+        console.log("Distribute fee");
         distributeFee(feeAmount);
 
+        // Update pool balance
+        console.log("Update pool balance");
         _updatePoolBalance();
     }
 
@@ -773,8 +812,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         if (_tradingPaused) revert TradingPausedError();
         address sender = _msgSender();
         _checkUser(sender);
-        if (payToken == address(0)) revert ZeroAddress();
-        if (receiveToken == address(0)) revert ZeroAddress();
         if (payToken == address(this))
             revert InvalidSwap(payToken, receiveToken);
         if (receiveToken == address(this))
@@ -866,7 +903,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         if (_tradingPaused) revert TradingPausedError();
         address sender = _msgSender();
         _checkUser(sender);
-        if (payToken == address(0)) revert ZeroAddress();
         if (payToken == address(this)) revert InvalidStake(payToken);
         if (_assetState[payToken].token != payToken)
             revert AssetNotFound(payToken);
@@ -943,7 +979,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         if (_tradingPaused) revert TradingPausedError();
         address sender = _msgSender();
         _checkUser(sender);
-        if (receiveToken == address(0)) revert ZeroAddress();
         if (receiveToken == address(this)) revert InvalidUnstake(receiveToken);
         if (_assetState[receiveToken].token != receiveToken)
             revert AssetNotFound(receiveToken);
@@ -1035,7 +1070,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                 revert ExcessivePayAmount(maxPayAmounts[i], payAmount);
             payAmounts[i] = payAmount;
 
-            if (_storeNative && _assetAddresses[i] == _wrappedNative) {
+            if (_storeNative && _assetAddresses[i] == _wrappedNativeAddress) {
                 _payNative(sender, payAmount);
             } else {
                 SafeERC20.safeTransferFrom(
@@ -1200,12 +1235,16 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     }
 
     function _wrap(uint256 amount) internal {
-        IWrappedNative(_wrappedNative).deposit{value: amount}();
+        IWrappedNative(_wrappedNativeAddress).deposit{value: amount}();
     }
 
     function _unwrap(uint256 amount) internal {
-        _approveTokenIfNeeded(_wrappedNative, _wrappedNative, amount);
-        IWrappedNative(_wrappedNative).withdraw(amount);
+        _approveTokenIfNeeded(
+            _wrappedNativeAddress,
+            _wrappedNativeAddress,
+            amount
+        );
+        IWrappedNative(_wrappedNativeAddress).withdraw(amount);
     }
 
     receive() external payable {

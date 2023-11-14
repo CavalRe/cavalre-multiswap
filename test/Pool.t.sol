@@ -53,7 +53,9 @@ contract PoolTest is Test {
             protocolFee,
             tau,
             address(WAVAX),
-            storeNative
+            storeNative,
+            "Avalanche",
+            "AVAX"
         );
         tokens = new Token[](NTOKENS);
 

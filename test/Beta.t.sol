@@ -245,26 +245,28 @@ contract BetaTest is PoolTest {
         emit log_named_uint("feeAmount", feeAmount);
     }
 
-    function testBetaStake() public {
-        uint256 amount = oneAmount[0] / oneConversion[0];
+    function testBetaStakeUSDC() public {
+        uint256 amount = USDC.balanceOf(address(pool)) / 10;
 
-        emit log("Initial state");
-        emit log("");
-        showPool(pool);
-        emit log("");
-        emit log_named_uint("amountIn", amount);
-        emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
+        // emit log("Initial state");
+        // emit log("");
+        // showPool(pool);
+        // emit log("");
+        // emit log_named_uint("amountIn", amount);
+        // emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
+        console.log("Quote stake");
         (amountQuote, feeQuote) = pool.quoteStake(oneAsset[0], amount);
+        console.log("Stake");
         (amountOut, feeAmount) = pool.stake(oneAsset[0], amount, oneMin[0]);
         assertEq(amountQuote, amountOut, "amountOut");
         assertEq(feeQuote, feeAmount, "feeAmount");
-        emit log("State after stake");
-        emit log("");
-        emit log_named_uint("amountOut", amountOut);
-        emit log_named_uint("feeAmount", feeAmount);
-        emit log("");
-        showPool(pool);
-        emit log("");
+        // emit log("State after stake");
+        // emit log("");
+        // emit log_named_uint("amountOut", amountOut);
+        // emit log_named_uint("feeAmount", feeAmount);
+        // emit log("");
+        // showPool(pool);
+        // emit log("");
     }
 
     function testBetaUnstake() public {

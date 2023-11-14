@@ -167,7 +167,11 @@ interface IPool is ILPToken {
 
     function removeAsset(address token) external;
 
-    function setOmega(uint256 tau) external;
+    function setTau(uint256 tau) external;
+
+    function setNativeName(string memory name) external;
+
+    function setNativeSymbol(string memory symbol) external;
 
     function initialize() external;
 

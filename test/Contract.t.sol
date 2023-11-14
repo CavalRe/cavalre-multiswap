@@ -88,7 +88,9 @@ contract ContractTest is Context, Test {
             2e17,
             1e16,
             vm.envAddress("WRAPPED_NATIVE_TOKEN"),
-            false
+            false,
+            "Avalanche",
+            "AVAX"
         );
 
         for (uint256 i; i < NTOKENS; i++) {

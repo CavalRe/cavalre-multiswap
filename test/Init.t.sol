@@ -19,7 +19,9 @@ contract InitTest is Test {
             2e17,
             1e16,
             vm.envAddress("WRAPPED_NATIVE_TOKEN"),
-            false
+            false,
+            "Avalanche",
+            "AVAX"
         );
         uint256 amount = 1e27;
         uint256 minReceiveAmount = 0;
@@ -106,7 +108,9 @@ contract InitTest is Test {
             2e17,
             1e16,
             vm.envAddress("WRAPPED_NATIVE_TOKEN"),
-            false
+            false,
+            "Avalanche",
+            "AVAX"
         );
         vm.stopPrank();
 
@@ -122,7 +126,16 @@ contract InitTest is Test {
         Token tokenA = new Token("Foo", "FOOA", 18);
 
         vm.startPrank(alice);
-        Pool pool = new Pool("Pool", "P", 2e17, 1e16, address(tokenA), false);
+        Pool pool = new Pool(
+            "Pool",
+            "P",
+            2e17,
+            1e16,
+            address(tokenA),
+            false,
+            "Avalanche",
+            "AVAX"
+        );
         vm.stopPrank();
 
         vm.startPrank(bob);

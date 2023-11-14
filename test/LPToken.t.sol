@@ -14,7 +14,18 @@ contract PoolMintable is Pool {
         string memory symbol_,
         uint256 protocolFee_,
         uint256 tau_
-    ) Pool(name_, symbol_, protocolFee_, tau_, address(1234), false) {}
+    )
+        Pool(
+            name_,
+            symbol_,
+            protocolFee_,
+            tau_,
+            address(1234),
+            false,
+            "Avalanche",
+            "AVAX"
+        )
+    {}
 
     function distributeFee_(uint256 amount) public {
         super.distributeFee(amount);
@@ -280,13 +291,13 @@ contract LPTokenTest is Test {
 
         assertApproxEqRel(
             pool.tokensOf(alice),
-            2*amount.divWadUp(uint256(1e18) + protocolFee),
+            2 * amount.divWadUp(uint256(1e18) + protocolFee),
             1e12,
             "Balance of alice after fee distribution."
         );
         assertApproxEqRel(
             pool.tokensOf(bob),
-            2*amount.divWadUp(uint256(1e18) + protocolFee),
+            2 * amount.divWadUp(uint256(1e18) + protocolFee),
             1e12,
             "Balance of bob after fee distribution."
         );
