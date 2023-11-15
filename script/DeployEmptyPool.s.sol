@@ -19,11 +19,7 @@ contract DeployEmptyPoolScript is Script, Test {
             "Multiswap",
             unicode"β",
             protocolFee,
-            tau,
-            vm.envAddress("WRAPPED_NATIVE_TOKEN"),
-            false,
-            "Avalanche",
-            "AVAX"
+            tau
         );
 
         emit log_named_address("pool address", address(pool));

@@ -10,7 +10,7 @@
 // See the file LICENSE.md for licensing terms.
 pragma solidity 0.8.19;
 
-import {ILPToken} from "./ILPToken.sol";
+import {ILPToken} from "./interfaces/ILPToken.sol";
 import {Users} from "./Users.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {FixedPointMathLib} from "solady/src/utils/FixedPointMathLib.sol";

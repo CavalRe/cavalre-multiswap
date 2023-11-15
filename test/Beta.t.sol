@@ -72,9 +72,7 @@ contract BetaTest is PoolTest {
 
         vm.startPrank(alice);
 
-        (pool, tokens) = setUpPool("Pool", "P", 2e17, 1e16, false);
-
-        wrappedNative = pool.wrappedNative();
+        (pool, tokens) = setUpPool("Pool", "P", 2e17, 1e16);
 
         for (uint256 i; i < NTOKENS; i++) {
             allMaxs[i] = type(uint256).max;
@@ -140,9 +138,7 @@ contract BetaTest is PoolTest {
             assertEq(assets[i].symbol, tokens[i].symbol(), "Asset symbol");
             assertEq(
                 assets[i].balance / assets[i].conversion,
-                assets[i].token == pool.wrappedNative() && pool.storeNative()
-                    ? payable(pool).balance
-                    : tokens[i].balanceOf(address(pool)),
+                tokens[i].balanceOf(address(pool)),
                 "Asset balance"
             );
             assertEq(assets[i].scale, marketCap, "Asset scale");
@@ -197,9 +193,7 @@ contract BetaTest is PoolTest {
     }
 
     function testBetaSwapWAVAX() public {
-        uint256 balance = pool.storeNative()
-            ? payable(pool).balance
-            : WAVAX.balanceOf(address(pool));
+        uint256 balance = WAVAX.balanceOf(address(pool));
         uint256 amount = balance / 10;
         WAVAX.mint(amount);
         WAVAX.approve(address(pool), amount);
@@ -219,31 +213,31 @@ contract BetaTest is PoolTest {
         assertEq(feeQuote, feeAmount, "feeAmount");
     }
 
-    function testBetaSwapAVAX() public {
-        uint256 balance = pool.storeNative()
-            ? payable(pool).balance
-            : WAVAX.balanceOf(address(pool));
-        uint256 amount = balance / 10;
+    // function testBetaSwapAVAX() public {
+    //     uint256 balance = pool.storeNative()
+    //         ? payable(pool).balance
+    //         : WAVAX.balanceOf(address(pool));
+    //     uint256 amount = balance / 10;
 
-        (amountQuote, feeQuote) = pool.quoteSwap(
-            wrappedNative,
-            anotherAsset[0],
-            amount
-        );
-        (amountOut, feeAmount) = pool.swap{value: amount}(
-            wrappedNative,
-            anotherAsset[0],
-            amount,
-            oneMin[0]
-        );
-        assertEq(amountQuote, amountOut, "amountOut");
-        assertEq(feeQuote, feeAmount, "feeAmount");
-        emit log("State after swap");
-        emit log("");
-        emit log_named_uint("amountIn", amount);
-        emit log_named_uint("amountOut", amountOut);
-        emit log_named_uint("feeAmount", feeAmount);
-    }
+    //     (amountQuote, feeQuote) = pool.quoteSwap(
+    //         wrappedNative,
+    //         anotherAsset[0],
+    //         amount
+    //     );
+    //     (amountOut, feeAmount) = pool.swap{value: amount}(
+    //         wrappedNative,
+    //         anotherAsset[0],
+    //         amount,
+    //         oneMin[0]
+    //     );
+    //     assertEq(amountQuote, amountOut, "amountOut");
+    //     assertEq(feeQuote, feeAmount, "feeAmount");
+    //     emit log("State after swap");
+    //     emit log("");
+    //     emit log_named_uint("amountIn", amount);
+    //     emit log_named_uint("amountOut", amountOut);
+    //     emit log_named_uint("feeAmount", feeAmount);
+    // }
 
     function testBetaStakeUSDC() public {
         uint256 amount = USDC.balanceOf(address(pool)) / 10;

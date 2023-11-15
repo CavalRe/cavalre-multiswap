@@ -169,10 +169,6 @@ interface IPool is ILPToken {
 
     function setTau(uint256 tau) external;
 
-    function setNativeName(string memory name) external;
-
-    function setNativeSymbol(string memory symbol) external;
-
     function initialize() external;
 
     function txCount() external view returns (uint256);

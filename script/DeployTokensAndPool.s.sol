@@ -69,11 +69,7 @@ contract DeployTokensAndPoolScript is Script, Test {
             "Pool",
             "P",
             protocolFee,
-            tau,
-            vm.envAddress("WRAPPED_NATIVE_TOKEN"),
-            false,
-            "Avalanche",
-            "AVAX"
+            tau
         );
 
         emit log_named_address("pool owner", address(pool.owner()));

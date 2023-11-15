@@ -16,11 +16,7 @@ contract TestPool is Pool {
             name_,
             symbol_,
             protocolFee_,
-            tau_,
-            address(1234),
-            false,
-            "Avalanche",
-            "AVAX"
+            tau_
         )
     {}
 

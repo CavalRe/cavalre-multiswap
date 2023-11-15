@@ -43,19 +43,14 @@ contract PoolTest is Test {
         string memory name,
         string memory symbol,
         uint256 protocolFee,
-        uint tau,
-        bool storeNative
+        uint tau
     ) public returns (Pool pool, Token[] memory tokens) {
         console.log("Setting up pool");
         pool = new Pool(
             name,
             symbol,
             protocolFee,
-            tau,
-            address(WAVAX),
-            storeNative,
-            "Avalanche",
-            "AVAX"
+            tau
         );
         tokens = new Token[](NTOKENS);
 
@@ -100,24 +95,14 @@ contract PoolTest is Test {
             conversion = 10 ** (18 - token.decimals());
             conversions[i] = conversion;
             balance = marketCap.divWadUp(prices[i]) / conversion;
-            if (storeNative && i == 0) {
-                pool.addAsset{value: balance}(
-                    address(WAVAX),
-                    fees[i],
-                    balance,
-                    marketCap
-                );
-            } else {
-                token.mint(balance);
-                token.approve(address(pool), balance);
-                pool.addAsset(address(token), fees[i], balance, marketCap);
-            }
+            token.mint(balance);
+            token.approve(address(pool), balance);
+            pool.addAsset(address(token), fees[i], balance, marketCap);
         }
 
         pool.initialize();
 
-        uint256 i0 = storeNative ? 1 : 0;
-        for (uint256 i = i0; i < NTOKENS; i++) {
+        for (uint256 i; i < NTOKENS; i++) {
             token = tokens[i];
             balance = token.balanceOf(address(pool));
             token.mint(balance);
