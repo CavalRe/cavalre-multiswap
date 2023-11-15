@@ -322,20 +322,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         emit DistributeFee(_txCount, lpAmount, protocolAmount);
     }
 
-    function _quoteDisable()
-        internal
-        view
-        returns (uint256[] memory receiveAmounts, uint256 feeAmount)
-    {
-        feeAmount = 0;
-        receiveAmounts = new uint256[](_assetAddresses.length);
-        for (uint256 i; i < _assetAddresses.length; i++) {
-            receiveAmounts[i] = IERC20(_assetAddresses[i]).balanceOf(
-                address(this)
-            );
-        }
-    }
-
     function _quoteMultiswap(
         address sender,
         address[] memory payTokens,
