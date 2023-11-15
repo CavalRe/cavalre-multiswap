@@ -9,9 +9,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.
 import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "forge-std/Test.sol";
-
-contract Pool is IPool, LPToken, ReentrancyGuard, Test {
+contract Pool is IPool, LPToken, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using FixedPointMathLib for uint256;
     using FixedPointMathLib for int256;
@@ -521,7 +519,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
         );
 
         // Check receiveAmounts
-        console.log("Check receiveAmounts");
         {
             for (uint256 i; i < receiveTokens.length; i++) {
                 if (receiveAmounts[i] < minReceiveAmounts[i]) {
@@ -534,7 +531,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
         }
 
         // Transfer tokens to the pool
-        console.log("Transfer tokens to the pool");
         for (uint256 i; i < payTokens.length; i++) {
             address payToken = payTokens[i];
             uint256 amount = amounts[i];
@@ -546,7 +542,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
         }
 
         // Transfer tokens to the receiving address
-        console.log("Transfer tokens to the receiving address");
         for (uint256 i; i < receiveTokens.length; i++) {
             address receiveToken = receiveTokens[i];
             uint256 receiveAmount = receiveAmounts[i];
@@ -558,11 +553,9 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
         }
 
         // Distribute fee
-        console.log("Distribute fee");
         distributeFee(feeAmount);
 
         // Update pool balance
-        console.log("Update pool balance");
         _updatePoolBalance();
     }
 
