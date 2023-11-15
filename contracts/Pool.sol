@@ -258,7 +258,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         );
     }
 
-    function _updatePoolBalance() internal {
+    function _updatePoolBalance() internal virtual {
         uint256 lastPoolBalance = _poolState.balance;
         _poolState.tokensPerShare = _tokensPerShare;
         _poolState.balance = _totalTokens;
