@@ -77,6 +77,7 @@ contract WrappedNativePool is Pool {
             return;
         }
         if (token == address(0)) {
+            if (msg.value != amount) revert IncorrectAmount(msg.value, amount);
             _unwrap(amount);
             (bool success, ) = payable(recipient).call{value: amount}("");
             require(success, "Transfer failed");
