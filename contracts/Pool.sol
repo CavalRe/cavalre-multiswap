@@ -84,7 +84,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256 fee_, // 18 decimals
         uint256 balance_, // Token decimals
         uint256 scale_ // 18 decimals
-    ) public payable virtual onlyUninitialized onlyOwner {
+    ) public virtual onlyUninitialized onlyOwner {
         if (token_ == address(0)) revert ZeroAddress();
         if (_assetState[token_].token == token_) revert DuplicateToken(token_);
         if (balance_ == 0) revert ZeroBalance();
@@ -568,7 +568,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256[] memory minReceiveAmounts
     )
         public
-        payable
         onlyInitialized
         returns (uint256[] memory receiveAmounts, uint256 feeAmount)
     {
@@ -688,7 +687,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256 minReceiveAmount
     )
         public
-        payable
         onlyInitialized
         returns (uint256 receiveAmount, uint256 feeAmount)
     {
@@ -781,7 +779,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256 minReceiveAmount
     )
         public
-        payable
         onlyInitialized
         returns (uint256 receiveAmount, uint256 feeAmount)
     {
@@ -928,7 +925,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256[] memory maxPayAmounts
     )
         public
-        payable
         onlyInitialized
         nonReentrant
         returns (uint256[] memory payAmounts)
