@@ -45,7 +45,6 @@ contract PoolTest is Test {
         uint256 protocolFee,
         uint tau
     ) public returns (Pool pool, Token[] memory tokens) {
-        console.log("Setting up pool");
         pool = new Pool(
             name,
             symbol,

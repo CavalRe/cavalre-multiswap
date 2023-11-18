@@ -415,7 +415,7 @@ contract ContractTest is Context, Test {
         showPool(pool);
         emit log("");
         uint256[] memory payAmounts;
-        payAmounts = pool.addLiquidity(1e18, allMaxs);
+        payAmounts = pool.addLiquidity(address(pool), 1e18, allMaxs);
         emit log("======================");
         for (uint256 i; i < addresses.length; i++) {
             postTradePrices[i] = price(addresses[i]);
@@ -452,7 +452,7 @@ contract ContractTest is Context, Test {
         showPool(pool);
         emit log("");
         uint256 amount_ = tokens[0].balanceOf(address(pool)) / 2;
-        pool.addLiquidity(oneAmount[0], allMaxs);
+        pool.addLiquidity(address(pool), oneAmount[0], allMaxs);
         for (uint256 i; i < addresses.length; i++) {
             midTradePrices[i] = price(addresses[i]);
         }

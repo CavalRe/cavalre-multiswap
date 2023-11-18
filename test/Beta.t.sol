@@ -377,8 +377,8 @@ contract BetaTest is PoolTest {
         // emit log_named_uint("amountIn", oneAmount[0]);
         // emit log_named_uint("balance", pool.info().balance);
         // emit log("");
-        payAmountQuotes = pool.quoteAddLiquidity(oneAmount[0]);
-        payAmounts = pool.addLiquidity(oneAmount[0], allMaxs);
+        payAmountQuotes = pool.quoteAddLiquidity(address(pool), oneAmount[0]);
+        payAmounts = pool.addLiquidity(address(pool), oneAmount[0], allMaxs);
         for (uint256 i; i < NTOKENS; i++) {
             assertEq(payAmountQuotes[i], payAmounts[i], "payAmount");
         }
