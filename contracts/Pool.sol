@@ -93,7 +93,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         bool isNative = token_ == address(0);
         if (!isNative && _assetState[token_].token == token_)
             revert DuplicateToken(token_);
-        if (isNative && payable(address(this)).balance != 0)
+        if (isNative && _assetState[address(0)].balance != 0)
             revert DuplicateToken(token_);
         if (balance_ == 0) revert ZeroBalance();
         if (scale_ == 0) revert ZeroScale();
@@ -262,12 +262,15 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             _txCount - asset_.lastUpdated
         );
         asset_.lastUpdated = _txCount;
+        uint256 userBalance = token == address(0)
+            ? payable(_msgSender()).balance
+            : IERC20(token).balanceOf(_msgSender());
         emit BalanceUpdate(
             _txCount,
             token,
             asset_.balance,
             asset_.meanBalance,
-            IERC20(token).balanceOf(_msgSender())
+            userBalance
         );
     }
 

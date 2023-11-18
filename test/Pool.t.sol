@@ -45,51 +45,50 @@ contract PoolTest is Test {
         uint256 protocolFee,
         uint tau
     ) public returns (Pool pool, Token[] memory tokens) {
-        pool = new Pool(
-            name,
-            symbol,
-            protocolFee,
-            tau
-        );
+        pool = new Pool(name, symbol, protocolFee, tau);
         tokens = new Token[](NTOKENS);
 
-        tokens[0] = WAVAX;
-        tokens[1] = USDC;
-        tokens[2] = USDt;
-        tokens[3] = EUROC;
-        tokens[4] = USDCe;
-        tokens[5] = USDTe;
-        tokens[6] = DAIe;
-        tokens[7] = WETHe;
-        tokens[8] = WBTCe;
-        tokens[9] = BTCb;
+        uint256 n;
+        tokens[n++] = WAVAX;
+        tokens[n++] = USDC;
+        tokens[n++] = USDt;
+        tokens[n++] = EUROC;
+        tokens[n++] = USDCe;
+        tokens[n++] = USDTe;
+        tokens[n++] = DAIe;
+        tokens[n++] = WETHe;
+        tokens[n++] = WBTCe;
+        tokens[n++] = BTCb;
 
-        fees[0] = 15 * BPS;
-        fees[1] = 5 * BPS;
-        fees[2] = 5 * BPS;
-        fees[3] = 5 * BPS;
-        fees[4] = 5 * BPS;
-        fees[5] = 5 * BPS;
-        fees[6] = 5 * BPS;
-        fees[7] = 30 * BPS;
-        fees[8] = 30 * BPS;
-        fees[9] = 30 * BPS;
+        n = 0;
+        fees[n++] = 15 * BPS;
+        fees[n++] = 5 * BPS;
+        fees[n++] = 5 * BPS;
+        fees[n++] = 5 * BPS;
+        fees[n++] = 5 * BPS;
+        fees[n++] = 5 * BPS;
+        fees[n++] = 5 * BPS;
+        fees[n++] = 30 * BPS;
+        fees[n++] = 30 * BPS;
+        fees[n++] = 30 * BPS;
 
-        prices[0] = 145e17;
-        prices[1] = 1e18;
-        prices[2] = 1e18;
-        prices[3] = 113e16;
-        prices[4] = 1e18;
-        prices[5] = 1e18;
-        prices[6] = 1e18;
-        prices[7] = 1908e18;
-        prices[8] = 30065e18;
-        prices[9] = 30065e18;
+        n = 0;
+        prices[n++] = 145e17;
+        prices[n++] = 1e18;
+        prices[n++] = 1e18;
+        prices[n++] = 113e16;
+        prices[n++] = 1e18;
+        prices[n++] = 1e18;
+        prices[n++] = 1e18;
+        prices[n++] = 1908e18;
+        prices[n++] = 30065e18;
+        prices[n++] = 30065e18;
 
         Token token;
         uint256 conversion;
-        uint256 balance;
-        for (uint256 i; i < NTOKENS; i++) {
+        uint256 balance = marketCap.divWadUp(prices[0]);
+        pool.addAsset{value: balance}(address(0), fees[0], balance, marketCap);
+        for (uint256 i = 1; i < NTOKENS; i++) {
             token = tokens[i];
             conversion = 10 ** (18 - token.decimals());
             conversions[i] = conversion;
@@ -101,7 +100,7 @@ contract PoolTest is Test {
 
         pool.initialize();
 
-        for (uint256 i; i < NTOKENS; i++) {
+        for (uint256 i = 1; i < NTOKENS; i++) {
             token = tokens[i];
             balance = token.balanceOf(address(pool));
             token.mint(balance);
