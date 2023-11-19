@@ -348,9 +348,13 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             feeAmount = 0;
             receiveAmounts = new uint256[](_assetAddresses.length);
             for (uint256 i; i < _assetAddresses.length; i++) {
-                receiveAmounts[i] = IERC20(_assetAddresses[i]).balanceOf(
-                    address(this)
-                );
+                if (_assetAddresses[i] == address(0)) {
+                    receiveAmounts[i] = payable(address(this)).balance;
+                } else {
+                    receiveAmounts[i] = IERC20(_assetAddresses[i]).balanceOf(
+                        address(this)
+                    );
+                }
             }
             return (receiveAmounts, feeAmount);
         }
