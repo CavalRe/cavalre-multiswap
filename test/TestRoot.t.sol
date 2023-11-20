@@ -57,7 +57,8 @@ contract TestRoot is Test, Context {
             "Pool",
             "P",
             protocolFee,
-            1e16
+            1e16,
+            addresses[0]
         );
 
         for (uint256 i; i < NTOKENS; i++) {

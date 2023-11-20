@@ -17,7 +17,8 @@ contract InitTest is Test {
             "Pool",
             "P",
             2e17,
-            1e16
+            1e16,
+            address(tokenA)
         );
         uint256 amount = 1e27;
         uint256 minReceiveAmount = 0;
@@ -102,7 +103,8 @@ contract InitTest is Test {
             "Pool",
             "P",
             2e17,
-            1e16
+            1e16,
+            address(1234)
         );
         vm.stopPrank();
 
@@ -122,7 +124,8 @@ contract InitTest is Test {
             "Pool",
             "P",
             2e17,
-            1e16
+            1e16,
+            address(tokenA)
         );
         vm.stopPrank();
 

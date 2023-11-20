@@ -16,7 +16,8 @@ contract TestPool is Pool {
             name_,
             symbol_,
             protocolFee_,
-            tau_
+            tau_,
+            address(1234)
         )
     {}
 

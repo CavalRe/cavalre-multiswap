@@ -86,7 +86,8 @@ contract ContractTest is Context, Test {
             "Pool",
             "P",
             2e17,
-            1e16
+            1e16,
+            address(1234)
         );
 
         for (uint256 i; i < NTOKENS; i++) {

@@ -5,24 +5,30 @@ pragma solidity 0.8.19;
 
 import {IPool, PoolState, AssetState} from "./interfaces/IPool.sol";
 import {LPToken, FixedPointMathLib} from "./LPToken.sol";
+import {IWrappedNative} from "./interfaces/IWrappedNative.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract Pool is IPool, LPToken, ReentrancyGuard {
+import "forge-std/Test.sol";
+
+contract Pool is IPool, LPToken, ReentrancyGuard, Test {
     using SafeERC20 for IERC20;
     using FixedPointMathLib for uint256;
     using FixedPointMathLib for int256;
 
-    uint256 internal _txCount;
+    uint256 private _txCount;
 
-    uint256 internal _isInitialized;
+    uint256 private _isInitialized;
 
-    PoolState internal _poolState;
-    mapping(address => AssetState) internal _assetState;
-    address[] internal _assetAddresses;
+    PoolState private _poolState;
+    mapping(address => AssetState) private _assetState;
+    address[] private _assetAddresses;
 
-    bool internal _tradingPaused;
+    address private _wrappedNativeAddress;
+    bool private _hasWrappedNative;
+
+    bool private _tradingPaused;
 
     modifier onlyInitialized() {
         if (_isInitialized == 0) revert NotInitialized();
@@ -38,7 +44,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         string memory name,
         string memory symbol,
         uint256 protocolFee,
-        uint256 tau
+        uint256 tau,
+        address wrappedNativeAddress
     ) LPToken(name, symbol) {
         if (tau >= ONE) revert TooLarge(tau);
         _protocolFee = protocolFee;
@@ -48,17 +55,19 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         _poolState.decimals = 18;
         _poolState.omega = int256(ONE - tau);
         _poolState.tokensPerShare = ONE;
+        _wrappedNativeAddress = wrappedNativeAddress;
     }
 
     function _payTokenToPool(
         address sender,
         address payToken,
         uint256 amount
-    ) internal virtual {
+    ) private {
         if (payToken == address(this)) {
             _burn(sender, amount);
-        } else if (payToken == address(0)) {
+        } else if (payToken == address(0) && _hasWrappedNative) {
             if (msg.value != amount) revert IncorrectAmount(msg.value, amount);
+            _wrap(amount);
         } else {
             SafeERC20.safeTransferFrom(
                 IERC20(payToken),
@@ -73,10 +82,11 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         address sender,
         address receiveToken,
         uint256 amount
-    ) internal virtual {
+    ) private {
         if (receiveToken == address(this)) {
             _mint(sender, amount);
         } else if (receiveToken == address(0)) {
+            _unwrap(amount);
             (bool success, ) = payable(sender).call{value: amount}("");
             require(success, "Transfer failed");
         } else {
@@ -89,24 +99,19 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256 fee_, // 18 decimals
         uint256 balance_, // Token decimals
         uint256 scale_ // 18 decimals
-    ) public payable virtual onlyUninitialized onlyOwner {
-        bool isNative = token_ == address(0);
-        if (!isNative && _assetState[token_].token == token_)
-            revert DuplicateToken(token_);
-        if (isNative && _assetState[address(0)].balance != 0)
-            revert DuplicateToken(token_);
+    ) public payable onlyUninitialized onlyOwner {
+        if (_assetState[token_].token == token_) revert DuplicateToken(token_);
         if (balance_ == 0) revert ZeroBalance();
         if (scale_ == 0) revert ZeroScale();
         if (fee_ >= ONE) revert TooLarge(fee_);
 
-        string memory name_ = "";
-        string memory symbol_ = "";
-        uint8 decimals_ = 18;
-        if (!isNative) {
-            name_ = IERC20Metadata(token_).name();
-            symbol_ = IERC20Metadata(token_).symbol();
-            decimals_ = IERC20Metadata(token_).decimals();
+        if (token_ == _wrappedNativeAddress) {
+            _hasWrappedNative = true;
         }
+
+        string memory name_ = IERC20Metadata(token_).name();
+        string memory symbol_ = IERC20Metadata(token_).symbol();
+        uint8 decimals_ = IERC20Metadata(token_).decimals();
         if (decimals_ > 18) revert TooLarge(decimals_); // Contract supports 18 decimals or fewer
 
         _payTokenToPool(_msgSender(), token_, balance_);
@@ -140,14 +145,13 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         AssetState storage asset_ = _assetState[token];
         if (asset_.token != token) revert AssetNotFound(token);
 
-        uint256 balance;
-        if (token == address(0)) {
-            balance = payable(address(this)).balance;
-        } else {
-            balance = IERC20(token).balanceOf(address(this));
-        }
+        uint256 balance = IERC20(token).balanceOf(address(this));
 
         _payTokenToSender(_msgSender(), token, balance);
+
+        if (token == _wrappedNativeAddress) {
+            _hasWrappedNative = false;
+        }
 
         uint256 scale_ = asset_.scale;
         _poolState.balance -= scale_;
@@ -249,7 +253,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         address token,
         uint256 increaseAmount,
         uint256 decreaseAmount
-    ) internal virtual {
+    ) private {
         AssetState storage asset_ = _assetState[token];
         if (asset_.token != token) revert AssetNotFound(token);
         uint256 lastBalance = asset_.balance;
@@ -262,9 +266,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             _txCount - asset_.lastUpdated
         );
         asset_.lastUpdated = _txCount;
-        uint256 userBalance = token == address(0)
-            ? payable(_msgSender()).balance
-            : IERC20(token).balanceOf(_msgSender());
+        uint256 userBalance = IERC20(token).balanceOf(_msgSender());
         emit BalanceUpdate(
             _txCount,
             token,
@@ -274,7 +276,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         );
     }
 
-    function _updatePoolBalance() internal virtual {
+    function _updatePoolBalance() private {
         uint256 lastPoolBalance = _poolState.balance;
         _poolState.tokensPerShare = _tokensPerShare;
         _poolState.balance = _totalTokens;
@@ -294,7 +296,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         );
     }
 
-    function _checkUser(address user_) internal view {
+    function _checkUser(address user_) private view {
         if (user_ == address(0)) revert ZeroAddress();
         if (_isBlocked[user_]) revert UserNotAllowed(user_);
     }
@@ -303,7 +305,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         address[] memory tokens,
         bool[] memory check_,
         bool isLP
-    ) internal view returns (bool) {
+    ) private view returns (bool) {
         for (uint256 i; i < tokens.length; i++) {
             address token = tokens[i];
             if (address(this) == token) {
@@ -348,13 +350,9 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             feeAmount = 0;
             receiveAmounts = new uint256[](_assetAddresses.length);
             for (uint256 i; i < _assetAddresses.length; i++) {
-                if (_assetAddresses[i] == address(0)) {
-                    receiveAmounts[i] = payable(address(this)).balance;
-                } else {
-                    receiveAmounts[i] = IERC20(_assetAddresses[i]).balanceOf(
-                        address(this)
-                    );
-                }
+                receiveAmounts[i] = IERC20(_assetAddresses[i]).balanceOf(
+                    address(this)
+                );
             }
             return (receiveAmounts, feeAmount);
         }
@@ -454,11 +452,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
 
     function _disable(
         address receiver
-    )
-        internal
-        virtual
-        returns (uint256[] memory receiveAmounts, uint256 feeAmount)
-    {
+    ) private returns (uint256[] memory receiveAmounts, uint256 feeAmount) {
         receiveAmounts = new uint256[](_assetAddresses.length);
 
         // Burn all LP tokens
@@ -467,20 +461,9 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
 
         for (uint256 i; i < _assetAddresses.length; i++) {
             address token = _assetAddresses[i];
-            uint256 balance;
-            if (token == address(0)) {
-                balance = payable(address(this)).balance;
-                if (balance > 0) {
-                    (bool success, ) = payable(receiver).call{value: balance}(
-                        ""
-                    );
-                    require(success, "Transfer failed");
-                }
-            } else {
-                balance = IERC20(token).balanceOf(address(this));
-                if (balance > 0) {
-                    SafeERC20.safeTransfer(IERC20(token), receiver, balance);
-                }
+            uint256 balance = IERC20(token).balanceOf(address(this));
+            if (balance > 0) {
+                SafeERC20.safeTransfer(IERC20(token), receiver, balance);
             }
             delete _assetState[token];
             receiveAmounts[i] = balance;
@@ -516,7 +499,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256[] memory allocations,
         uint256[] memory minReceiveAmounts
     )
-        internal
+        private
         nonReentrant
         returns (uint256[] memory receiveAmounts, uint256 feeAmount)
     {
@@ -1066,7 +1049,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         address sender,
         uint256 amount,
         uint256[] memory minReceiveAmounts
-    ) internal returns (uint256[] memory receiveAmounts, uint256 feeAmount) {
+    ) private returns (uint256[] memory receiveAmounts, uint256 feeAmount) {
         uint256 n = _assetAddresses.length;
         address[] memory payTokens = new address[](1);
         uint256[] memory amounts = new uint256[](1);
@@ -1157,5 +1140,28 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     function resumeTrading() public onlyOwner {
         _tradingPaused = false;
         emit TradingResumed();
+    }
+
+    function _approveTokenIfNeeded(
+        address token,
+        address _to,
+        uint256 _amount
+    ) internal {
+        if (IERC20(token).allowance(address(this), _to) < _amount) {
+            IERC20(token).approve(_to, type(uint256).max);
+        }
+    }
+
+    function _wrap(uint256 amount) internal {
+        IWrappedNative(_wrappedNativeAddress).deposit{value: amount}();
+    }
+
+    function _unwrap(uint256 amount) internal {
+        _approveTokenIfNeeded(
+            _wrappedNativeAddress,
+            _wrappedNativeAddress,
+            amount
+        );
+        IWrappedNative(_wrappedNativeAddress).withdraw(amount);
     }
 }

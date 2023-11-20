@@ -80,7 +80,8 @@ contract DeployPoolScript is Script, Test {
             "Pool",
             "P",
             protocolFee,
-            tau
+            tau,
+            vm.envAddress("WRAPPED_NATIVE_TOKEN")
         );
 
         emit log_named_address("pool address", address(pool));

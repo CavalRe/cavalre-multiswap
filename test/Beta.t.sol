@@ -214,14 +214,16 @@ contract BetaTest is PoolTest {
     // }
 
     function testBetaSwapPayAVAX() public {
-        uint256 balance = payable(address(pool)).balance;
-        uint256 amount = balance / 10;
+        vm.startPrank(alice);
+        uint256 amount = WAVAX.balanceOf(address(pool)) / 10;        
 
+        console.log("Quote swap:", amount);
         (amountQuote, feeQuote) = pool.quoteSwap(
             address(0),
             address(BTCb),
             amount
         );
+        console.log("Swap");
         (amountOut, feeAmount) = pool.swap{value: amount}(
             address(0),
             address(BTCb),
