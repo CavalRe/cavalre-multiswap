@@ -82,13 +82,7 @@ contract ContractTest is Context, Test {
             scales[i] = scale;
         }
 
-        pool = new Pool(
-            "Pool",
-            "P",
-            2e17,
-            1e16,
-            address(1234)
-        );
+        pool = new Pool("Pool", "P", 2e17, 1e16, address(1234));
 
         for (uint256 i; i < NTOKENS; i++) {
             amount = (i + 1) * 1e27;

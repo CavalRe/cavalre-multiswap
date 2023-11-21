@@ -89,6 +89,9 @@ contract PoolTest is Test {
             conversion = 10 ** (18 - token.decimals());
             conversions[i] = conversion;
             balance = marketCap.divWadUp(prices[i]) / conversion;
+            if (address(token) == address(WAVAX)) {
+                vm.deal(address(token), balance);
+            }
             token.mint(balance);
             token.approve(address(pool), balance);
             pool.addAsset(address(token), fees[i], balance, marketCap);
@@ -99,6 +102,9 @@ contract PoolTest is Test {
         for (uint256 i; i < NTOKENS; i++) {
             token = tokens[i];
             balance = token.balanceOf(address(pool));
+            if (address(token) == address(WAVAX)) {
+                vm.deal(address(token), balance);
+            }
             token.mint(balance);
             token.approve(address(pool), balance);
         }

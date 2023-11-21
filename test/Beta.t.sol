@@ -215,15 +215,13 @@ contract BetaTest is PoolTest {
 
     function testBetaSwapPayAVAX() public {
         vm.startPrank(alice);
-        uint256 amount = WAVAX.balanceOf(address(pool)) / 10;        
+        uint256 amount = WAVAX.balanceOf(address(pool)) / 10;
 
-        console.log("Quote swap:", amount);
         (amountQuote, feeQuote) = pool.quoteSwap(
             address(0),
             address(BTCb),
             amount
         );
-        console.log("Swap");
         (amountOut, feeAmount) = pool.swap{value: amount}(
             address(0),
             address(BTCb),
@@ -236,6 +234,7 @@ contract BetaTest is PoolTest {
     }
 
     function testBetaSwapReceiveAVAX() public {
+        vm.startPrank(alice);
         uint256 amount = USDC.balanceOf(address(pool)) / 10;
         USDC.mint(amount);
         USDC.approve(address(pool), amount);
@@ -265,8 +264,8 @@ contract BetaTest is PoolTest {
     }
 
     function testBetaStakeAVAX() public {
-        uint256 balance = payable(address(pool)).balance;
-        uint256 amount = balance / 10;
+        vm.startPrank(alice);
+        uint256 amount = WAVAX.balanceOf(alice) / 10;
 
         (amountQuote, feeQuote) = pool.quoteStake(address(0), amount);
         (amountOut, feeAmount) = pool.stake{value: amount}(
@@ -334,10 +333,12 @@ contract BetaTest is PoolTest {
     }
 
     function testBetaMixedStakePayAVAX() public {
+        vm.startPrank(alice);
+        uint256 amount = WAVAX.balanceOf(alice) / 10;
         address[] memory payTokens = new address[](1);
         payTokens[0] = address(0);
         uint256[] memory amounts = new uint256[](1);
-        amounts[0] = payable(address(pool)).balance / 10;
+        amounts[0] = amount;
 
         address[] memory receiveTokens = new address[](2);
         uint256[] memory allocations = new uint256[](2);
@@ -422,12 +423,13 @@ contract BetaTest is PoolTest {
 
     function testBetaMixedUnstakePayAVAX() public {
         vm.startPrank(alice);
+        uint256 amount = WAVAX.balanceOf(alice) / 10;
         address[] memory payTokens = new address[](2);
         payTokens[0] = address(pool);
         payTokens[1] = address(0);
         uint256[] memory amounts = new uint256[](2);
         amounts[0] = pool.info().balance / 10;
-        amounts[1] = payable(address(pool)).balance / 10;
+        amounts[1] = amount;
         address[] memory receiveTokens = new address[](1);
         receiveTokens[0] = address(BTCb);
         (receiveAmountQuotes, feeQuote) = pool.quoteMultiswap(
@@ -475,7 +477,8 @@ contract BetaTest is PoolTest {
     }
 
     function testBetaAddLiquidity() public {
-        uint256 balance = payable(address(pool)).balance;
+        vm.startPrank(alice);
+        uint256 balance = WAVAX.balanceOf(alice);
         uint256 amount = balance / 10;
 
         payAmountQuotes = pool.quoteAddLiquidity(address(0), amount);

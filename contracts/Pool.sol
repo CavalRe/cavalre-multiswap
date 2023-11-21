@@ -10,9 +10,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.
 import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "forge-std/Test.sol";
-
-contract Pool is IPool, LPToken, ReentrancyGuard, Test {
+contract Pool is IPool, LPToken, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using FixedPointMathLib for uint256;
     using FixedPointMathLib for int256;
@@ -26,7 +24,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
     address[] private _assetAddresses;
 
     address private _wrappedNativeAddress;
-    bool private _hasWrappedNative;
 
     bool private _tradingPaused;
 
@@ -65,7 +62,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
     ) private {
         if (payToken == address(this)) {
             _burn(sender, amount);
-        } else if (payToken == address(0) && _hasWrappedNative) {
+        } else if (payToken == address(0)) {
             if (msg.value != amount) revert IncorrectAmount(msg.value, amount);
             _wrap(amount);
         } else {
@@ -100,14 +97,11 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
         uint256 balance_, // Token decimals
         uint256 scale_ // 18 decimals
     ) public payable onlyUninitialized onlyOwner {
+        if (token_ == address(0)) revert ZeroAddress();
         if (_assetState[token_].token == token_) revert DuplicateToken(token_);
         if (balance_ == 0) revert ZeroBalance();
         if (scale_ == 0) revert ZeroScale();
         if (fee_ >= ONE) revert TooLarge(fee_);
-
-        if (token_ == _wrappedNativeAddress) {
-            _hasWrappedNative = true;
-        }
 
         string memory name_ = IERC20Metadata(token_).name();
         string memory symbol_ = IERC20Metadata(token_).symbol();
@@ -123,7 +117,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
 
         uint256 conversion_ = 10 ** (18 - decimals_);
         balance_ *= conversion_; // Convert to canonical
-        _assetState[token_] = AssetState(
+        AssetState memory asset_ = _assetState[token_] = AssetState(
             token_,
             _assetAddresses.length,
             name_,
@@ -137,21 +131,21 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
             scale_,
             0
         );
+        _assetState[token_] = asset_;
+        if (token_ == _wrappedNativeAddress) {
+            _assetState[address(0)] = asset_;
+        }
         _assetAddresses.push(token_);
         emit AssetAdded(token_, fee_, balance_, scale_);
     }
 
     function removeAsset(address token) public onlyUninitialized onlyOwner {
         AssetState storage asset_ = _assetState[token];
-        if (asset_.token != token) revert AssetNotFound(token);
+        if (asset_.decimals == 0) revert AssetNotFound(token);
 
         uint256 balance = IERC20(token).balanceOf(address(this));
 
         _payTokenToSender(_msgSender(), token, balance);
-
-        if (token == _wrappedNativeAddress) {
-            _hasWrappedNative = false;
-        }
 
         uint256 scale_ = asset_.scale;
         _poolState.balance -= scale_;
@@ -169,6 +163,9 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
         _assetAddresses.pop();
 
         delete _assetState[token];
+        if (token == _wrappedNativeAddress) {
+            delete _assetState[address(0)];
+        }
         emit AssetRemoved(token);
     }
 
@@ -211,8 +208,12 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
     }
 
     function asset(address token) public view returns (AssetState memory) {
-        if (_assetState[token].token != token) revert AssetNotFound(token);
+        if (_assetState[token].decimals == 0) revert AssetNotFound(token);
         return _assetState[token];
+    }
+
+    function contains(address token) public view returns (bool) {
+        return _assetState[token].decimals > 0;
     }
 
     function isPaused() public view returns (bool) {
@@ -249,13 +250,22 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
         }
     }
 
+    function _userAssetBalance(address token) internal view returns (uint256) {
+        if (token == address(0) || token == _wrappedNativeAddress) {
+            return
+                _msgSender().balance +
+                IERC20(_wrappedNativeAddress).balanceOf(_msgSender());
+        }
+        return IERC20(token).balanceOf(_msgSender());
+    }
+
     function _updateAssetBalance(
         address token,
         uint256 increaseAmount,
         uint256 decreaseAmount
     ) private {
         AssetState storage asset_ = _assetState[token];
-        if (asset_.token != token) revert AssetNotFound(token);
+        if (asset_.decimals == 0) revert AssetNotFound(token);
         uint256 lastBalance = asset_.balance;
         asset_.balance += increaseAmount;
         asset_.balance -= decreaseAmount;
@@ -266,13 +276,12 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
             _txCount - asset_.lastUpdated
         );
         asset_.lastUpdated = _txCount;
-        uint256 userBalance = IERC20(token).balanceOf(_msgSender());
         emit BalanceUpdate(
             _txCount,
             token,
             asset_.balance,
             asset_.meanBalance,
-            userBalance
+            _userAssetBalance(token)
         );
     }
 
@@ -315,7 +324,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
                 continue;
             }
             AssetState memory asset_ = _assetState[token];
-            if (asset_.token != token) revert AssetNotFound(token);
+            if (asset_.decimals == 0) revert AssetNotFound(token);
             if (check_[asset_.index]) revert DuplicateToken(token);
             check_[asset_.index] = true;
         }
@@ -711,9 +720,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
         if (receiveToken == address(this))
             revert InvalidSwap(payToken, receiveToken);
         if (payToken == receiveToken) revert DuplicateToken(payToken);
-        if (_assetState[payToken].token != payToken)
-            revert AssetNotFound(payToken);
-        if (_assetState[receiveToken].token != receiveToken)
+        if (_assetState[payToken].decimals == 0) revert AssetNotFound(payToken);
+        if (_assetState[receiveToken].decimals == 0)
             revert AssetNotFound(receiveToken);
         if (payAmount == 0) revert ZeroAmount();
         if (
@@ -798,8 +806,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
         address sender = _msgSender();
         _checkUser(sender);
         if (payToken == address(this)) revert InvalidStake(payToken);
-        if (_assetState[payToken].token != payToken)
-            revert AssetNotFound(payToken);
+        if (_assetState[payToken].decimals == 0) revert AssetNotFound(payToken);
         if (payAmount == 0) revert ZeroAmount();
         if (
             payAmount * 3 >
@@ -874,7 +881,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
         address sender = _msgSender();
         _checkUser(sender);
         if (receiveToken == address(this)) revert InvalidUnstake(receiveToken);
-        if (_assetState[receiveToken].token != receiveToken)
+        if (_assetState[receiveToken].decimals == 0)
             revert AssetNotFound(receiveToken);
         if (payAmount == 0) revert ZeroAmount();
         if (payAmount * 3 > _poolState.balance) revert TooLarge(payAmount);
@@ -928,7 +935,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
                 );
         } else {
             assetIn = _assetState[token];
-            if (assetIn.token != token) revert AssetNotFound(token);
+            if (assetIn.decimals == 0) revert AssetNotFound(token);
             g = (assetIn.balance + amount * assetIn.conversion).divWadUp(
                 assetIn.balance
             );
@@ -937,7 +944,10 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
         uint256 payAmount;
         for (uint256 i; i < _assetAddresses.length; i++) {
             assetIn = _assetState[_assetAddresses[i]];
-            if (assetIn.token == token) {
+            if (
+                (assetIn.token == token) ||
+                (assetIn.token == _wrappedNativeAddress && token == address(0))
+            ) {
                 payAmount = amount;
             } else {
                 payAmount =
@@ -979,17 +989,23 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
                 );
         } else {
             assetIn = _assetState[token];
-            if (assetIn.token != token) revert AssetNotFound(token);
+            if (assetIn.decimals == 0) revert AssetNotFound(token);
             g = (assetIn.balance + amount * assetIn.conversion).divWadUp(
                 assetIn.balance
             );
         }
+        address payAddress;
         uint256 payAmount;
         for (uint256 i; i < _assetAddresses.length; i++) {
             assetIn = _assetState[_assetAddresses[i]];
-            if (assetIn.token == token) {
+            if (
+                (assetIn.token == token) ||
+                (assetIn.token == _wrappedNativeAddress && token == address(0))
+            ) {
+                payAddress = token;
                 payAmount = amount;
             } else {
+                payAddress = _assetAddresses[i];
                 payAmount =
                     (assetIn.balance.mulWadUp(g) - assetIn.balance) /
                     assetIn.conversion;
@@ -998,7 +1014,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
                 revert ExcessivePayAmount(maxPayAmounts[i], payAmount);
             payAmounts[i] = payAmount;
 
-            _payTokenToPool(sender, assetIn.token, payAmount);
+            _payTokenToPool(sender, payAddress, payAmount);
             payAmount *= assetIn.conversion; // Convert to canonical
             _updateAssetBalance(_assetAddresses[i], payAmount, 0);
         }
@@ -1164,4 +1180,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
         );
         IWrappedNative(_wrappedNativeAddress).withdraw(amount);
     }
+
+    receive() external payable {}
 }

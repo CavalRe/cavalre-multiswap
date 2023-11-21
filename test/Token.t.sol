@@ -2,8 +2,9 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "forge-std/Test.sol";
 
-contract Token is ERC20 {
+contract Token is ERC20, Test {
     uint8 private _decimals;
 
     event Deposit(address indexed dst, uint256 wad);
@@ -41,7 +42,8 @@ contract Token is ERC20 {
     function withdraw(uint256 wad) public {
         require(balanceOf(_msgSender()) >= wad);
         _burn(_msgSender(), wad);
-        payable(_msgSender()).transfer(wad);
+        (bool success, ) = payable(_msgSender()).call{value: wad}("");
+        require(success, "Transfer failed");
         emit Withdrawal(_msgSender(), wad);
     }
 }

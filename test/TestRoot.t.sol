@@ -53,13 +53,7 @@ contract TestRoot is Test, Context {
         uint256 protocolFee;
         // protocolFee = 2e17;
 
-        pool = new Pool(
-            "Pool",
-            "P",
-            protocolFee,
-            1e16,
-            addresses[0]
-        );
+        pool = new Pool("Pool", "P", protocolFee, 1e16, addresses[0]);
 
         for (uint256 i; i < NTOKENS; i++) {
             uint256 amount = (i + 1) * 1e27;
