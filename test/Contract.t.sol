@@ -50,7 +50,6 @@ contract ContractTest is Context, Test {
         vm.startPrank(alice);
         vm.roll(1);
 
-        pool = new Pool("Pool", "P", 1e16);
         tokens = new Token[](NTOKENS);
 
         addresses = new address[](NTOKENS);
@@ -74,8 +73,6 @@ contract ContractTest is Context, Test {
             symbol = string(abi.encodePacked("T", Strings.toString(i + 1)));
             token = new Token(name, symbol, 18);
             token.mint(balance);
-            token.approve(address(pool), balance);
-            pool.addAsset(address(token), fee, balance, scale);
 
             tokens[i] = token;
 
@@ -83,6 +80,16 @@ contract ContractTest is Context, Test {
             amounts[i] = amount;
             fees[i] = fee;
             scales[i] = scale;
+        }
+
+        pool = new Pool("Pool", "P", 2e17, 1e16, address(1234));
+
+        for (uint256 i; i < NTOKENS; i++) {
+            amount = (i + 1) * 1e27;
+            balance = 100 * amount;
+            scale = balance;
+            tokens[i].approve(address(pool), balance);
+            pool.addAsset(address(tokens[i]), fee, balance, scale);
         }
 
         pool.initialize();
@@ -403,7 +410,7 @@ contract ContractTest is Context, Test {
         showPool(pool);
         emit log("");
         uint256[] memory payAmounts;
-        payAmounts = pool.addLiquidity(1e18, allMaxs);
+        payAmounts = pool.addLiquidity(address(pool), 1e18, allMaxs);
         emit log("======================");
         for (uint256 i; i < addresses.length; i++) {
             postTradePrices[i] = price(addresses[i]);
@@ -440,7 +447,7 @@ contract ContractTest is Context, Test {
         showPool(pool);
         emit log("");
         uint256 amount_ = tokens[0].balanceOf(address(pool)) / 2;
-        pool.addLiquidity(oneAmount[0], allMaxs);
+        pool.addLiquidity(address(pool), oneAmount[0], allMaxs);
         for (uint256 i; i < addresses.length; i++) {
             midTradePrices[i] = price(addresses[i]);
         }

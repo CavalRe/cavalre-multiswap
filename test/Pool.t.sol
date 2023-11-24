@@ -22,8 +22,6 @@ contract PoolTest is Test {
     uint256 internal constant PCT = 1e16;
     uint256 internal constant BPS = 1e14;
 
-    uint256 internal tau = 1e16;
-
     uint256 internal marketCap = 1e25;
 
     Token internal WAVAX = new Token("Wrapped AVAX", "WAVAX", 18);
@@ -41,8 +39,13 @@ contract PoolTest is Test {
     uint256[] internal receiveAmounts;
     uint256 internal feeAmount;
 
-    function setUpPool() public returns (Pool pool, Token[] memory tokens) {
-        pool = new Pool("Pool", "P", tau);
+    function setUpPool(
+        string memory name,
+        string memory symbol,
+        uint256 protocolFee,
+        uint tau
+    ) public returns (Pool pool, Token[] memory tokens) {
+        pool = new Pool(name, symbol, protocolFee, tau, address(WAVAX));
         tokens = new Token[](NTOKENS);
 
         tokens[0] = WAVAX;
@@ -80,12 +83,15 @@ contract PoolTest is Test {
 
         Token token;
         uint256 conversion;
-        uint256 balance;
+        uint256 balance = marketCap.divWadUp(prices[0]);
         for (uint256 i; i < NTOKENS; i++) {
             token = tokens[i];
             conversion = 10 ** (18 - token.decimals());
             conversions[i] = conversion;
             balance = marketCap.divWadUp(prices[i]) / conversion;
+            if (address(token) == address(WAVAX)) {
+                vm.deal(address(token), balance);
+            }
             token.mint(balance);
             token.approve(address(pool), balance);
             pool.addAsset(address(token), fees[i], balance, marketCap);
@@ -96,6 +102,9 @@ contract PoolTest is Test {
         for (uint256 i; i < NTOKENS; i++) {
             token = tokens[i];
             balance = token.balanceOf(address(pool));
+            if (address(token) == address(WAVAX)) {
+                vm.deal(address(token), balance);
+            }
             token.mint(balance);
             token.approve(address(pool), balance);
         }

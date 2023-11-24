@@ -13,6 +13,7 @@ contract DeployPoolScript is Script, Test {
     uint256 public deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
     Pool private pool;
+    uint256 private protocolFee = 5e17;
     uint256 private tau = 1e16;
     uint256 private bps = 1e14;
     uint256 private marketCap = 1e26;
@@ -75,7 +76,13 @@ contract DeployPoolScript is Script, Test {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        pool = new Pool("Pool", "P", tau);
+        pool = new Pool(
+            "Pool",
+            "P",
+            protocolFee,
+            tau,
+            vm.envAddress("WRAPPED_NATIVE_TOKEN")
+        );
 
         emit log_named_address("pool address", address(pool));
         emit log_named_address("pool owner", address(pool.owner()));
@@ -85,7 +92,7 @@ contract DeployPoolScript is Script, Test {
         uint256 balance;
         uint256 conversion;
         for (uint256 i; i < 10; i++) {
-            token = Token(tokens[i]);
+            token = Token(payable(tokens[i]));
             conversion = 10 ** (18 - token.decimals());
             value = marketCap.mulWadUp(weights[i]);
             balance = value.divWadUp(prices[i]) / conversion;

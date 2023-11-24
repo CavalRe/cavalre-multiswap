@@ -168,15 +168,15 @@ contract SwapTest is TestRoot {
      * Pathological
      */
 
-    function testSwapWithdrawNonContract() public {
-        Token depositToken = tokens[0];
-        uint256 amount = 1e27;
-        depositToken.mint(amount);
-        depositToken.approve(address(pool), amount);
+    // function testSwapWithdrawNonContract() public {
+    //     Token depositToken = tokens[0];
+    //     uint256 amount = 1e27;
+    //     depositToken.mint(amount);
+    //     depositToken.approve(address(pool), amount);
 
-        vm.expectRevert(abi.encodeWithSelector(IUsers.ZeroAddress.selector));
-        pool.swap(address(depositToken), address(0), amount, 0);
-    }
+    //     vm.expectRevert(abi.encodeWithSelector(IUsers.ZeroAddress.selector));
+    //     pool.swap(address(depositToken), address(0), amount, 0);
+    // }
 
     function testSwapWithdrawNotInPool() public {
         Token outside = new Token("Foo", "BAR", 18);

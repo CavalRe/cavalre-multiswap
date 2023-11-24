@@ -24,10 +24,23 @@ module.exports = {
       url: "https://api.avax.network/ext/bc/C/rpc",
       accounts: [process.env.PRIVATE_KEY]
     },
+    base: {
+      url: 'https://mainnet.base.org',
+      // chainId: 8453,
+      accounts: [process.env.PRIVATE_KEY],
+      // gasPrice: 10000000000,
+    },
+    bsc: {
+      url: "https://bsc-dataseed.bnbchain.org/",
+      chainId: 56,
+      gasPrice: 20000000000,
+      accounts: [process.env.PRIVATE_KEY]
+    }
   },
   etherscan: {
     apiKey: {
       avalanche: "avalanche", // apiKey is not required, just set a placeholder
+      bsc: process.env.BSC_API_KEY
     },
     customChains: [
       {

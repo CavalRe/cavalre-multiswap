@@ -26,7 +26,6 @@ contract TestRoot is Test, Context {
         vm.startPrank(alice);
         vm.roll(1);
 
-        pool = new Pool("Pool", "P", 1e16);
         tokens = new Token[](NTOKENS);
         addresses = new address[](NTOKENS);
 
@@ -37,16 +36,30 @@ contract TestRoot is Test, Context {
         for (uint256 i; i < NTOKENS; i++) {
             uint256 amount = (i + 1) * 1e27;
             uint256 balance = 100 * amount;
-            string memory name = "Token";
-            string memory symbol = "T";
+
+            string memory name = string(
+                abi.encodePacked("Token ", Strings.toString(i + 1))
+            );
+            string memory symbol = string(
+                abi.encodePacked("T", Strings.toString(i + 1))
+            );
             Token token = new Token(name, symbol, 18);
             token.burn(token.balanceOf(alice));
             token.mint(balance);
-            token.approve(address(pool), balance);
             tokens[i] = token;
             addresses[i] = address(token);
+        }
 
-            pool.addAsset(address(token), fee_, balance, scale_);
+        uint256 protocolFee;
+        // protocolFee = 2e17;
+
+        pool = new Pool("Pool", "P", protocolFee, 1e16, addresses[0]);
+
+        for (uint256 i; i < NTOKENS; i++) {
+            uint256 amount = (i + 1) * 1e27;
+            uint256 balance = 100 * amount;
+            tokens[i].approve(address(pool), balance);
+            pool.addAsset(address(tokens[i]), fee_, balance, scale_);
         }
 
         pool.initialize();
@@ -132,7 +145,7 @@ contract TestRoot is Test, Context {
 
     function checkLP() public {
         assertApproxEqRel(
-            pool.totalSupply(),
+            pool.totalTokens(),
             pool.info().balance,
             1e8,
             "Pool total supply is not approximately equal to pool balance: "
@@ -141,7 +154,7 @@ contract TestRoot is Test, Context {
 
     function checkLP(uint256 amountIn, uint256 amountOut) public {
         assertApproxEqRel(
-            pool.totalSupply(),
+            pool.totalTokens(),
             pool.info().balance,
             1e8,
             string(

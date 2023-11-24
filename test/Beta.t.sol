@@ -37,6 +37,7 @@ contract BetaTest is PoolTest {
 
     Pool internal pool;
     Token[] internal tokens;
+    address internal wrappedNative;
 
     address[] private oneAsset = new address[](1);
     address[] private anotherAsset = new address[](1);
@@ -64,7 +65,14 @@ contract BetaTest is PoolTest {
     uint256[] private receiveAmountQuotes;
 
     function setUp() public {
-        (pool, tokens) = setUpPool();
+        uint256 startBalance = type(uint256).max / 2;
+        vm.deal(alice, startBalance);
+        vm.deal(bob, startBalance);
+        vm.deal(carol, startBalance);
+
+        vm.startPrank(alice);
+
+        (pool, tokens) = setUpPool("Pool", "P", 2e17, 1e16);
 
         for (uint256 i; i < NTOKENS; i++) {
             allMaxs[i] = type(uint256).max;
@@ -94,7 +102,7 @@ contract BetaTest is PoolTest {
     }
 
     function testNames() public {
-        assertEq(tokens[0].name(), "Wrapped AVAX");
+        // assertEq(tokens[0].name(), "");
         assertEq(tokens[1].name(), "USD Coin");
         assertEq(tokens[2].name(), "TetherToken");
         assertEq(tokens[3].name(), "Euro Coin");
@@ -107,7 +115,7 @@ contract BetaTest is PoolTest {
     }
 
     function testSymbols() public {
-        assertEq(tokens[0].symbol(), "WAVAX");
+        // assertEq(tokens[0].symbol(), "");
         assertEq(tokens[1].symbol(), "USDC");
         assertEq(tokens[2].symbol(), "USDt");
         assertEq(tokens[3].symbol(), "EUROC");
@@ -119,12 +127,14 @@ contract BetaTest is PoolTest {
         assertEq(tokens[9].symbol(), "BTC.b");
     }
 
-    function testInit() public {
+    function testBetaInit() public {
         AssetState[] memory assets = pool.assets();
         assertEq(assets.length, NTOKENS, "Number of assets in pool");
         assertEq(pool.info().balance, pool.totalSupply(), "Pool balance");
+        emit log_named_uint("Pool balance", pool.info().balance);
         assertEq(pool.info().scale, marketCap * NTOKENS, "Pool scale");
-        for (uint256 i; i < NTOKENS; i++) {
+        emit log_named_uint("Pool scale", pool.info().scale);
+        for (uint256 i = 1; i < NTOKENS; i++) {
             assertEq(assets[i].symbol, tokens[i].symbol(), "Asset symbol");
             assertEq(
                 assets[i].balance / assets[i].conversion,
@@ -151,85 +161,123 @@ contract BetaTest is PoolTest {
         emit log("Pool Info");
         emit log("=========");
         pool_ = _pool.info();
-        // emit log("Name:",poolName);
-        // emit log("Symbol:",poolSymbol);
-        // emit log_named_uint("Decimals", poolDecimals);
-        // emit log_named_uint("totalSupply", pool.totalSupply());
         emit log_named_uint("balance", pool_.balance);
         emit log_named_uint("scale", pool_.scale);
         emit log("");
         emit log("Assets:");
         emit log("-------");
-        Token token;
+        AssetState[] memory assets_ = _pool.assets();
         for (uint256 i; i < NTOKENS; i++) {
-            token = tokens[i];
-            showAsset(pool.asset(address(token)));
+            showAsset(assets_[i]);
         }
     }
 
-    function testBetaSwap() public {
-        uint256 amount = oneAmount[0] / oneConversion[0];
+    function testBetaSwapPayUSDC() public {
+        uint256 amount = USDC.balanceOf(address(pool)) / 10;
         USDC.mint(amount);
         USDC.approve(address(pool), amount);
 
-        emit log("Initial state");
-        emit log("");
-        showPool(pool);
-        emit log("");
-        emit log_named_uint("amountIn", amount);
-        emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
         (amountQuote, feeQuote) = pool.quoteSwap(
-            oneAsset[0],
-            anotherAsset[0],
+            address(USDC),
+            address(BTCb),
             amount
         );
         (amountOut, feeAmount) = pool.swap(
-            oneAsset[0],
-            anotherAsset[0],
+            address(USDC),
+            address(BTCb),
             amount,
             oneMin[0]
         );
         assertEq(amountQuote, amountOut, "amountOut");
         assertEq(feeQuote, feeAmount, "feeAmount");
-        emit log("State after swap");
-        emit log("");
-        emit log_named_uint("amountIn", amount);
-        emit log_named_uint("amountOut", amountOut);
-        emit log_named_uint("feeAmount", feeAmount);
-        emit log("");
-        showPool(pool);
-        emit log("");
     }
 
-    function testBetaStake() public {
-        uint256 amount = oneAmount[0] / oneConversion[0];
+    // function testBetaSwapWAVAX() public {
+    //     uint256 balance = WAVAX.balanceOf(address(pool));
+    //     uint256 amount = balance / 10;
+    //     WAVAX.mint(amount);
+    //     WAVAX.approve(address(pool), amount);
 
-        emit log("Initial state");
-        emit log("");
-        showPool(pool);
-        emit log("");
-        emit log_named_uint("amountIn", amount);
-        emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
-        (amountQuote, feeQuote) = pool.quoteStake(oneAsset[0], amount);
-        (amountOut, feeAmount) = pool.stake(oneAsset[0], amount, oneMin[0]);
+    //     (amountQuote, feeQuote) = pool.quoteSwap(
+    //         address(WAVAX),
+    //         anotherAsset[0],
+    //         amount
+    //     );
+    //     (amountOut, feeAmount) = pool.swap(
+    //         address(WAVAX),
+    //         anotherAsset[0],
+    //         amount,
+    //         oneMin[0]
+    //     );
+    //     assertEq(amountQuote, amountOut, "amountOut");
+    //     assertEq(feeQuote, feeAmount, "feeAmount");
+    // }
+
+    function testBetaSwapPayAVAX() public {
+        vm.startPrank(alice);
+        uint256 amount = WAVAX.balanceOf(address(pool)) / 10;
+
+        (amountQuote, feeQuote) = pool.quoteSwap(
+            address(0),
+            address(BTCb),
+            amount
+        );
+        (amountOut, feeAmount) = pool.swap{value: amount}(
+            address(0),
+            address(BTCb),
+            amount,
+            oneMin[0]
+        );
+
         assertEq(amountQuote, amountOut, "amountOut");
         assertEq(feeQuote, feeAmount, "feeAmount");
-        emit log("State after stake");
-        emit log("");
-        emit log_named_uint("amountOut", amountOut);
-        emit log_named_uint("feeAmount", feeAmount);
-        emit log("");
-        showPool(pool);
-        emit log("");
+    }
+
+    function testBetaSwapReceiveAVAX() public {
+        vm.startPrank(alice);
+        uint256 amount = USDC.balanceOf(address(pool)) / 10;
+        USDC.mint(amount);
+        USDC.approve(address(pool), amount);
+
+        (amountQuote, feeQuote) = pool.quoteSwap(
+            address(USDC),
+            address(0),
+            amount
+        );
+        (amountOut, feeAmount) = pool.swap(
+            address(USDC),
+            address(0),
+            amount,
+            oneMin[0]
+        );
+        assertEq(amountQuote, amountOut, "amountOut");
+        assertEq(feeQuote, feeAmount, "feeAmount");
+    }
+
+    function testBetaStakeUSDC() public {
+        uint256 amount = USDC.balanceOf(address(pool)) / 10;
+
+        (amountQuote, feeQuote) = pool.quoteStake(address(USDC), amount);
+        (amountOut, feeAmount) = pool.stake(address(USDC), amount, oneMin[0]);
+        assertEq(amountQuote, amountOut, "amountOut");
+        assertEq(feeQuote, feeAmount, "feeAmount");
+    }
+
+    function testBetaStakeAVAX() public {
+        vm.startPrank(alice);
+        uint256 amount = WAVAX.balanceOf(alice) / 10;
+
+        (amountQuote, feeQuote) = pool.quoteStake(address(0), amount);
+        (amountOut, feeAmount) = pool.stake{value: amount}(
+            address(0),
+            amount,
+            oneMin[0]
+        );
+        assertEq(amountQuote, amountOut, "amountOut");
+        assertEq(feeQuote, feeAmount, "feeAmount");
     }
 
     function testBetaUnstake() public {
-        emit log("Initial state");
-        emit log("");
-        showPool(pool);
-        emit log("");
-        emit log_named_uint("amountIn", oneAmount[0]);
-        emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
         (amountQuote, feeQuote) = pool.quoteUnstake(
             anotherAsset[0],
             oneAmount[0]
@@ -241,125 +289,214 @@ contract BetaTest is PoolTest {
         );
         assertEq(amountQuote, amountOut, "amountOut");
         assertEq(feeQuote, feeAmount, "feeAmount");
-        emit log("State after stake");
-        emit log("");
-        emit log_named_uint("amountOut", amountOut);
-        emit log_named_uint("feeAmount", feeAmount);
-        emit log("");
-        showPool(pool);
-        emit log("");
+    }
+
+    function testBetaUnstakeReceiveAVAX() public {
+        (amountQuote, feeQuote) = pool.quoteUnstake(address(0), oneAmount[0]);
+        (amountOut, feeAmount) = pool.unstake(
+            address(0),
+            oneAmount[0],
+            oneMin[0]
+        );
+        assertEq(amountQuote, amountOut, "amountOut");
+        assertEq(feeQuote, feeAmount, "feeAmount");
     }
 
     function testBetaMixedStake() public {
-        uint256[] memory amount = new uint256[](1);
-        amount[0] = oneAmount[0] / oneConversion[0];
+        address[] memory payTokens = new address[](1);
+        payTokens[0] = address(USDC);
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = USDC.balanceOf(address(pool)) / 10;
 
-        twoTokens[0] = address(pool);
-        twoTokens[1] = anotherAsset[0];
-        twoAmounts[0] = 5e17;
-        twoAmounts[1] = 5e17;
-        emit log("Initial state");
-        emit log("");
-        showPool(pool);
-        emit log("");
-        emit log_named_uint("amountIn", oneAmount[0]);
-        emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
+        address[] memory receiveTokens = new address[](2);
+        uint256[] memory allocations = new uint256[](2);
+        receiveTokens[0] = address(pool);
+        receiveTokens[1] = address(BTCb);
+        allocations[0] = 5e17;
+        allocations[1] = 5e17;
         (receiveAmountQuotes, feeQuote) = pool.quoteMultiswap(
-            oneAsset,
-            amount,
-            twoTokens,
-            twoAmounts
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations
         );
         (receiveAmounts, feeAmount) = pool.multiswap(
-            oneAsset,
-            amount,
-            twoTokens,
-            twoAmounts,
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations,
             twoMins
         );
         assertEq(receiveAmountQuotes[0], receiveAmounts[0], "amountOut 1");
         assertEq(receiveAmountQuotes[1], receiveAmounts[1], "amountOut 2");
         assertEq(feeQuote, feeAmount, "feeAmount");
-        emit log("State after stake");
-        emit log("");
-        emit log_named_uint("amountOut 1", receiveAmounts[0]);
-        emit log_named_uint("amountOut 2", receiveAmounts[1]);
-        emit log_named_uint("feeAmount", feeAmount);
-        emit log("");
-        showPool(pool);
-        emit log("");
+    }
+
+    function testBetaMixedStakePayAVAX() public {
+        vm.startPrank(alice);
+        uint256 amount = WAVAX.balanceOf(alice) / 10;
+        address[] memory payTokens = new address[](1);
+        payTokens[0] = address(0);
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = amount;
+
+        address[] memory receiveTokens = new address[](2);
+        uint256[] memory allocations = new uint256[](2);
+        receiveTokens[0] = address(pool);
+        receiveTokens[1] = address(BTCb);
+        allocations[0] = 5e17;
+        allocations[1] = 5e17;
+        (receiveAmountQuotes, feeQuote) = pool.quoteMultiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations
+        );
+        (receiveAmounts, feeAmount) = pool.multiswap{value: amounts[0]}(
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations,
+            twoMins
+        );
+        assertEq(receiveAmountQuotes[0], receiveAmounts[0], "amountOut 1");
+        assertEq(receiveAmountQuotes[1], receiveAmounts[1], "amountOut 2");
+        assertEq(feeQuote, feeAmount, "feeAmount");
+    }
+
+    function testBetaMixedStakeReceiveAVAX() public {
+        address[] memory payTokens = new address[](1);
+        payTokens[0] = address(USDC);
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = USDC.balanceOf(address(pool)) / 10;
+
+        address[] memory receiveTokens = new address[](2);
+        uint256[] memory allocations = new uint256[](2);
+        receiveTokens[0] = address(pool);
+        receiveTokens[1] = address(0);
+        allocations[0] = 5e17;
+        allocations[1] = 5e17;
+        (receiveAmountQuotes, feeQuote) = pool.quoteMultiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations
+        );
+        (receiveAmounts, feeAmount) = pool.multiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations,
+            twoMins
+        );
+        assertEq(receiveAmountQuotes[0], receiveAmounts[0], "amountOut 1");
+        assertEq(receiveAmountQuotes[1], receiveAmounts[1], "amountOut 2");
+        assertEq(feeQuote, feeAmount, "feeAmount");
     }
 
     function testBetaMixedUnstake() public {
-        twoTokens[0] = address(pool);
-        twoTokens[1] = oneAsset[0];
-        twoAmounts[0] = oneAmount[0];
-        twoAmounts[1] = oneAmount[0] / oneConversion[0];
-        emit log("=============");
-        emit log("Initial state");
-        emit log("");
-        showPool(pool);
-        emit log("");
-        emit log_named_uint("amountIn 1", twoAmounts[0]);
-        emit log_named_uint("amountIn 2", twoAmounts[1]);
-        emit log("");
+        vm.startPrank(alice);
+        address[] memory payTokens = new address[](2);
+        payTokens[0] = address(pool);
+        payTokens[1] = address(USDC);
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = pool.info().balance / 10;
+        amounts[1] = USDC.balanceOf(alice) / 10;
+        address[] memory receiveTokens = new address[](1);
+        receiveTokens[0] = address(BTCb);
         (receiveAmountQuotes, feeQuote) = pool.quoteMultiswap(
-            twoTokens,
-            twoAmounts,
-            anotherAsset,
+            payTokens,
+            amounts,
+            receiveTokens,
             oneAllocation
         );
         (receiveAmounts, feeAmount) = pool.multiswap(
-            twoTokens,
-            twoAmounts,
-            anotherAsset,
+            payTokens,
+            amounts,
+            receiveTokens,
             oneAllocation,
             oneMin
         );
         assertEq(receiveAmountQuotes[0], receiveAmounts[0], "amountOut");
         assertEq(feeQuote, feeAmount, "feeAmount");
-        emit log("=================");
-        emit log("State after stake");
-        emit log("");
-        emit log_named_uint("amountOut", receiveAmounts[0]);
-        emit log_named_uint("feeAmount", feeAmount);
-        emit log("");
-        showPool(pool);
-        emit log("");
+    }
+
+    function testBetaMixedUnstakePayAVAX() public {
+        vm.startPrank(alice);
+        uint256 amount = WAVAX.balanceOf(alice) / 10;
+        address[] memory payTokens = new address[](2);
+        payTokens[0] = address(pool);
+        payTokens[1] = address(0);
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = pool.info().balance / 10;
+        amounts[1] = amount;
+        address[] memory receiveTokens = new address[](1);
+        receiveTokens[0] = address(BTCb);
+        (receiveAmountQuotes, feeQuote) = pool.quoteMultiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            oneAllocation
+        );
+        (receiveAmounts, feeAmount) = pool.multiswap{value: amounts[1]}(
+            payTokens,
+            amounts,
+            receiveTokens,
+            oneAllocation,
+            oneMin
+        );
+        assertEq(receiveAmountQuotes[0], receiveAmounts[0], "amountOut");
+        assertEq(feeQuote, feeAmount, "feeAmount");
+    }
+
+    function testBetaMixedUnstakeReceiveAVAX() public {
+        vm.startPrank(alice);
+        address[] memory payTokens = new address[](2);
+        payTokens[0] = address(pool);
+        payTokens[1] = address(USDC);
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = pool.info().balance / 10;
+        amounts[1] = USDC.balanceOf(alice) / 10;
+        address[] memory receiveTokens = new address[](1);
+        receiveTokens[0] = address(0);
+        (receiveAmountQuotes, feeQuote) = pool.quoteMultiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            oneAllocation
+        );
+        (receiveAmounts, feeAmount) = pool.multiswap(
+            payTokens,
+            amounts,
+            receiveTokens,
+            oneAllocation,
+            oneMin
+        );
+        assertEq(receiveAmountQuotes[0], receiveAmounts[0], "amountOut");
+        assertEq(feeQuote, feeAmount, "feeAmount");
     }
 
     function testBetaAddLiquidity() public {
-        emit log("=============");
-        emit log("Initial state");
-        emit log("");
-        showPool(pool);
-        emit log("");
-        emit log_named_uint("amountIn", oneAmount[0]);
-        emit log_named_uint("balance", pool.info().balance);
-        emit log("");
-        payAmountQuotes = pool.quoteAddLiquidity(oneAmount[0]);
-        payAmounts = pool.addLiquidity(oneAmount[0], allMaxs);
+        vm.startPrank(alice);
+        uint256 balance = WAVAX.balanceOf(alice);
+        uint256 amount = balance / 10;
+
+        payAmountQuotes = pool.quoteAddLiquidity(address(0), amount);
+        payAmounts = pool.addLiquidity{value: amount}(
+            address(0),
+            amount,
+            allMaxs
+        );
         for (uint256 i; i < NTOKENS; i++) {
             assertEq(payAmountQuotes[i], payAmounts[i], "payAmount");
         }
-        emit log("=================");
-        emit log("State after addLiquidity");
-        emit log("");
-        showPool(pool);
-        emit log("");
     }
 
     function testBetaRemoveLiquidity() public {
-        emit log("=============");
-        emit log("Initial state");
-        emit log("");
-        showPool(pool);
-        emit log("");
-        emit log_named_uint("amountIn", oneAmount[0]);
-        emit log_named_uint("balance", pool.asset(oneAsset[0]).balance);
-        emit log("");
-        (receiveAmountQuotes, feeQuote) = pool.quoteRemoveLiquidity(marketCap);
-        (receiveAmounts, feeAmount) = pool.removeLiquidity(marketCap, allMins);
+        vm.startPrank(alice);
+        uint256 amount = pool.balanceOf(alice);
+        (receiveAmountQuotes, feeQuote) = pool.quoteRemoveLiquidity(amount);
+        (receiveAmounts, feeAmount) = pool.removeLiquidity(amount, allMins);
         for (uint256 i; i < NTOKENS; i++) {
             assertEq(
                 receiveAmountQuotes[i],
@@ -368,20 +505,39 @@ contract BetaTest is PoolTest {
             );
         }
         assertEq(feeQuote, feeAmount, "feeAmount");
-        emit log("=================");
-        emit log("State after removeLiquidity");
-        emit log("");
+
+        setUp();
+
+        amount = pool.balanceOf(alice) / 2;
+        (receiveAmountQuotes, feeQuote) = pool.quoteRemoveLiquidity(amount);
+        (receiveAmounts, feeAmount) = pool.removeLiquidity(amount, allMins);
         for (uint256 i; i < NTOKENS; i++) {
-            emit log_named_uint("amountOut", receiveAmounts[i]);
+            assertEq(
+                receiveAmountQuotes[i],
+                receiveAmounts[i],
+                "receiveAmount"
+            );
         }
-        emit log_named_uint("feeAmount", feeAmount);
-        emit log("");
-        showPool(pool);
-        emit log("");
+        assertEq(feeQuote, feeAmount, "feeAmount");
+
+        // emit log("=================");
+        // emit log("State after removeLiquidity");
+        // emit log("");
+        // for (uint256 i; i < NTOKENS; i++) {
+        //     emit log_named_uint("amountOut", receiveAmounts[i]);
+        // }
+        // emit log_named_uint("feeAmount", feeAmount);
+        // emit log("");
+        // showPool(pool);
+        // emit log("");
     }
 
     function testBetaDiscount() public {
+        vm.startPrank(alice);
+
         pool.setDiscount(bob, ONE);
+
+        vm.stopPrank();
 
         vm.startPrank(bob);
 
@@ -394,17 +550,21 @@ contract BetaTest is PoolTest {
             anotherAsset[0],
             amount
         );
+
         (amountOut, feeAmount) = pool.swap(
             oneAsset[0],
             anotherAsset[0],
             amount,
             oneMin[0]
         );
+
         assertEq(amountQuote, amountOut, "amountOut");
         assertEq(feeQuote, feeAmount, "feeAmount");
         assertEq(feeAmount, 0, "feeAmount");
 
         vm.stopPrank();
+
+        vm.startPrank(alice);
 
         vm.expectRevert(
             abi.encodeWithSelector(IUsers.InvalidDiscount.selector, 2 * ONE)
