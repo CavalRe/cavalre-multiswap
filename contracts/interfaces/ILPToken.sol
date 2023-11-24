@@ -13,7 +13,7 @@ pragma solidity 0.8.19;
 import {IUsers} from "./IUsers.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface ILPToken is IERC20, IUsers {
+interface ILPToken is IUsers {
     event DistributeFee(
         uint256 indexed txCount,
         uint256 lpAmount,
