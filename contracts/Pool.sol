@@ -107,6 +107,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         string memory symbol_ = IERC20Metadata(token_).symbol();
         uint8 decimals_ = IERC20Metadata(token_).decimals();
         if (decimals_ > 18) revert TooLarge(decimals_); // Contract supports 18 decimals or fewer
+        if (decimals_ == 0) revert TooSmall(decimals_);
 
         _payTokenToPool(_msgSender(), token_, balance_);
 
@@ -140,6 +141,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     }
 
     function removeAsset(address token) public onlyUninitialized onlyOwner {
+        if (token == address(0)) revert ZeroAddress();
         AssetState storage asset_ = _assetState[token];
         if (asset_.decimals == 0) revert AssetNotFound(token);
 
@@ -210,10 +212,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     function asset(address token) public view returns (AssetState memory) {
         if (_assetState[token].decimals == 0) revert AssetNotFound(token);
         return _assetState[token];
-    }
-
-    function contains(address token) public view returns (bool) {
-        return _assetState[token].decimals > 0;
     }
 
     function isPaused() public view returns (bool) {

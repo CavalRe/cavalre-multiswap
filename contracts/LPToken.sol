@@ -98,23 +98,6 @@ contract LPToken is ILPToken, ERC20, Users {
         _tokensPerShare = _totalTokens.divWadUp(totalSupply());
     }
 
-    // function _distributeFee(
-    //     uint256 txCount,
-    //     uint256 amount
-    // ) internal returns (uint256 lpAmount, uint256 protocolAmount) {
-    //     protocolAmount = amount.mulWadUp(_protocolFee);
-    //     lpAmount = amount - protocolAmount;
-    //     _totalTokens += amount;
-    //     _tokensPerShare = _totalTokens.divWadUp(totalSupply());
-    //     if (protocolAmount > 0)
-    //         _mint(
-    //             _protocolFeeRecipient,
-    //             protocolAmount.divWadUp(_tokensPerShare)
-    //         );
-
-    //     emit DistributeFee(txCount, lpAmount, protocolAmount);
-    // }
-
     function protocolFee() public view returns (uint256) {
         return _protocolFee;
     }

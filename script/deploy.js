@@ -1,7 +1,17 @@
 const hre = require("hardhat");
 
 async function main() {
-  const pool = await hre.ethers.deployContract("Pool", ["Mulitswap", "β", BigInt(1e16)], {});
+  const pool = await hre.ethers.deployContract(
+    "Pool",
+    [
+      "Mulitswap",
+      "β2",
+      BigInt(5e17),
+      BigInt(1e16),
+      process.env.WRAPPED_NATIVE_TOKEN
+    ],
+    {}
+  );
 
   await pool.waitForDeployment();
   console.log(`Pool deployed to ${pool.target}`);
