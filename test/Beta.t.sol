@@ -29,13 +29,14 @@ pragma solidity 0.8.19;
 // (8) 0xdbda1821b80551c9d65939329250298aa3472ba22feea921c0cf5d620ea67b97
 // (9) 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
 
+import {TestPool} from "./Pool.t.sol";
 import "./Pool.t.sol";
 import "../contracts/Users.sol";
 
 contract BetaTest is PoolTest {
     using FixedPointMathLib for uint256;
 
-    Pool internal pool;
+    TestPool internal pool;
     Token[] internal tokens;
     address internal wrappedNative;
 
@@ -172,46 +173,37 @@ contract BetaTest is PoolTest {
         }
     }
 
-    function testBetaSwapPayUSDC() public {
-        uint256 amount = USDC.balanceOf(address(pool)) / 10;
-        USDC.mint(amount);
-        USDC.approve(address(pool), amount);
+    function _testBetaSwap(Token payToken, Token receiveToken) internal {
+        uint256 amount = payToken.balanceOf(address(pool)) / 10;
+        payToken.mint(amount);
+        payToken.approve(address(pool), amount);
 
         (amountQuote, feeQuote) = pool.quoteSwap(
-            address(USDC),
-            address(BTCb),
+            address(payToken),
+            address(receiveToken),
             amount
         );
         (amountOut, feeAmount) = pool.swap(
-            address(USDC),
-            address(BTCb),
+            address(payToken),
+            address(receiveToken),
             amount,
             oneMin[0]
         );
         assertEq(amountQuote, amountOut, "amountOut");
         assertEq(feeQuote, feeAmount, "feeAmount");
+
+        payToken.mint(amount);
+        payToken.approve(address(pool), amount);
+        checkSwap(pool, address(payToken), address(receiveToken), amount, 0);
     }
 
-    // function testBetaSwapWAVAX() public {
-    //     uint256 balance = WAVAX.balanceOf(address(pool));
-    //     uint256 amount = balance / 10;
-    //     WAVAX.mint(amount);
-    //     WAVAX.approve(address(pool), amount);
+    function testBetaSwapPayUSDC() public {
+        _testBetaSwap(USDC, BTCb);
+    }
 
-    //     (amountQuote, feeQuote) = pool.quoteSwap(
-    //         address(WAVAX),
-    //         anotherAsset[0],
-    //         amount
-    //     );
-    //     (amountOut, feeAmount) = pool.swap(
-    //         address(WAVAX),
-    //         anotherAsset[0],
-    //         amount,
-    //         oneMin[0]
-    //     );
-    //     assertEq(amountQuote, amountOut, "amountOut");
-    //     assertEq(feeQuote, feeAmount, "feeAmount");
-    // }
+    function testBetaSwapPayWAVAX() public {
+        _testBetaSwap(WAVAX, WETHe);
+    }
 
     function testBetaSwapPayAVAX() public {
         vm.startPrank(alice);
@@ -257,10 +249,18 @@ contract BetaTest is PoolTest {
     function testBetaStakeUSDC() public {
         uint256 amount = USDC.balanceOf(address(pool)) / 10;
 
+        console.log("Get quote");
         (amountQuote, feeQuote) = pool.quoteStake(address(USDC), amount);
+        console.log("Stake");
         (amountOut, feeAmount) = pool.stake(address(USDC), amount, oneMin[0]);
         assertEq(amountQuote, amountOut, "amountOut");
         assertEq(feeQuote, feeAmount, "feeAmount");
+
+        USDC.mint(amount);
+        USDC.approve(address(pool), amount);
+        console.log("Check stake");
+        checkStake(pool, address(USDC), amount, 0);
+        console.log("Stake checked");
     }
 
     function testBetaStakeAVAX() public {

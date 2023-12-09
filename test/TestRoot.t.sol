@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import "../contracts/Pool.sol";
+import { AssetState } from "../contracts/interfaces/IPool.sol";
+import { TestPool } from "./Pool.t.sol";
 import "./Token.t.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
@@ -17,7 +18,7 @@ contract TestRoot is Test, Context {
 
     Token[] internal tokens;
     address[] internal addresses;
-    Pool internal pool;
+    TestPool internal pool;
     address alice = address(1);
     address bob = address(2);
     address carol = address(3);
@@ -53,7 +54,8 @@ contract TestRoot is Test, Context {
         uint256 protocolFee;
         // protocolFee = 2e17;
 
-        pool = new Pool("Pool", "P", protocolFee, 1e16, addresses[0]);
+        pool = new TestPool("Pool", "P", protocolFee, 1e16, addresses[0]);
+        pool.setProtocolFee(5e17);
 
         for (uint256 i; i < NTOKENS; i++) {
             uint256 amount = (i + 1) * 1e27;
@@ -63,6 +65,7 @@ contract TestRoot is Test, Context {
         }
 
         pool.initialize();
+        pool.distributeTokens(pool.totalTokens());
     }
 
     function weight(address token) public view returns (uint256) {
@@ -93,9 +96,14 @@ contract TestRoot is Test, Context {
         assertGt(payAmount, 0, "Pay amount must be greater than 0");
         assertGt(receiveAmount, 0, "Receive amount must be greater than 0");
 
+        emit log_named_uint("Protocol fee", pool.protocolFee());
         uint256 valueIn = payAmount.mulWadUp(price(payToken));
-        uint256 valueOut = receiveAmount.mulWadUp(price(receiveToken)) +
-            fee(receiveToken).mulWadUp(valueIn);
+        emit log_named_uint("Value in", valueIn);
+        uint256 valueOut = receiveAmount.mulWadUp(price(receiveToken));
+        emit log_named_uint("Value out", valueOut);
+        valueOut += fee(receiveToken).mulWadUp(valueIn);
+        emit log_named_uint("Fee", fee(receiveToken).mulWadUp(valueIn));
+        emit log_named_uint("Total value out", valueOut);
 
         assertApproxEqRel(
             valueIn,

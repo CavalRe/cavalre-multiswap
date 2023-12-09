@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import "./TestRoot.t.sol";
-import "../contracts/Pool.sol";
+import { IPool } from "../contracts/Pool.sol";
 import "../contracts/Users.sol";
 
 contract SwapTest is TestRoot {

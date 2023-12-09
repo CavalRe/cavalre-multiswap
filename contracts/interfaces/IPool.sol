@@ -34,6 +34,21 @@ struct AssetState {
     uint256 lastUpdated;
 }
 
+struct QuoteState {
+    uint256 fee;
+    uint256 discount;
+    uint256 poolAlloc;
+    uint256 lastPoolBalance;
+    uint256 scaledPoolOut;
+    uint256 poolIn;
+    uint256 poolOut;
+    uint256 scaledValueIn;
+    uint256 newShares;
+    uint256 finalTokensPerShare;
+    uint256[] receiveAmounts;
+    uint256 feeAmount;
+}
+
 interface IPool is ILPToken {
     event AssetAdded(
         address indexed token,
@@ -194,7 +209,7 @@ interface IPool is ILPToken {
     )
         external
         view
-        returns (uint256[] memory receiveAmounts, uint256 feeAmount);
+        returns (QuoteState memory quoteState);
 
     function quoteMultiswap(
         address[] memory payTokens,

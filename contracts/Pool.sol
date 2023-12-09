@@ -3,14 +3,16 @@
 // See the file LICENSE.md for licensing terms.
 pragma solidity 0.8.19;
 
-import {IPool, PoolState, AssetState} from "./interfaces/IPool.sol";
+import {IPool, PoolState, AssetState, QuoteState} from "./interfaces/IPool.sol";
 import {LPToken, FixedPointMathLib} from "./LPToken.sol";
 import {IWrappedNative} from "./interfaces/IWrappedNative.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract Pool is IPool, LPToken, ReentrancyGuard {
+import { Test } from "forge-std/Test.sol";
+
+contract Pool is IPool, LPToken, ReentrancyGuard, Test {
     using SafeERC20 for IERC20;
     using FixedPointMathLib for uint256;
     using FixedPointMathLib for int256;
@@ -311,14 +313,14 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     function _checkDuplicateTokens(
         address[] memory tokens,
         bool[] memory check_,
-        bool isLP
+        bool hasLP
     ) private view returns (bool) {
         for (uint256 i; i < tokens.length; i++) {
             address token = tokens[i];
             if (address(this) == token) {
-                if (isLP) revert DuplicateToken(token);
+                if (hasLP) revert DuplicateToken(token);
                 if (i != 0) revert LPTokenFirst();
-                isLP = true;
+                hasLP = true;
                 continue;
             }
             AssetState memory asset_ = _assetState[token];
@@ -326,7 +328,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             if (check_[asset_.index]) revert DuplicateToken(token);
             check_[asset_.index] = true;
         }
-        return isLP;
+        return hasLP;
     }
 
     function distributeFee(uint256 amount) internal {
@@ -352,115 +354,114 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256[] memory amounts,
         address[] memory receiveTokens,
         uint256[] memory allocations
-    ) public view returns (uint256[] memory receiveAmounts, uint256 feeAmount) {
+    ) public view returns (QuoteState memory q) {
         if (payTokens[0] == address(this) && amounts[0] == totalSupply()) {
-            feeAmount = 0;
-            receiveAmounts = new uint256[](_assetAddresses.length);
+            q.feeAmount = 0;
+            q.receiveAmounts = new uint256[](_assetAddresses.length);
             for (uint256 i; i < _assetAddresses.length; i++) {
-                receiveAmounts[i] = IERC20(_assetAddresses[i]).balanceOf(
-                    address(this)
-                );
+                q.receiveAmounts[i] = IERC20(_assetAddresses[i])
+                    .balanceOf(address(this));
             }
-            return (receiveAmounts, feeAmount);
+            return q;
         }
 
-        receiveAmounts = new uint256[](receiveTokens.length);
+        q.receiveAmounts = new uint256[](receiveTokens.length);
 
-        {
-            // Compute fee
-            uint256 fee;
-            {
-                for (uint256 i; i < receiveTokens.length; i++) {
-                    fee += allocations[i].mulWadUp(
-                        _assetState[receiveTokens[i]].fee
-                    );
-                }
-                uint256 discount_ = _discount[sender];
-                if (fee > 0 && discount_ > 0) {
-                    fee = fee.mulWadUp(ONE - discount_);
-                }
+        // Compute fee
+        for (uint256 i; i < receiveTokens.length; i++) {
+            q.fee += allocations[i].mulWadUp(
+                _assetState[receiveTokens[i]].fee
+            );
+        }
+        q.discount = _discount[sender];
+        if (q.fee > 0 && q.discount > 0) {
+            q.fee = q.fee.mulWadUp(ONE - q.discount);
+        }
+
+        // Compute scaledValueIn
+        // Contribution from assets only
+        for (uint256 i; i < payTokens.length; i++) {
+            address token_ = payTokens[i];
+            if (token_ != address(this)) {
+                AssetState storage assetIn = _assetState[token_];
+                uint256 amount_ = amounts[i] * assetIn.conversion; // Convert to canonical
+                q.scaledValueIn += assetIn.scale.fullMulDiv(
+                    amount_,
+                    assetIn.balance + amount_
+                );
             }
+        }
 
-            // Compute scaledValueIn
-            uint256 scaledValueIn;
-            uint256 poolOut;
-            {
-                // Contribution from assets only
-                for (uint256 i; i < payTokens.length; i++) {
-                    address token_ = payTokens[i];
-                    if (token_ != address(this)) {
-                        AssetState storage assetIn = _assetState[token_];
-                        uint256 amount_ = amounts[i] * assetIn.conversion; // Convert to canonical
-                        scaledValueIn += assetIn.scale.fullMulDiv(
-                            amount_,
-                            assetIn.balance + amount_
-                        );
-                    }
-                }
-
-                uint256 poolAlloc = fee;
-                if (receiveTokens[0] == address(this)) {
-                    poolAlloc += allocations[0].mulWadUp(ONE - fee);
-                }
-                uint256 lastPoolBalance = _poolState.balance;
-                uint256 scaledPoolOut = scaledValueIn.mulWadUp(poolAlloc);
-                if (payTokens[0] == address(this)) {
-                    uint256 poolIn = amounts[0].mulWadUp(
-                        _poolState.tokensPerShare
-                    );
-                    poolOut = poolAlloc.fullMulDiv(
-                        scaledValueIn.mulWadUp(lastPoolBalance - poolIn) +
-                            _poolState.scale.mulWadUp(poolIn),
-                        _poolState.scale - scaledPoolOut
-                    );
-                    scaledValueIn += _poolState.scale.fullMulDiv(
-                        poolIn,
-                        lastPoolBalance + poolOut - poolIn
-                    );
-                    feeAmount = poolOut;
-                } else {
-                    poolOut = lastPoolBalance.fullMulDiv(
-                        scaledPoolOut,
-                        _poolState.scale - scaledPoolOut
-                    );
-                    if (poolAlloc > 0) {
-                        feeAmount = poolOut.fullMulDiv(fee, poolAlloc);
-                    }
-                }
+        q.poolAlloc = q.fee;
+        if (receiveTokens[0] == address(this)) {
+            q.poolAlloc += allocations[0].mulWadUp(
+                ONE - q.fee
+            );
+        }
+        q.lastPoolBalance = _poolState.balance;
+        q.scaledPoolOut = q.scaledValueIn.mulWadUp(
+            q.poolAlloc
+        );
+        if (payTokens[0] == address(this)) {
+            q.poolIn = amounts[0].mulWadUp(_poolState.tokensPerShare);
+            q.poolOut = q.poolAlloc.fullMulDiv(
+                q.scaledValueIn.mulWadUp(
+                    q.lastPoolBalance - q.poolIn
+                ) + _poolState.scale.mulWadUp(q.poolIn),
+                _poolState.scale - q.scaledPoolOut
+            );
+            q.scaledValueIn += _poolState.scale.fullMulDiv(
+                q.poolIn,
+                q.lastPoolBalance +
+                    q.poolOut -
+                    q.poolIn
+            );
+            q.feeAmount = q.poolOut;
+        } else {
+            q.poolOut = q.lastPoolBalance.fullMulDiv(
+                q.scaledPoolOut,
+                _poolState.scale - q.scaledPoolOut
+            );
+            if (q.poolAlloc > 0) {
+                q.feeAmount = q.poolOut.fullMulDiv(
+                    q.fee,
+                    q.poolAlloc
+                );
             }
+        }
 
-            // Compute receiveAmounts
-            {
-                uint256 scaledValueOut;
+        // Compute receiveAmounts
+        q.newShares = q.feeAmount.fullMulDiv(_protocolFee,_poolState.tokensPerShare);
+        q.finalTokensPerShare = (_totalTokens +
+            q.poolOut -
+            q.poolIn).divWadUp(totalSupply() + q.newShares);
 
-                address receiveToken;
-                uint256 allocation;
-                for (uint256 i; i < receiveTokens.length; i++) {
-                    receiveToken = receiveTokens[i];
-                    allocation = allocations[i].mulWadUp(ONE - fee);
-                    scaledValueOut = scaledValueIn.mulWadUp(allocation);
-                    if (receiveToken == address(this)) {
-                        receiveAmounts[i] = (poolOut - feeAmount).divWadUp(
-                            _poolState.tokensPerShare
-                        );
-                    } else {
-                        AssetState storage assetOut = _assetState[receiveToken];
-                        receiveAmounts[i] =
-                            assetOut.balance.fullMulDiv(
-                                scaledValueOut,
-                                assetOut.scale + scaledValueOut
-                            ) /
-                            assetOut.conversion; // Convert from canonical
-                    }
-                }
+        address receiveToken;
+        uint256 allocation;
+        uint256 scaledValueOut;
+        for (uint256 i; i < receiveTokens.length; i++) {
+            receiveToken = receiveTokens[i];
+            allocation = allocations[i].mulWadUp(ONE - q.fee);
+            scaledValueOut = q.scaledValueIn.mulWadUp(allocation);
+            if (receiveToken == address(this)) {
+                q.receiveAmounts[i] = (q.poolOut -
+                    q.feeAmount).divWadUp(_poolState.tokensPerShare);
+            } else {
+                AssetState storage assetOut = _assetState[receiveToken];
+                q.receiveAmounts[i] =
+                    assetOut.balance.fullMulDiv(
+                        scaledValueOut,
+                        assetOut.scale + scaledValueOut
+                    ) /
+                    assetOut.conversion; // Convert from canonical
             }
         }
     }
 
     function _disable(
         address receiver
-    ) private returns (uint256[] memory receiveAmounts, uint256 feeAmount) {
-        receiveAmounts = new uint256[](_assetAddresses.length);
+    ) private returns (QuoteState memory q) {
+        q.receiveAmounts = new uint256[](_assetAddresses.length);
 
         // Burn all LP tokens
         _burn(receiver, totalSupply());
@@ -473,7 +474,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                 SafeERC20.safeTransfer(IERC20(token), receiver, balance);
             }
             delete _assetState[token];
-            receiveAmounts[i] = balance;
+            q.receiveAmounts[i] = balance;
             emit BalanceUpdate(_txCount, token, 0, 0, 0);
         }
 
@@ -492,7 +493,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         _poolState.lastUpdated = 0;
         delete _assetAddresses;
         _tradingPaused = false;
-        feeAmount = 0;
+        q.feeAmount = 0;
         renounceOwnership();
 
         emit PoolDisabled(_txCount, address(this));
@@ -505,18 +506,14 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         address[] memory receiveTokens,
         uint256[] memory allocations,
         uint256[] memory minReceiveAmounts
-    )
-        private
-        nonReentrant
-        returns (uint256[] memory receiveAmounts, uint256 feeAmount)
-    {
+    ) private nonReentrant returns (QuoteState memory q) {
         _txCount++;
 
         if (payTokens[0] == address(this) && amounts[0] == totalSupply()) {
             return _disable(sender);
         }
 
-        (receiveAmounts, feeAmount) = _quoteMultiswap(
+        q = _quoteMultiswap(
             sender,
             payTokens,
             amounts,
@@ -527,10 +524,10 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         // Check receiveAmounts
         {
             for (uint256 i; i < receiveTokens.length; i++) {
-                if (receiveAmounts[i] < minReceiveAmounts[i]) {
+                if (q.receiveAmounts[i] < minReceiveAmounts[i]) {
                     revert InsufficientReceiveAmount(
                         minReceiveAmounts[i],
-                        receiveAmounts[i]
+                        q.receiveAmounts[i]
                     );
                 }
             }
@@ -550,7 +547,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         // Transfer tokens to the receiving address
         for (uint256 i; i < receiveTokens.length; i++) {
             address receiveToken = receiveTokens[i];
-            uint256 receiveAmount = receiveAmounts[i];
+            uint256 receiveAmount = q.receiveAmounts[i];
             _payTokenToSender(sender, receiveToken, receiveAmount);
             if (receiveToken != address(this)) {
                 receiveAmount *= _assetState[receiveToken].conversion; // Convert to canonical
@@ -559,7 +556,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         }
 
         // Distribute fee
-        distributeFee(feeAmount);
+        distributeFee(q.feeAmount);
 
         // Update pool balance
         _updatePoolBalance();
@@ -571,13 +568,16 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         address[] memory receiveTokens,
         uint256[] memory allocations
     ) public view returns (uint256[] memory receiveAmounts, uint256 feeAmount) {
-        (receiveAmounts, feeAmount) = _quoteMultiswap(
+        QuoteState memory q = _quoteMultiswap(
             _msgSender(),
             payTokens,
             amounts,
             receiveTokens,
             allocations
         );
+
+        receiveAmounts = q.receiveAmounts;
+        feeAmount = q.feeAmount;
     }
 
     function multiswap(
@@ -615,10 +615,10 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         }
         // Check duplicates
         {
-            bool isLP;
+            bool hasLP;
             bool[] memory check_ = new bool[](_assetAddresses.length);
-            isLP = _checkDuplicateTokens(payTokens, check_, isLP);
-            isLP = _checkDuplicateTokens(receiveTokens, check_, isLP);
+            hasLP = _checkDuplicateTokens(payTokens, check_, hasLP);
+            hasLP = _checkDuplicateTokens(receiveTokens, check_, hasLP);
         }
         // Check amounts
         {
@@ -652,7 +652,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             }
         }
 
-        (receiveAmounts, feeAmount) = _multiswap(
+        QuoteState memory q = _multiswap(
             sender,
             payTokens,
             amounts,
@@ -660,6 +660,9 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             allocations,
             minReceiveAmounts
         );
+
+        receiveAmounts = q.receiveAmounts;
+        feeAmount = q.feeAmount;
 
         emit Multiswap(
             _txCount,
@@ -681,14 +684,13 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256[] memory amounts = new uint256[](1);
         address[] memory receiveTokens = new address[](1);
         uint256[] memory allocations = new uint256[](1);
-        uint256[] memory receiveAmounts = new uint256[](1);
 
         payTokens[0] = payToken;
         amounts[0] = payAmount;
         receiveTokens[0] = receiveToken;
         allocations[0] = 1e18;
 
-        (receiveAmounts, feeAmount) = _quoteMultiswap(
+        QuoteState memory q = _quoteMultiswap(
             _msgSender(),
             payTokens,
             amounts,
@@ -696,7 +698,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             allocations
         );
 
-        receiveAmount = receiveAmounts[0];
+        receiveAmount = q.receiveAmounts[0];
+        feeAmount = q.feeAmount;
     }
 
     function swap(
@@ -733,7 +736,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             address[] memory receiveTokens = new address[](1);
             uint256[] memory allocations = new uint256[](1);
             uint256[] memory minReceiveAmounts = new uint256[](1);
-            uint256[] memory receiveAmounts = new uint256[](1);
 
             payTokens[0] = payToken;
             amounts[0] = payAmount;
@@ -741,7 +743,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             allocations[0] = 1e18;
             minReceiveAmounts[0] = minReceiveAmount;
 
-            (receiveAmounts, feeAmount) = _multiswap(
+            QuoteState memory q = _multiswap(
                 sender,
                 payTokens,
                 amounts,
@@ -750,7 +752,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                 minReceiveAmounts
             );
 
-            receiveAmount = receiveAmounts[0];
+            receiveAmount = q.receiveAmounts[0];
+            feeAmount = q.feeAmount;
         }
 
         emit Swap(
@@ -772,14 +775,13 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256[] memory amounts = new uint256[](1);
         address[] memory receiveTokens = new address[](1);
         uint256[] memory allocations = new uint256[](1);
-        uint256[] memory receiveAmounts = new uint256[](1);
 
         payTokens[0] = payToken;
         amounts[0] = payAmount;
         receiveTokens[0] = address(this);
         allocations[0] = 1e18;
 
-        (receiveAmounts, feeAmount) = _quoteMultiswap(
+        QuoteState memory q = _quoteMultiswap(
             _msgSender(),
             payTokens,
             amounts,
@@ -787,7 +789,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             allocations
         );
 
-        receiveAmount = receiveAmounts[0];
+        receiveAmount = q.receiveAmounts[0];
+        feeAmount = q.feeAmount;
     }
 
     function stake(
@@ -817,7 +820,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             address[] memory receiveTokens = new address[](1);
             uint256[] memory allocations = new uint256[](1);
             uint256[] memory minReceiveAmounts = new uint256[](1);
-            uint256[] memory receiveAmounts = new uint256[](1);
 
             payTokens[0] = payToken;
             amounts[0] = payAmount;
@@ -825,7 +827,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             allocations[0] = 1e18;
             minReceiveAmounts[0] = minReceiveAmount;
 
-            (receiveAmounts, feeAmount) = _multiswap(
+            QuoteState memory q = _multiswap(
                 sender,
                 payTokens,
                 amounts,
@@ -834,7 +836,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                 minReceiveAmounts
             );
 
-            receiveAmount = receiveAmounts[0];
+            receiveAmount = q.receiveAmounts[0];
+            feeAmount = q.feeAmount;
         }
 
         emit Stake(_txCount, sender, payToken, payAmount, receiveAmount);
@@ -848,14 +851,13 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256[] memory amounts = new uint256[](1);
         address[] memory receiveTokens = new address[](1);
         uint256[] memory allocations = new uint256[](1);
-        uint256[] memory receiveAmounts = new uint256[](1);
 
         payTokens[0] = address(this);
         amounts[0] = payAmount;
         receiveTokens[0] = receiveToken;
         allocations[0] = 1e18;
 
-        (receiveAmounts, feeAmount) = _quoteMultiswap(
+        QuoteState memory q = _quoteMultiswap(
             _msgSender(),
             payTokens,
             amounts,
@@ -863,7 +865,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             allocations
         );
 
-        receiveAmount = receiveAmounts[0];
+        receiveAmount = q.receiveAmounts[0];
+        feeAmount = q.feeAmount;
     }
 
     function unstake(
@@ -889,7 +892,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         address[] memory receiveTokens = new address[](1);
         uint256[] memory allocations = new uint256[](1);
         uint256[] memory minReceiveAmounts = new uint256[](1);
-        uint256[] memory receiveAmounts = new uint256[](1);
 
         payTokens[0] = address(this);
         amounts[0] = payAmount;
@@ -897,7 +899,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         allocations[0] = 1e18;
         minReceiveAmounts[0] = minReceiveAmount;
 
-        (receiveAmounts, feeAmount) = _multiswap(
+        QuoteState memory q = _multiswap(
             sender,
             payTokens,
             amounts,
@@ -906,7 +908,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             minReceiveAmounts
         );
 
-        receiveAmount = receiveAmounts[0];
+        receiveAmount = q.receiveAmounts[0];
+        feeAmount = q.feeAmount;
 
         emit Unstake(
             _txCount,
@@ -1050,13 +1053,16 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             allocations[n - 1] = 1e18 - totalAllocation;
         }
 
-        (receiveAmounts, feeAmount) = _quoteMultiswap(
+        QuoteState memory q = _quoteMultiswap(
             _msgSender(),
             payTokens,
             amounts,
             receiveTokens,
             allocations
         );
+
+        receiveAmounts = q.receiveAmounts;
+        feeAmount = q.feeAmount;
     }
 
     function _removeLiquidity(
@@ -1087,7 +1093,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             allocations[n - 1] = 1e18 - totalAllocation;
         }
 
-        (receiveAmounts, feeAmount) = _multiswap(
+        QuoteState memory q = _multiswap(
             sender,
             payTokens,
             amounts,
@@ -1095,6 +1101,9 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             allocations,
             minReceiveAmounts
         );
+
+        receiveAmounts = q.receiveAmounts;
+        feeAmount = q.feeAmount;
 
         emit RemoveLiquidity(
             _txCount,

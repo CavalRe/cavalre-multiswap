@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
+import { IPool } from "../contracts/Pool.sol";
 import "./TestRoot.t.sol";
 
 contract UnstakeTest is TestRoot {

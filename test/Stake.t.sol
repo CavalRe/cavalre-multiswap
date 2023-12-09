@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
+import { IPool } from "../contracts/Pool.sol";
 import {console} from "forge-std/console.sol";
 import "./TestRoot.t.sol";
 import "solady/src/utils/FixedPointMathLib.sol";
@@ -38,6 +39,13 @@ contract StakeTest is TestRoot {
             pool.balanceOf(alice),
             poolBalance + amountOut,
             "Pool balance after stake."
+        );
+
+        checkSF(
+            address(payToken),
+            address(pool),
+            amount,
+            amountOut
         );
     }
 
