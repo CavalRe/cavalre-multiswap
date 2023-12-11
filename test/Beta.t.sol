@@ -73,7 +73,7 @@ contract BetaTest is PoolTest {
 
         vm.startPrank(alice);
 
-        (pool, tokens) = setUpPool("Pool", "P", 2e17, 1e16);
+        (pool, tokens) = setUpPool("Pool", "P", 3e17, 1e16);
 
         for (uint256 i; i < NTOKENS; i++) {
             allMaxs[i] = type(uint256).max;
@@ -175,25 +175,31 @@ contract BetaTest is PoolTest {
 
     function _testBetaSwap(Token payToken, Token receiveToken) internal {
         uint256 amount = payToken.balanceOf(address(pool)) / 10;
+        // payToken.mint(amount);
+        // payToken.approve(address(pool), amount);
+
+        // emit log("Get swap quote");
+        // (amountQuote, feeQuote) = pool.quoteSwap(
+        //     address(payToken),
+        //     address(receiveToken),
+        //     amount
+        // );
+        // emit log("Execute swap");
+        // (amountOut, feeAmount) = pool.swap(
+        //     address(payToken),
+        //     address(receiveToken),
+        //     amount,
+        //     oneMin[0]
+        // );
+        // emit log("Swap executed");
+        // assertEq(amountQuote, amountOut, "amountOut");
+        // assertEq(feeQuote, feeAmount, "feeAmount");
+
         payToken.mint(amount);
         payToken.approve(address(pool), amount);
-
-        (amountQuote, feeQuote) = pool.quoteSwap(
-            address(payToken),
-            address(receiveToken),
-            amount
-        );
-        (amountOut, feeAmount) = pool.swap(
-            address(payToken),
-            address(receiveToken),
-            amount,
-            oneMin[0]
-        );
-        assertEq(amountQuote, amountOut, "amountOut");
-        assertEq(feeQuote, feeAmount, "feeAmount");
-
-        payToken.mint(amount);
-        payToken.approve(address(pool), amount);
+        emit log("==========");
+        emit log("Check swap");
+        emit log("==================================");
         checkSwap(pool, address(payToken), address(receiveToken), amount, 0);
     }
 
@@ -249,18 +255,14 @@ contract BetaTest is PoolTest {
     function testBetaStakeUSDC() public {
         uint256 amount = USDC.balanceOf(address(pool)) / 10;
 
-        console.log("Get quote");
-        (amountQuote, feeQuote) = pool.quoteStake(address(USDC), amount);
-        console.log("Stake");
-        (amountOut, feeAmount) = pool.stake(address(USDC), amount, oneMin[0]);
-        assertEq(amountQuote, amountOut, "amountOut");
-        assertEq(feeQuote, feeAmount, "feeAmount");
+        // (amountQuote, feeQuote) = pool.quoteStake(address(USDC), amount);
+        // (amountOut, feeAmount) = pool.stake(address(USDC), amount, oneMin[0]);
+        // assertEq(amountQuote, amountOut, "amountOut");
+        // assertEq(feeQuote, feeAmount, "feeAmount");
 
         USDC.mint(amount);
         USDC.approve(address(pool), amount);
-        console.log("Check stake");
         checkStake(pool, address(USDC), amount, 0);
-        console.log("Stake checked");
     }
 
     function testBetaStakeAVAX() public {
@@ -302,7 +304,7 @@ contract BetaTest is PoolTest {
         assertEq(feeQuote, feeAmount, "feeAmount");
     }
 
-    function testBetaMixedStake() public {
+    function testBetaMixedStakeUSDC() public {
         address[] memory payTokens = new address[](1);
         payTokens[0] = address(USDC);
         uint256[] memory amounts = new uint256[](1);
@@ -314,22 +316,70 @@ contract BetaTest is PoolTest {
         receiveTokens[1] = address(BTCb);
         allocations[0] = 5e17;
         allocations[1] = 5e17;
-        (receiveAmountQuotes, feeQuote) = pool.quoteMultiswap(
-            payTokens,
-            amounts,
-            receiveTokens,
-            allocations
-        );
-        (receiveAmounts, feeAmount) = pool.multiswap(
+        // (receiveAmountQuotes, feeQuote) = pool.quoteMultiswap(
+        //     payTokens,
+        //     amounts,
+        //     receiveTokens,
+        //     allocations
+        // );
+        // (receiveAmounts, feeAmount) = pool.multiswap(
+        //     payTokens,
+        //     amounts,
+        //     receiveTokens,
+        //     allocations,
+        //     twoMins
+        // );
+        // assertEq(receiveAmountQuotes[0], receiveAmounts[0], "amountOut 1");
+        // assertEq(receiveAmountQuotes[1], receiveAmounts[1], "amountOut 2");
+        // assertEq(feeQuote, feeAmount, "feeAmount");
+
+        checkMultiswap(
+            pool,
             payTokens,
             amounts,
             receiveTokens,
             allocations,
             twoMins
         );
-        assertEq(receiveAmountQuotes[0], receiveAmounts[0], "amountOut 1");
-        assertEq(receiveAmountQuotes[1], receiveAmounts[1], "amountOut 2");
-        assertEq(feeQuote, feeAmount, "feeAmount");
+    }
+
+    function testBetaMixedStakeWAVAX() public {
+        address[] memory payTokens = new address[](1);
+        payTokens[0] = address(WAVAX);
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = WAVAX.balanceOf(address(pool)) / 10;
+
+        address[] memory receiveTokens = new address[](2);
+        uint256[] memory allocations = new uint256[](2);
+        receiveTokens[0] = address(pool);
+        receiveTokens[1] = address(WETHe);
+        allocations[0] = 5e17;
+        allocations[1] = 5e17;
+        // (receiveAmountQuotes, feeQuote) = pool.quoteMultiswap(
+        //     payTokens,
+        //     amounts,
+        //     receiveTokens,
+        //     allocations
+        // );
+        // (receiveAmounts, feeAmount) = pool.multiswap(
+        //     payTokens,
+        //     amounts,
+        //     receiveTokens,
+        //     allocations,
+        //     twoMins
+        // );
+        // assertEq(receiveAmountQuotes[0], receiveAmounts[0], "amountOut 1");
+        // assertEq(receiveAmountQuotes[1], receiveAmounts[1], "amountOut 2");
+        // assertEq(feeQuote, feeAmount, "feeAmount");
+
+        checkMultiswap(
+            pool,
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations,
+            twoMins
+        );
     }
 
     function testBetaMixedStakePayAVAX() public {

@@ -179,6 +179,10 @@ contract PoolTest is Test {
         return count;
     }
 
+    function delta(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a > b ? a - b : b - a;
+    }
+
     function checkMultiswap(
         TestPool pool,
         address[] memory payTokens,
@@ -195,28 +199,13 @@ contract PoolTest is Test {
         c.initialTokensPerShare = pool.tokensPerShare();
         c.initialBalances = getBalances(pool);
         c.initialScales = getScales(pool);
-        console.log("Check get quote");
-        // QuoteState memory quoteState = pool._quoteMultiswap(
-        //     alice,
-        //     payTokens,
-        //     amounts,
-        //     receiveTokens,
-        //     allocations
-        // );
-        console.log("Check multiswap");
-        console.log("Pay tokens length", payTokens.length);
-        console.log("Amounts length", amounts.length);
-        console.log("Receive tokens length", receiveTokens.length);
-        console.log("Allocations length", allocations.length);
-        console.log("Min receive amounts length", minReceiveAmounts.length);
-        console.log("Pay token", payTokens[0]);
-        console.log("Receive token", receiveTokens[0]);
-        console.log("Pool address", address(pool));
-        console.log("Pool info address", pool.info().token);
-        // for (uint256 i; i < assetStates.length; i++) {
-        //     console.log(assetStates[i].symbol, assetStates[i].token);
-        //     console.log(assetStates[i].symbol, assetStates[i].decimals);
-        // }
+        QuoteState memory q = pool._quoteMultiswap(
+            alice,
+            payTokens,
+            amounts,
+            receiveTokens,
+            allocations
+        );
         (receiveAmounts, feeAmount) = pool.multiswap(
             payTokens,
             amounts,
@@ -232,27 +221,132 @@ contract PoolTest is Test {
         c.balanceIncrease = new uint256[](assetStates.length + 1);
         c.balanceDecrease = new uint256[](assetStates.length + 1);
 
-        // emit log_named_uint(
-        //     "Tokens per share (initial)",
-        //     c.initialTokensPerShare
-        // );
-        // emit log_named_uint(
-        //     "Tokens per share (final)",
-        //     c.finalTokensPerShare
-        // );
-        // emit log_named_uint(
-        //     "Tokens per share (quoteState)",
-        //     quoteState.finalTokensPerShare
-        // );
-        // emit log_named_uint("LP tokens (initial)", c.initialTokens);
-        // emit log_named_uint("LP tokens (final)", c.finalTokens);
-        // emit log_named_uint("Shares (initial)", c.initialShares);
-        // emit log_named_uint("Shares (final)", c.finalShares);
+        if (c.initialTokens != q.initialTokens) {
+            emit log("=======================");
+            emit log("Initial tokens mismatch");
+            emit log("=======================");
+            emit log_named_uint("Initial tokens         ", c.initialTokens);
+            emit log_named_uint("Initial tokens (quote) ", q.initialTokens);
+            emit log("-----------------------");
+            emit log_named_uint(
+                "Delta                  ",
+                delta(c.initialTokens, q.initialTokens)
+            );
+            fail();
+        }
+        if (c.finalTokens != q.finalTokens) {
+            emit log("=====================");
+            emit log("Final tokens mismatch");
+            emit log("=====================");
+            emit log_named_uint("Final tokens        ", c.finalTokens);
+            emit log_named_uint("Final tokens (quote)", q.finalTokens);
+            emit log("---------------------");
+            emit log_named_uint(
+                "Delta                ",
+                delta(c.finalTokens, q.finalTokens)
+            );
+            emit log_named_uint(
+                "Increase             ",
+                delta(c.finalTokens, c.initialTokens)
+            );
+            emit log_named_uint(
+                "Increase (quote)     ",
+                delta(q.finalTokens, q.initialTokens)
+            );
+            fail();
+        }
+        if (c.initialShares != q.initialShares) {
+            emit log("=======================");
+            emit log("Initial shares mismatch");
+            emit log("=======================");
+            emit log_named_uint("Initial shares         ", c.initialShares);
+            emit log_named_uint("Initial shares (quote) ", q.initialShares);
+            emit log("-----------------------");
+            emit log_named_uint(
+                "Delta                  ",
+                delta(c.initialShares, q.initialShares)
+            );
+            fail();
+        }
 
-        c.balanceIncrease[0] += feeAmount;
+
+        emit log("");
+        emit log_named_uint("Fee amount              ", feeAmount);
+        emit log_named_uint("Protocol fee            ", pool.protocolFee());
+        emit log_named_uint(
+            "Initial tokens per share",
+            c.initialTokensPerShare
+        );
+        emit log_named_uint(
+            "Shares allocated        ",
+            feeAmount.fullMulDiv(pool.protocolFee(), c.initialTokensPerShare)
+        );
+
+        emit log("");
+        if (c.finalShares != q.finalShares) {
+            emit log("=====================");
+            emit log("Final shares mismatch");
+            emit log("=====================");
+            emit log_named_uint("Final shares         ", c.finalShares);
+            emit log_named_uint("Final shares (quote) ", q.finalShares);
+            emit log("---------------------");
+            emit log_named_uint(
+                "Delta                ",
+                delta(c.finalShares, q.finalShares)
+            );
+            emit log_named_uint(
+                "Increase             ",
+                delta(c.finalShares, c.initialShares)
+            );
+            emit log_named_uint(
+                "Increase (quote)     ",
+                delta(q.finalShares, q.initialShares)
+            );
+            fail();
+        }
+        if (c.initialTokensPerShare != q.initialTokensPerShare) {
+            emit log("=================================");
+            emit log("Initial tokens per share mismatch");
+            emit log("=================================");
+            emit log_named_uint(
+                "Initial tokens per share         ",
+                c.initialTokensPerShare
+            );
+            emit log_named_uint(
+                "Initial tokens per share (quote) ",
+                q.initialTokensPerShare
+            );
+            emit log("---------------------------------");
+            emit log_named_uint(
+                "Delta                            ",
+                delta(c.initialTokensPerShare, q.initialTokensPerShare)
+            );
+            fail();
+        }
+        if (c.finalTokensPerShare != q.finalTokensPerShare) {
+            emit log("===============================");
+            emit log("Final tokens per share mismatch");
+            emit log("===============================");
+            emit log_named_uint(
+                "Final tokens per share         ",
+                c.finalTokensPerShare
+            );
+            emit log_named_uint(
+                "Final tokens per share (quote) ",
+                q.finalTokensPerShare
+            );
+            emit log("-------------------------------");
+            emit log_named_uint(
+                "Delta                          ",
+                delta(c.finalTokensPerShare, q.finalTokensPerShare)
+            );
+            fail();
+        }
 
         //Handle pool balances
-        // console.log("Handle pool balances");
+        // emit log("Handle pool balances");
+        c.balanceIncrease[0] += feeAmount;
+
         if (payTokens[0] == address(pool)) {
             c.balanceDecrease[0] += amounts[0].mulWadUp(
                 c.initialTokensPerShare
@@ -278,20 +372,18 @@ contract PoolTest is Test {
         //     c.finalBalances[0]
         // );
 
-        // console.log("Check pool balance");
+        // emit log("Check pool balance");
         assertEq(
-            c.initialBalances[0] +
-                c.balanceIncrease[0] -
-                c.balanceDecrease[0],
+            c.initialBalances[0] + c.balanceIncrease[0] - c.balanceDecrease[0],
             c.finalBalances[0],
             "Pool balance mismatch"
         );
 
         //Handle asset balances
-        // console.log("Handle asset balances");
+        // emit log("Handle asset balances");
         for (uint256 i; i < amounts.length; i++) {
             if (payTokens[i] == address(pool)) continue;
-            // console.log(pool.asset(payTokens[i]).symbol);
+            // emit log(pool.asset(payTokens[i]).symbol);
             uint256 index = pool.asset(payTokens[i]).index;
             c.balanceIncrease[index + 1] += amounts[i] * conversions[index];
         }
@@ -306,8 +398,8 @@ contract PoolTest is Test {
 
         // Check balances and scales
         for (uint256 i; i < assetStates.length + 1; i++) {
-            // if (i == 0) console.log("Pool balance");
-            // else console.log(assetStates[i + 1].symbol, "balance");
+            // if (i == 0) emit log("Pool balance");
+            // else emit log(assetStates[i + 1].symbol, "balance");
             assertEq(
                 c.finalBalances[i],
                 c.initialBalances[i] +
@@ -315,15 +407,23 @@ contract PoolTest is Test {
                     c.balanceDecrease[i],
                 "Balance mismatch"
             );
-            assertEq(
-                c.finalScales[i],
-                c.initialScales[i],
-                "Scale mismatch"
-            );
+            assertEq(c.finalScales[i], c.initialScales[i], "Scale mismatch");
         }
 
-        console.log(
+        emit log("");
+        emit log("");
+        emit log("");
+        emit log("");
+        emit log("");
+        emit log("");
+        emit log(
+            "==================================================================="
+        );
+        emit log(
             "Note: Check case where pool token amount in is less than fee amount"
+        );
+        emit log(
+            "==================================================================="
         );
 
         // Compute scaled value flows
@@ -333,21 +433,18 @@ contract PoolTest is Test {
         if (payTokens[0] == address(pool)) {
             if (amounts[0] > feeAmount) {
                 c.scaledValueIn += c.finalScales[0].fullMulDiv(
-                    amounts[0].mulWadUp(c.initialTokensPerShare) -
-                        feeAmount,
+                    amounts[0].mulWadUp(c.initialTokensPerShare) - feeAmount,
                     c.finalBalances[0]
                 );
             } else {
                 c.scaledValueOut += c.finalScales[0].fullMulDiv(
-                    feeAmount -
-                        amounts[0].mulWadUp(c.initialTokensPerShare),
+                    feeAmount - amounts[0].mulWadUp(c.initialTokensPerShare),
                     c.finalBalances[0]
                 );
             }
         } else if (receiveTokens[0] == address(pool)) {
             c.scaledValueOut += c.finalScales[0].fullMulDiv(
-                receiveAmounts[0].mulWadUp(c.finalTokensPerShare) +
-                    feeAmount,
+                receiveAmounts[0].mulWadUp(c.finalTokensPerShare) + feeAmount,
                 c.finalBalances[0]
             );
         } else {
@@ -413,7 +510,7 @@ contract PoolTest is Test {
         assertApproxEqRel(
             c.scaledValueIn,
             c.scaledValueOut,
-            10 ** (18-minDecimals),
+            10 ** (18 - minDecimals),
             "Scaled value in does not equal scaled value out"
         );
     }

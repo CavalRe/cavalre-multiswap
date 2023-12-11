@@ -35,15 +35,20 @@ struct AssetState {
 }
 
 struct QuoteState {
+    uint256 initialTokens;
+    uint256 initialShares;
+    uint256 initialTokensPerShare;
     uint256 fee;
     uint256 discount;
     uint256 poolAlloc;
     uint256 lastPoolBalance;
     uint256 scaledPoolOut;
+    uint256 sharesIn;
     uint256 poolIn;
     uint256 poolOut;
     uint256 scaledValueIn;
-    uint256 newShares;
+    uint256 finalTokens;
+    uint256 finalShares;
     uint256 finalTokensPerShare;
     uint256[] receiveAmounts;
     uint256 feeAmount;

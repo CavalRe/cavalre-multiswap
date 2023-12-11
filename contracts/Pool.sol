@@ -10,9 +10,9 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.
 import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import { Test } from "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 
-contract Pool is IPool, LPToken, ReentrancyGuard, Test {
+contract Pool is IPool, LPToken, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using FixedPointMathLib for uint256;
     using FixedPointMathLib for int256;
@@ -181,7 +181,9 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
     function initialize() public onlyUninitialized onlyOwner {
         _isInitialized = 1;
 
+        emit log("Initializing pool");
         _mint(_msgSender(), _poolState.scale);
+        emit log("Pool initialized");
         emit Initialized(_poolState.token);
     }
 
@@ -331,7 +333,10 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
         return hasLP;
     }
 
-    function distributeFee(uint256 amount) internal {
+    function distributeFee(
+        uint256 amount,
+        uint256 finalTokensPerShare
+    ) internal {
         uint256 totalShares = totalSupply();
         if (totalShares == 0) return; // Last LP token has been burned
         uint256 protocolAmount = amount.mulWadUp(_protocolFee);
@@ -340,10 +345,11 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
         if (protocolAmount != 0) {
             _allocateShares(
                 _protocolFeeRecipient,
-                protocolAmount.divWadUp(_tokensPerShare)
+                protocolAmount.divWadUp(finalTokensPerShare)
             );
+        } else {
+            _tokensPerShare = _totalTokens.divWadUp(totalSupply());
         }
-        _tokensPerShare = _totalTokens.divWadUp(totalSupply());
 
         emit DistributeFee(_txCount, lpAmount, protocolAmount);
     }
@@ -359,19 +365,21 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
             q.feeAmount = 0;
             q.receiveAmounts = new uint256[](_assetAddresses.length);
             for (uint256 i; i < _assetAddresses.length; i++) {
-                q.receiveAmounts[i] = IERC20(_assetAddresses[i])
-                    .balanceOf(address(this));
+                q.receiveAmounts[i] = IERC20(_assetAddresses[i]).balanceOf(
+                    address(this)
+                );
             }
             return q;
         }
 
         q.receiveAmounts = new uint256[](receiveTokens.length);
+        q.initialTokens = totalTokens();
+        q.initialShares = totalSupply();
+        q.initialTokensPerShare = tokensPerShare();
 
         // Compute fee
         for (uint256 i; i < receiveTokens.length; i++) {
-            q.fee += allocations[i].mulWadUp(
-                _assetState[receiveTokens[i]].fee
-            );
+            q.fee += allocations[i].mulWadUp(_assetState[receiveTokens[i]].fee);
         }
         q.discount = _discount[sender];
         if (q.fee > 0 && q.discount > 0) {
@@ -381,40 +389,34 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
         // Compute scaledValueIn
         // Contribution from assets only
         for (uint256 i; i < payTokens.length; i++) {
-            address token_ = payTokens[i];
-            if (token_ != address(this)) {
-                AssetState storage assetIn = _assetState[token_];
-                uint256 amount_ = amounts[i] * assetIn.conversion; // Convert to canonical
+            address payToken = payTokens[i];
+            if (payToken != address(this)) {
+                AssetState storage assetIn = _assetState[payToken];
+                uint256 amount = amounts[i] * assetIn.conversion; // Convert to canonical
                 q.scaledValueIn += assetIn.scale.fullMulDiv(
-                    amount_,
-                    assetIn.balance + amount_
+                    amount,
+                    assetIn.balance + amount
                 );
             }
         }
 
         q.poolAlloc = q.fee;
         if (receiveTokens[0] == address(this)) {
-            q.poolAlloc += allocations[0].mulWadUp(
-                ONE - q.fee
-            );
+            q.poolAlloc += allocations[0].mulWadUp(ONE - q.fee);
         }
         q.lastPoolBalance = _poolState.balance;
-        q.scaledPoolOut = q.scaledValueIn.mulWadUp(
-            q.poolAlloc
-        );
+        q.scaledPoolOut = q.scaledValueIn.mulWadUp(q.poolAlloc);
         if (payTokens[0] == address(this)) {
-            q.poolIn = amounts[0].mulWadUp(_poolState.tokensPerShare);
+            q.sharesIn = amounts[0];
+            q.poolIn = amounts[0].mulWadUp(q.initialTokensPerShare); // Convert shares to tokens
             q.poolOut = q.poolAlloc.fullMulDiv(
-                q.scaledValueIn.mulWadUp(
-                    q.lastPoolBalance - q.poolIn
-                ) + _poolState.scale.mulWadUp(q.poolIn),
+                q.scaledValueIn.mulWadUp(q.lastPoolBalance - q.poolIn) +
+                    _poolState.scale.mulWadUp(q.poolIn),
                 _poolState.scale - q.scaledPoolOut
             );
             q.scaledValueIn += _poolState.scale.fullMulDiv(
                 q.poolIn,
-                q.lastPoolBalance +
-                    q.poolOut -
-                    q.poolIn
+                q.lastPoolBalance + q.poolOut - q.poolIn
             );
             q.feeAmount = q.poolOut;
         } else {
@@ -423,30 +425,31 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
                 _poolState.scale - q.scaledPoolOut
             );
             if (q.poolAlloc > 0) {
-                q.feeAmount = q.poolOut.fullMulDiv(
-                    q.fee,
-                    q.poolAlloc
-                );
+                q.feeAmount = q.poolOut.fullMulDiv(q.fee, q.poolAlloc);
             }
         }
 
         // Compute receiveAmounts
-        q.newShares = q.feeAmount.fullMulDiv(_protocolFee,_poolState.tokensPerShare);
-        q.finalTokensPerShare = (_totalTokens +
-            q.poolOut -
-            q.poolIn).divWadUp(totalSupply() + q.newShares);
+        q.finalTokens = q.initialTokens + q.poolOut - q.poolIn;
+        q.finalTokensPerShare = (q.initialTokens -
+            q.poolIn +
+            q.feeAmount.mulWadUp(ONE - _protocolFee)).divWadUp(
+                q.initialShares - q.sharesIn
+            );
+        q.finalShares = q.finalTokens.divWadUp(q.finalTokensPerShare);
 
         address receiveToken;
         uint256 allocation;
         uint256 scaledValueOut;
         for (uint256 i; i < receiveTokens.length; i++) {
             receiveToken = receiveTokens[i];
-            allocation = allocations[i].mulWadUp(ONE - q.fee);
-            scaledValueOut = q.scaledValueIn.mulWadUp(allocation);
             if (receiveToken == address(this)) {
-                q.receiveAmounts[i] = (q.poolOut -
-                    q.feeAmount).divWadUp(_poolState.tokensPerShare);
+                q.receiveAmounts[i] = (q.poolOut - q.feeAmount).divWadUp(
+                    q.finalTokensPerShare
+                );
             } else {
+                allocation = allocations[i].mulWadUp(ONE - q.fee);
+                scaledValueOut = q.scaledValueIn.mulWadUp(allocation);
                 AssetState storage assetOut = _assetState[receiveToken];
                 q.receiveAmounts[i] =
                     assetOut.balance.fullMulDiv(
@@ -458,9 +461,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
         }
     }
 
-    function _disable(
-        address receiver
-    ) private returns (QuoteState memory q) {
+    function _disable(address receiver) private returns (QuoteState memory q) {
         q.receiveAmounts = new uint256[](_assetAddresses.length);
 
         // Burn all LP tokens
@@ -556,7 +557,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard, Test {
         }
 
         // Distribute fee
-        distributeFee(q.feeAmount);
+        distributeFee(q.feeAmount, q.finalTokensPerShare);
 
         // Update pool balance
         _updatePoolBalance();

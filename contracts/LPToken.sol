@@ -15,7 +15,9 @@ import {Users} from "./Users.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {FixedPointMathLib} from "solady/src/utils/FixedPointMathLib.sol";
 
-contract LPToken is ILPToken, ERC20, Users {
+import { Test } from "forge-std/Test.sol";
+
+contract LPToken is ILPToken, ERC20, Users, Test {
     using FixedPointMathLib for uint256;
 
     mapping(address => uint256) private _balances;
@@ -76,6 +78,7 @@ contract LPToken is ILPToken, ERC20, Users {
     }
 
     function _mint(address account, uint256 shares) internal override {
+        emit log("Minting shares");
         if (_isBlocked[account]) revert UserNotAllowed(account);
         super._mint(account, shares);
         _totalTokens = totalSupply().mulWadUp(_tokensPerShare);
@@ -94,6 +97,7 @@ contract LPToken is ILPToken, ERC20, Users {
     }
 
     function _allocateShares(address recipient, uint256 shares) internal {
+        emit log("Allocating shares");
         super._mint(recipient, shares);
         _tokensPerShare = _totalTokens.divWadUp(totalSupply());
     }

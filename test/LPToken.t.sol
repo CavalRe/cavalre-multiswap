@@ -16,8 +16,8 @@ contract PoolMintable is Pool {
         uint256 tau_
     ) Pool(name_, symbol_, protocolFee_, tau_, address(1234)) {}
 
-    function distributeFee_(uint256 amount) public {
-        super.distributeFee(amount);
+    function distributeFee_(uint256 amount, uint256 finalTokensPerShare) public {
+        super.distributeFee(amount, finalTokensPerShare);
     }
 
     function mint_(uint256 amount) public {
@@ -271,7 +271,7 @@ contract LPTokenTest is Test {
 
         vm.stopPrank();
 
-        pool.distributeFee_(2 * amount);
+        pool.distributeFee_(2 * amount, 1e18);
 
         uint256 protocolFee = pool.protocolFee();
 
