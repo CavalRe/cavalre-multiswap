@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-import "../contracts/Pool.sol";
-import "../test/Token.t.sol";
+import {Pool, FixedPointMathLib} from "../contracts/Pool.sol";
+import {Token} from "../test/Token.t.sol";
 import "forge-std/Script.sol";
 import "forge-std/Test.sol";
 
@@ -13,6 +13,8 @@ contract DeployTokensAndPoolScript is Script, Test {
 
     Pool private pool;
     uint256 private protocolFee = 5e17;
+    address private multisigAddress = vm.envAddress("MULTISIG_ADDRESS");
+    uint256 private tokensPerShare = 1e18;
     uint256 private tau = 1e16;
     uint256 private bps = 1e14;
     uint256 private marketCap = 1e25;
@@ -52,8 +54,6 @@ contract DeployTokensAndPoolScript is Script, Test {
 
         vm.startBroadcast(deployerPrivateKey);
 
-
-
         tokens[0] = new Token("Wrapped AVAX", "WAVAX", 18);
         tokens[1] = new Token("USD Coin", "USDC", 6);
         tokens[2] = new Token("TetherToken", "USDt", 6);
@@ -69,6 +69,8 @@ contract DeployTokensAndPoolScript is Script, Test {
             "Pool",
             "P",
             protocolFee,
+            multisigAddress,
+            tokensPerShare,
             tau,
             vm.envAddress("WRAPPED_NATIVE_TOKEN")
         );

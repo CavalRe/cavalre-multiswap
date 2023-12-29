@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import {console} from "forge-std/console.sol";
-import "./TestRoot.t.sol";
-import "../contracts/Pool.sol";
+import {TestRoot, Token} from "./TestRoot.t.sol";
+import {PoolState, IPool, AssetState} from "../contracts/Pool.sol";
 
 contract InfoTest is TestRoot {
     /// @dev check number of tokens return is equal to the initial number of tokens

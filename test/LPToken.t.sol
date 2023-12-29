@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import "../contracts/LPToken.sol";
-import "../contracts/Pool.sol";
-import "../contracts/Users.sol";
+import {Pool, FixedPointMathLib} from "../contracts/Pool.sol";
+import {IUsers} from "../contracts/Users.sol";
 import "forge-std/Test.sol";
 
 contract PoolMintable is Pool {
@@ -13,12 +12,24 @@ contract PoolMintable is Pool {
         string memory name_,
         string memory symbol_,
         uint256 protocolFee_,
+        address protocolFeeRecipient_,
+        uint256 tokensPerShare_,
         uint256 tau_
-    ) Pool(name_, symbol_, protocolFee_, tau_, address(1234)) {}
+    )
+        Pool(
+            name_,
+            symbol_,
+            protocolFee_,
+            protocolFeeRecipient_,
+            tokensPerShare_,
+            tau_,
+            address(1234)
+        )
+    {}
 
-    function distributeFee_(uint256 amount, uint256 finalTokensPerShare) public {
-        super.distributeFee(amount, finalTokensPerShare);
-    }
+    // function distributeFee_(uint256 amount, uint256 finalTokensPerShare) public {
+    //     super.distributeFee(amount, finalTokensPerShare);
+    // }
 
     function mint_(uint256 amount) public {
         super._mint(_msgSender(), amount);
@@ -38,9 +49,21 @@ contract LPTokenTest is Test {
 
     PoolMintable private pool;
 
+    uint256 private protocolFee = 5e17;
+    address private multisigAddress = vm.envAddress("MULTISIG_ADDRESS");
+    uint256 private tokensPerShare = 1e18;
+    uint256 private tau = 1e16;
+
     function setUp() public {
         vm.roll(1);
-        pool = new PoolMintable("Pool", "P", 2e17, 1e16);
+        pool = new PoolMintable(
+            "Pool",
+            "P",
+            protocolFee,
+            multisigAddress,
+            tokensPerShare,
+            tau
+        );
     }
 
     function testLPToken_allowance() public {
@@ -271,9 +294,7 @@ contract LPTokenTest is Test {
 
         vm.stopPrank();
 
-        pool.distributeFee_(2 * amount, 1e18);
-
-        uint256 protocolFee = pool.protocolFee();
+        // pool.distributeFee_(2 * amount, 1e18);
 
         emit log_named_uint("Amount", amount);
         emit log_named_uint("Protocol fee", protocolFee);

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import { IPool } from "../contracts/Pool.sol";
-import "./TestRoot.t.sol";
+import {IPool, FixedPointMathLib} from "../contracts/Pool.sol";
+import {TestRoot, Token} from "./TestRoot.t.sol";
 
 contract UnstakeTest is TestRoot {
     using FixedPointMathLib for uint256;
@@ -91,9 +91,15 @@ contract UnstakeTest is TestRoot {
         vm.assume(
             (amount > 1e17) && (amount < 1e50) && (3 * amount < assetBalance)
         );
-        emit log_named_uint("Alice's receive balance before minting.", receiveToken.balanceOf(alice));
+        emit log_named_uint(
+            "Alice's receive balance before minting.",
+            receiveToken.balanceOf(alice)
+        );
         receiveToken.mint(amount);
-        emit log_named_uint("Alice's receive after before minting.", receiveToken.balanceOf(alice));
+        emit log_named_uint(
+            "Alice's receive after before minting.",
+            receiveToken.balanceOf(alice)
+        );
 
         assertEq(
             receiveToken.balanceOf(alice),
@@ -104,9 +110,15 @@ contract UnstakeTest is TestRoot {
         receiveToken.approve(address(pool), amount);
 
         uint256 amountOut;
-        emit log_named_uint("Alice's pool balance before staking.", pool.tokensOf(alice));
+        emit log_named_uint(
+            "Alice's pool balance before staking.",
+            pool.tokensOf(alice)
+        );
         (amountOut, ) = pool.stake(address(receiveToken), amount, 0);
-        emit log_named_uint("Alice's pool balance after staking.", pool.tokensOf(alice));
+        emit log_named_uint(
+            "Alice's pool balance after staking.",
+            pool.tokensOf(alice)
+        );
 
         assertEq(
             receiveToken.balanceOf(alice),
@@ -141,7 +153,10 @@ contract UnstakeTest is TestRoot {
                 receiveBalance + receiveAmount,
                 "Alice's receive token balance after unstaking."
             );
-            emit log_named_uint("Alice's pool balance after unstaking.", pool.tokensOf(alice));
+            emit log_named_uint(
+                "Alice's pool balance after unstaking.",
+                pool.tokensOf(alice)
+            );
             assertApproxEqRel(
                 pool.tokensOf(alice),
                 poolBalance +
@@ -187,9 +202,7 @@ contract UnstakeTest is TestRoot {
         uint256 receiveBalance = receiveToken.balanceOf(alice);
         uint256 poolBalance = pool.balanceOf(alice);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(IPool.ZeroAmount.selector)
-        );
+        vm.expectRevert(abi.encodeWithSelector(IPool.ZeroAmount.selector));
         pool.unstake(address(receiveToken), 0, 0);
         assertEq(pool.balanceOf(alice), poolBalance);
         assertEq(receiveToken.balanceOf(alice), receiveBalance);

@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import { AssetState } from "../contracts/interfaces/IPool.sol";
-import { TestPool } from "./Pool.t.sol";
-import "./Token.t.sol";
+import {Pool, AssetState} from "../contracts/Pool.sol";
+import {FixedPointMathLib} from "./Pool.t.sol";
+import {Token} from "./Token.t.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "forge-std/Test.sol";
-import "solady/src/utils/FixedPointMathLib.sol";
 
 contract TestRoot is Test, Context {
     using FixedPointMathLib for uint256;
@@ -15,13 +14,19 @@ contract TestRoot is Test, Context {
 
     uint256 internal constant ONE = 1e18;
     uint256 internal constant NTOKENS = 100;
+    uint256 internal constant TO_INTERNAL = 1e9;
 
     Token[] internal tokens;
     address[] internal addresses;
-    TestPool internal pool;
+    Pool internal pool;
     address alice = address(1);
     address bob = address(2);
     address carol = address(3);
+
+    uint256 private protocolFee = 5e17;
+    address private multisigAddress = vm.envAddress("MULTISIG_ADDRESS");
+    uint256 private tokensPerShare = 1e18;
+    uint256 private tau = 1e16;
 
     function setUp() public {
         vm.startPrank(alice);
@@ -51,10 +56,15 @@ contract TestRoot is Test, Context {
             addresses[i] = address(token);
         }
 
-        uint256 protocolFee;
-        // protocolFee = 2e17;
-
-        pool = new TestPool("Pool", "P", protocolFee, 1e16, addresses[0]);
+        pool = new Pool(
+            "Pool",
+            "P",
+            protocolFee, // 18 decimals
+            multisigAddress,
+            tokensPerShare, // 18 decimals
+            tau, // 18 decimals
+            addresses[0]
+        );
         pool.setProtocolFee(5e17);
 
         for (uint256 i; i < NTOKENS; i++) {
@@ -65,26 +75,25 @@ contract TestRoot is Test, Context {
         }
 
         pool.initialize();
-        pool.distributeTokens(pool.totalTokens());
     }
 
     function weight(address token) public view returns (uint256) {
         if (token == address(pool)) return ONE;
         AssetState memory asset_ = pool.asset(token);
-        return asset_.scale.divWadUp(pool.info().scale);
+        return asset_.scale.divRayUp(pool.info().scale) / TO_INTERNAL;
     }
 
     function price(address token) public view returns (uint256) {
         if (token == address(pool)) return ONE;
         AssetState memory asset_ = pool.asset(token);
         uint256 weight_ = weight(token);
-        return weight_.fullMulDiv(pool.info().balance, asset_.balance);
+        return weight_.fullMulDiv(pool.info().balance, asset_.balance) / TO_INTERNAL;
     }
 
     function fee(address token) public view returns (uint256) {
         if (token == address(pool)) return 0;
         AssetState memory asset_ = pool.asset(token);
-        return asset_.fee;
+        return asset_.fee / TO_INTERNAL;
     }
 
     function checkSF(

@@ -9,7 +9,7 @@ struct PoolState {
     address token;
     string name;
     string symbol;
-    uint8 decimals;
+    uint8 internalDecimals;
     int256 omega;
     uint256 tokensPerShare; // LP token price per share
     uint256 balance; // # of LP tokens
@@ -35,9 +35,23 @@ struct AssetState {
 }
 
 struct QuoteState {
+    // Inputs
+    address[] payTokens;
+    uint256[] payAmounts;
+    address[] receiveTokens;
+    uint256[] allocations;
+    // Outputs
+    uint256[] receiveAmounts;
+    uint256 feeAmount;
+    // Initial LP token state
     uint256 initialTokens;
     uint256 initialShares;
     uint256 initialTokensPerShare;
+    // Final LP token state
+    uint256 finalTokens;
+    uint256 finalTokensPerShare;
+    uint256 finalShares;
+    // Intermediate state
     uint256 fee;
     uint256 discount;
     uint256 poolAlloc;
@@ -47,11 +61,6 @@ struct QuoteState {
     uint256 poolIn;
     uint256 poolOut;
     uint256 scaledValueIn;
-    uint256 finalTokens;
-    uint256 finalShares;
-    uint256 finalTokensPerShare;
-    uint256[] receiveAmounts;
-    uint256 feeAmount;
 }
 
 interface IPool is ILPToken {
@@ -114,8 +123,8 @@ interface IPool is ILPToken {
     event AddLiquidity(
         uint256 indexed txCount,
         address indexed user,
-        uint256[] payAmounts,
-        uint256 receiveAmount
+        uint256 poolAmount,
+        uint256[] payAmounts
     );
 
     event RemoveLiquidity(
@@ -193,11 +202,29 @@ interface IPool is ILPToken {
 
     function txCount() external view returns (uint256);
 
+    function conversion(address token) external view returns (uint256);
+
     function isInitialized() external view returns (bool);
+
+    function _info() external view returns (PoolState memory);
+
+    function _assets() external view returns (AssetState[] memory);
+
+    function _state()
+        external
+        view
+        returns (PoolState memory, AssetState[] memory);
+
+    function _asset(address token) external view returns (AssetState memory);
 
     function info() external view returns (PoolState memory);
 
     function assets() external view returns (AssetState[] memory);
+
+    function state()
+        external
+        view
+        returns (PoolState memory, AssetState[] memory);
 
     function assetAddresses() external view returns (address[] memory);
 
@@ -211,10 +238,7 @@ interface IPool is ILPToken {
         uint256[] memory amounts,
         address[] memory receiveTokens,
         uint256[] memory allocations
-    )
-        external
-        view
-        returns (QuoteState memory quoteState);
+    ) external view returns (QuoteState memory quoteState);
 
     function quoteMultiswap(
         address[] memory payTokens,
@@ -237,11 +261,17 @@ interface IPool is ILPToken {
         payable
         returns (uint256[] memory receiveAmounts, uint256 feeAmount);
 
+    function _quoteSwap(
+        address payToken,
+        address receiveToken,
+        uint256 payAmount
+    ) external view returns (QuoteState memory);
+
     function quoteSwap(
         address payToken,
         address receiveToken,
         uint256 payAmount
-    ) external returns (uint256 receiveAmount, uint256 feeAmount);
+    ) external view returns (uint256 receiveAmount, uint256 feeAmount);
 
     function swap(
         address payToken,
@@ -250,10 +280,15 @@ interface IPool is ILPToken {
         uint256 minReceiveAmount
     ) external payable returns (uint256 receiveAmount, uint256 feeAmount);
 
+    function _quoteStake(
+        address payToken,
+        uint256 payAmount
+    ) external view returns (QuoteState memory);
+
     function quoteStake(
         address payToken,
         uint256 payAmount
-    ) external returns (uint256 receiveAmount, uint256 feeAmount);
+    ) external view returns (uint256 receiveAmount, uint256 feeAmount);
 
     function stake(
         address payToken,
@@ -261,10 +296,15 @@ interface IPool is ILPToken {
         uint256 minReceiveAmount
     ) external payable returns (uint256 receiveAmount, uint256 feeAmount);
 
+    function _quoteUnstake(
+        address receiveToken,
+        uint256 payAmount
+    ) external view returns (QuoteState memory);
+
     function quoteUnstake(
         address receiveToken,
         uint256 payAmount
-    ) external returns (uint256 receiveAmount, uint256 feeAmount);
+    ) external view returns (uint256 receiveAmount, uint256 feeAmount);
 
     function unstake(
         address receiveToken,
@@ -272,20 +312,38 @@ interface IPool is ILPToken {
         uint256 minReceiveAmount
     ) external returns (uint256 receiveAmount, uint256 feeAmount);
 
+    function _quoteAddLiquidity(
+        address token,
+        uint256 amount
+    ) external view returns (QuoteState memory);
+
     function quoteAddLiquidity(
         address token,
         uint256 amount
-    ) external returns (uint256[] memory payAmounts);
+    )
+        external
+        view
+        returns (uint256[] memory payAmounts, uint256 receiveAmount);
 
     function addLiquidity(
         address token,
         uint256 amount,
         uint256[] memory maxPayAmounts
-    ) external payable returns (uint256[] memory payAmounts);
+    )
+        external
+        payable
+        returns (uint256[] memory payAmounts, uint256 receiveAmount);
+
+    function _quoteRemoveLiquidity(
+        uint256 amount
+    ) external view returns (QuoteState memory);
 
     function quoteRemoveLiquidity(
         uint256 amount
-    ) external returns (uint256[] memory receiveAmounts, uint256 feeAmount);
+    )
+        external
+        view
+        returns (uint256[] memory receiveAmounts, uint256 feeAmount);
 
     function removeLiquidity(
         uint256 amount,

@@ -29,14 +29,14 @@ pragma solidity 0.8.19;
 // (8) 0xdbda1821b80551c9d65939329250298aa3472ba22feea921c0cf5d620ea67b97
 // (9) 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
 
-import {TestPool} from "./Pool.t.sol";
-import "./Pool.t.sol";
-import "../contracts/Users.sol";
+import {PoolTest, Token} from "./Pool.t.sol";
+import {Pool, AssetState, QuoteState, FixedPointMathLib} from "../contracts/Pool.sol";
+import {Users, IUsers} from "../contracts/Users.sol";
 
 contract BetaTest is PoolTest {
     using FixedPointMathLib for uint256;
 
-    TestPool internal pool;
+    Pool internal pool;
     Token[] internal tokens;
     address internal wrappedNative;
 
@@ -59,11 +59,13 @@ contract BetaTest is PoolTest {
     uint256[] private allMins = new uint256[](NTOKENS);
     uint256[] private allMaxs = new uint256[](NTOKENS);
 
-    uint256 private amountOut;
-    uint256 private amountQuote;
-    uint256 private feeQuote;
-    uint256[] private payAmountQuotes;
-    uint256[] private receiveAmountQuotes;
+    // uint256 private amountOut;
+    // uint256 private amountQuote;
+    // uint256 private feeQuote;
+    // uint256[] private payAmountQuotes;
+    // uint256[] private receiveAmountQuotes;
+
+    uint256 private TO_INTERNAL;
 
     function setUp() public {
         uint256 startBalance = type(uint256).max / 2;
@@ -87,6 +89,8 @@ contract BetaTest is PoolTest {
         oneAmount[0] = 1e24;
         oneAllocation[0] = 1e18;
         oneMax[0] = type(uint256).max;
+
+        TO_INTERNAL = pool.conversion(address(pool));
     }
 
     function testDecimals() public {
@@ -131,7 +135,7 @@ contract BetaTest is PoolTest {
     function testBetaInit() public {
         AssetState[] memory assets = pool.assets();
         assertEq(assets.length, NTOKENS, "Number of assets in pool");
-        assertEq(pool.info().balance, pool.totalSupply(), "Pool balance");
+        assertEq(pool.info().balance, pool.totalTokens(), "Pool balance");
         emit log_named_uint("Pool balance", pool.info().balance);
         assertEq(pool.info().scale, marketCap * NTOKENS, "Pool scale");
         emit log_named_uint("Pool scale", pool.info().scale);
@@ -147,73 +151,215 @@ contract BetaTest is PoolTest {
         }
     }
 
-    function showAsset(AssetState memory _asset) internal {
-        // emit log_named_string("name", _asset.name);
-        emit log_named_string("symbol", _asset.symbol);
-        // emit log_named_uint("balanceOf", _asset.token.balanceOf(address(pool)));
-        emit log_named_uint("balance", _asset.balance);
-        emit log_named_uint("scale", _asset.scale);
-        emit log_named_uint("fee", _asset.fee);
-        emit log("-------");
+    function _testBetaSwap(
+        Token payToken,
+        Token receiveToken,
+        uint256 payAmount, // Token decimals
+        uint256 checkReceiveAmount, // Internal decimals
+        uint256 checkFeeAmount, // Internal decimals
+        string memory message
+    ) internal {
+        address[] memory payTokens = new address[](1);
+        payTokens[0] = address(payToken);
+        uint256[] memory payAmounts = new uint256[](1);
+        payAmounts[0] = payAmount;
+        address[] memory receiveTokens = new address[](1);
+        receiveTokens[0] = address(receiveToken);
+        uint256[] memory allocations = new uint256[](1);
+        allocations[0] = ONE;
+        uint256[] memory checkPayAmounts = new uint256[](0);
+        uint256[] memory checkReceiveAmounts = new uint256[](1);
+        checkReceiveAmounts[0] = checkReceiveAmount;
+        QuoteState memory q = pool._quoteMultiswap(
+            alice,
+            payTokens,
+            payAmounts,
+            receiveTokens,
+            allocations
+        );
+        checkSelfFinancing(pool, q, message);
+        checkVsExcel(
+            pool,
+            q,
+            checkPayAmounts,
+            checkReceiveAmounts,
+            checkFeeAmount,
+            message
+        );
     }
 
-    function showPool(Pool _pool) internal {
-        PoolState memory pool_;
-        emit log("Pool Info");
-        emit log("=========");
-        pool_ = _pool.info();
-        emit log_named_uint("balance", pool_.balance);
-        emit log_named_uint("scale", pool_.scale);
-        emit log("");
-        emit log("Assets:");
-        emit log("-------");
-        AssetState[] memory assets_ = _pool.assets();
-        for (uint256 i; i < NTOKENS; i++) {
-            showAsset(assets_[i]);
-        }
+    function test_USDC_BTCb() public {
+        uint256 amount;
+        uint256 checkReceiveAmount;
+        uint256 checkFeeAmount;
+        string memory message;
+
+        amount = USDC.balanceOf(address(pool)) / 10;
+        checkReceiveAmount = 27641479913510000000000000000;
+        checkFeeAmount = 2727347109466620000000000000000;
+        message = "Amount 10% of pool balance";
+        _testBetaSwap(
+            USDC,
+            BTCb,
+            amount,
+            checkReceiveAmount,
+            checkFeeAmount,
+            message
+        );
+
+        amount = 1;
+        checkReceiveAmount = 33161483452231400;
+        checkFeeAmount = 2999999999999700000;
+        message = "Amount is smallest token unit";
+        _testBetaSwap(
+            USDC,
+            BTCb,
+            amount,
+            checkReceiveAmount,
+            checkFeeAmount,
+            message
+        );
     }
 
-    function _testBetaSwap(Token payToken, Token receiveToken) internal {
-        uint256 amount = payToken.balanceOf(address(pool)) / 10;
-        // payToken.mint(amount);
-        // payToken.approve(address(pool), amount);
+    function test_BTCb_USDC() public {
+        uint256 amount;
+        uint256 checkReceiveAmount;
+        uint256 checkFeeAmount;
+        string memory message;
 
-        // emit log("Get swap quote");
-        // (amountQuote, feeQuote) = pool.quoteSwap(
-        //     address(payToken),
-        //     address(receiveToken),
-        //     amount
-        // );
-        // emit log("Execute swap");
-        // (amountOut, feeAmount) = pool.swap(
-        //     address(payToken),
-        //     address(receiveToken),
+        amount = BTCb.balanceOf(address(pool)) / 10;
+        checkReceiveAmount = 832951372890395000000000000000000;
+        checkFeeAmount = 454547520620854000000000000000;
+        message = "Amount 10% of pool balance";
+        _testBetaSwap(
+            BTCb,
+            USDC,
+            amount,
+            checkReceiveAmount,
+            checkFeeAmount,
+            message
+        );
+
+        amount = 1;
+        checkReceiveAmount = 300499674984487000000000;
+        checkFeeAmount = 150324999996757000000;
+        message = "Amount is smallest token unit";
+        _testBetaSwap(
+            BTCb,
+            USDC,
+            amount,
+            checkReceiveAmount,
+            checkFeeAmount,
+            message
+        );
+    }
+
+    function test_WAVAX_WETHe() public {
+        uint256 amount;
+        uint256 checkReceiveAmount;
+        uint256 checkFeeAmount;
+        string memory message;
+
+        amount = WAVAX.balanceOf(address(pool)) / 10;
+        checkReceiveAmount = 435556128724704000000000000000;
+        checkFeeAmount = 2727347109466620000000000000000;
+        message = "Amount 10% of pool balance";
+        _testBetaSwap(
+            WAVAX,
+            WETHe,
+            amount,
+            checkReceiveAmount,
+            checkFeeAmount,
+            message
+        );
+
+        amount = 1;
+        checkReceiveAmount = 7576782;
+        checkFeeAmount = 43500000;
+        message = "Amount is smallest token unit";
+        _testBetaSwap(
+            WAVAX,
+            WETHe,
+            amount,
+            checkReceiveAmount,
+            checkFeeAmount,
+            message
+        );
+    }
+
+    function test_WAVAX_USDC() public {
+        uint256 amount;
+        uint256 checkReceiveAmount;
+        uint256 checkFeeAmount;
+        string memory message;
+
+        amount = WAVAX.balanceOf(address(pool)) / 10;
+        checkReceiveAmount = 832951372973874000000000000000000;
+        checkFeeAmount = 454547520670548000000000000000;
+        message = "Amount 10% of pool balance";
+        _testBetaSwap(
+            WAVAX,
+            USDC,
+            amount,
+            checkReceiveAmount,
+            checkFeeAmount,
+            message
+        );
+
+        amount = 1;
+        checkReceiveAmount = 14492750000;
+        checkFeeAmount = 7250000;
+        message = "Amount is smallest token unit";
+        _testBetaSwap(
+            WAVAX,
+            USDC,
+            amount,
+            checkReceiveAmount,
+            checkFeeAmount,
+            message
+        );
+    }
+
+    function test_USDC_WAVAX() public {
+        uint256 amount;
+        uint256 checkReceiveAmount;
+        uint256 checkFeeAmount;
+        string memory message;
+
+        // amount = USDC.balanceOf(address(pool)) / 10;
+        // checkReceiveAmount = 435556128724704000000000000000;
+        // checkFeeAmount = 2727347109466620000000000000000;
+        // message = "Amount 10% of pool balance";
+        // _testBetaSwap(
+        //     USDC,
+        //     WAVAX,
         //     amount,
-        //     oneMin[0]
+        //     checkReceiveAmount,
+        //     checkFeeAmount,
+        //     message
         // );
-        // emit log("Swap executed");
-        // assertEq(amountQuote, amountOut, "amountOut");
-        // assertEq(feeQuote, feeAmount, "feeAmount");
 
-        payToken.mint(amount);
-        payToken.approve(address(pool), amount);
-        emit log("==========");
-        emit log("Check swap");
-        emit log("==================================");
-        checkSwap(pool, address(payToken), address(receiveToken), amount, 0);
+        amount = 1;
+        checkReceiveAmount = 68862068965503500000;
+        checkFeeAmount = 1499999999999850000;
+        message = "Amount is smallest token unit";
+        _testBetaSwap(
+            USDC,
+            WAVAX,
+            amount,
+            checkReceiveAmount,
+            checkFeeAmount,
+            message
+        );
     }
 
-    function testBetaSwapPayUSDC() public {
-        _testBetaSwap(USDC, BTCb);
-    }
-
-    function testBetaSwapPayWAVAX() public {
-        _testBetaSwap(WAVAX, WETHe);
-    }
-
-    function testBetaSwapPayAVAX() public {
+    function test_AVAX_BTCb() public {
         vm.startPrank(alice);
         uint256 amount = WAVAX.balanceOf(address(pool)) / 10;
+        uint256 amountQuote;
+        uint256 feeQuote;
+        uint256 amountOut;
+        uint256 feeAmount;
 
         (amountQuote, feeQuote) = pool.quoteSwap(
             address(0),
@@ -231,9 +377,13 @@ contract BetaTest is PoolTest {
         assertEq(feeQuote, feeAmount, "feeAmount");
     }
 
-    function testBetaSwapReceiveAVAX() public {
+    function test_USDC_AVAX() public {
         vm.startPrank(alice);
         uint256 amount = USDC.balanceOf(address(pool)) / 10;
+        uint256 amountQuote;
+        uint256 feeQuote;
+        uint256 amountOut;
+        uint256 feeAmount;
         USDC.mint(amount);
         USDC.approve(address(pool), amount);
 
@@ -252,22 +402,73 @@ contract BetaTest is PoolTest {
         assertEq(feeQuote, feeAmount, "feeAmount");
     }
 
-    function testBetaStakeUSDC() public {
-        uint256 amount = USDC.balanceOf(address(pool)) / 10;
-
-        // (amountQuote, feeQuote) = pool.quoteStake(address(USDC), amount);
-        // (amountOut, feeAmount) = pool.stake(address(USDC), amount, oneMin[0]);
-        // assertEq(amountQuote, amountOut, "amountOut");
-        // assertEq(feeQuote, feeAmount, "feeAmount");
-
-        USDC.mint(amount);
-        USDC.approve(address(pool), amount);
-        checkStake(pool, address(USDC), amount, 0);
+    function _testBetaStake(
+        Token payToken,
+        uint256 payAmount, // Token decimals
+        uint256 checkReceiveAmount, // Internal decimals
+        string memory message
+    ) internal {
+        address[] memory payTokens = new address[](1);
+        payTokens[0] = address(payToken);
+        uint256[] memory payAmounts = new uint256[](1);
+        payAmounts[0] = payAmount;
+        address[] memory receiveTokens = new address[](1);
+        receiveTokens[0] = address(pool);
+        uint256[] memory allocations = new uint256[](1);
+        allocations[0] = ONE;
+        uint256[] memory checkPayAmounts = new uint256[](0);
+        uint256[] memory checkReceiveAmounts = new uint256[](1);
+        checkReceiveAmounts[0] = checkReceiveAmount;
+        QuoteState memory q = pool._quoteMultiswap(
+            alice,
+            payTokens,
+            payAmounts,
+            receiveTokens,
+            allocations
+        );
+        checkSelfFinancing(pool, q, message);
+        checkVsExcel(pool, q, checkPayAmounts, checkReceiveAmounts, 0, message);
     }
 
-    function testBetaStakeAVAX() public {
+    function test_USDC_LP() public {
+        uint256 amount;
+        uint256 checkReceiveAmount;
+        string memory message;
+
+        amount = USDC.balanceOf(address(pool)) / 10;
+        checkReceiveAmount = 917431192660551000000000000000000;
+        message = "Amount 10% of pool balance";
+        _testBetaStake(USDC, amount, checkReceiveAmount, message);
+
+        amount = 1;
+        checkReceiveAmount = 999999999999910000000;
+        message = "Amount is smallest token unit";
+        _testBetaStake(USDC, amount, checkReceiveAmount, message);
+    }
+
+    function test_WAVAX_LP() public {
+        uint256 amount;
+        uint256 checkReceiveAmount;
+        string memory message;
+
+        amount = WAVAX.balanceOf(address(pool)) / 10;
+        checkReceiveAmount = 917431192660551000000000000000000;
+        message = "Amount 10% of pool balance";
+        _testBetaStake(WAVAX, amount, checkReceiveAmount, message);
+
+        amount = 1;
+        checkReceiveAmount = 14500000000;
+        message = "Amount is smallest token unit";
+        _testBetaStake(WAVAX, amount, checkReceiveAmount, message);
+    }
+
+    function test_AVAX_LP() public {
         vm.startPrank(alice);
         uint256 amount = WAVAX.balanceOf(alice) / 10;
+        uint256 amountQuote;
+        uint256 feeQuote;
+        uint256 amountOut;
+        uint256 feeAmount;
 
         (amountQuote, feeQuote) = pool.quoteStake(address(0), amount);
         (amountOut, feeAmount) = pool.stake{value: amount}(
@@ -279,21 +480,109 @@ contract BetaTest is PoolTest {
         assertEq(feeQuote, feeAmount, "feeAmount");
     }
 
-    function testBetaUnstake() public {
-        (amountQuote, feeQuote) = pool.quoteUnstake(
-            anotherAsset[0],
-            oneAmount[0]
+    function _testBetaUnstake(
+        Token receiveToken,
+        uint256 shareAmount, // Token decimals
+        uint256 checkReceiveAmount, // Internal decimals
+        uint256 checkFeeAmount, // Internal decimals
+        string memory message
+    ) internal {
+        address[] memory payTokens = new address[](1);
+        payTokens[0] = address(pool);
+        uint256[] memory payAmounts = new uint256[](1);
+        payAmounts[0] = shareAmount;
+        address[] memory receiveTokens = new address[](1);
+        receiveTokens[0] = address(receiveToken);
+        uint256[] memory allocations = new uint256[](1);
+        allocations[0] = ONE;
+        uint256[] memory checkPayAmounts = new uint256[](0);
+        uint256[] memory checkReceiveAmounts = new uint256[](1);
+        checkReceiveAmounts[0] = checkReceiveAmount;
+        QuoteState memory q = pool._quoteMultiswap(
+            alice,
+            payTokens,
+            payAmounts,
+            receiveTokens,
+            allocations
         );
-        (amountOut, feeAmount) = pool.unstake(
-            anotherAsset[0],
-            oneAmount[0],
-            oneMin[0]
+        checkSelfFinancing(pool, q, message);
+        checkVsExcel(
+            pool,
+            q,
+            checkPayAmounts,
+            checkReceiveAmounts,
+            checkFeeAmount,
+            message
         );
-        assertEq(amountQuote, amountOut, "amountOut");
-        assertEq(feeQuote, feeAmount, "feeAmount");
     }
 
-    function testBetaUnstakeReceiveAVAX() public {
+    function test_LP_USDC() public {
+        uint256 amount;
+        uint256 checkReceiveAmount;
+        uint256 checkFeeAmount;
+        string memory message;
+
+        amount = pool.totalSupply() / 10;
+        checkReceiveAmount = 5261772525071730000000000000000000;
+        checkFeeAmount = 5000000000000000000000000000000;
+        message = "Amount 10% of pool balance";
+        _testBetaUnstake(
+            USDC,
+            amount,
+            checkReceiveAmount,
+            checkFeeAmount,
+            message
+        );
+
+        amount = 1;
+        checkReceiveAmount = 2998500000;
+        checkFeeAmount = 1500000;
+        message = "Amount is smallest token unit";
+        _testBetaUnstake(
+            USDC,
+            amount,
+            checkReceiveAmount,
+            checkFeeAmount,
+            message
+        );
+    }
+
+    function test_LP_WAVAX() public {
+        uint256 amount;
+        uint256 checkReceiveAmount;
+        uint256 checkFeeAmount;
+        string memory message;
+
+        amount = pool.totalSupply() / 10;
+        checkReceiveAmount = 362689642459207000000000000000000;
+        checkFeeAmount = 15000000000000000000000000000000;
+        message = "Amount 10% of pool balance";
+        _testBetaUnstake(
+            WAVAX,
+            amount,
+            checkReceiveAmount,
+            checkFeeAmount,
+            message
+        );
+
+        amount = 1;
+        checkReceiveAmount = 206586207;
+        checkFeeAmount = 4500000;
+        message = "Amount is smallest token unit";
+        _testBetaUnstake(
+            WAVAX,
+            amount,
+            checkReceiveAmount,
+            checkFeeAmount,
+            message
+        );
+    }
+
+    function test_LP_AVAX() public {
+        uint256 amountQuote;
+        uint256 feeQuote;
+        uint256 amountOut;
+        uint256 feeAmount;
         (amountQuote, feeQuote) = pool.quoteUnstake(address(0), oneAmount[0]);
         (amountOut, feeAmount) = pool.unstake(
             address(0),
@@ -304,321 +593,512 @@ contract BetaTest is PoolTest {
         assertEq(feeQuote, feeAmount, "feeAmount");
     }
 
-    function testBetaMixedStakeUSDC() public {
+    function _testBetaMixedStake(
+        Token payToken,
+        Token receiveToken,
+        uint256 payAmount, // Token decimals
+        uint256[] memory checkReceiveAmounts, // Internal decimals
+        uint256 checkFeeAmount, // Internal decimals
+        string memory message
+    ) internal {
         address[] memory payTokens = new address[](1);
-        payTokens[0] = address(USDC);
-        uint256[] memory amounts = new uint256[](1);
-        amounts[0] = USDC.balanceOf(address(pool)) / 10;
-
+        payTokens[0] = address(payToken);
+        uint256[] memory payAmounts = new uint256[](1);
+        payAmounts[0] = payAmount;
         address[] memory receiveTokens = new address[](2);
-        uint256[] memory allocations = new uint256[](2);
         receiveTokens[0] = address(pool);
-        receiveTokens[1] = address(BTCb);
-        allocations[0] = 5e17;
-        allocations[1] = 5e17;
-        // (receiveAmountQuotes, feeQuote) = pool.quoteMultiswap(
-        //     payTokens,
-        //     amounts,
-        //     receiveTokens,
-        //     allocations
-        // );
-        // (receiveAmounts, feeAmount) = pool.multiswap(
-        //     payTokens,
-        //     amounts,
-        //     receiveTokens,
-        //     allocations,
-        //     twoMins
-        // );
-        // assertEq(receiveAmountQuotes[0], receiveAmounts[0], "amountOut 1");
-        // assertEq(receiveAmountQuotes[1], receiveAmounts[1], "amountOut 2");
-        // assertEq(feeQuote, feeAmount, "feeAmount");
-
-        checkMultiswap(
-            pool,
-            payTokens,
-            amounts,
-            receiveTokens,
-            allocations,
-            twoMins
-        );
-    }
-
-    function testBetaMixedStakeWAVAX() public {
-        address[] memory payTokens = new address[](1);
-        payTokens[0] = address(WAVAX);
-        uint256[] memory amounts = new uint256[](1);
-        amounts[0] = WAVAX.balanceOf(address(pool)) / 10;
-
-        address[] memory receiveTokens = new address[](2);
+        receiveTokens[1] = address(receiveToken);
         uint256[] memory allocations = new uint256[](2);
-        receiveTokens[0] = address(pool);
-        receiveTokens[1] = address(WETHe);
-        allocations[0] = 5e17;
-        allocations[1] = 5e17;
-        // (receiveAmountQuotes, feeQuote) = pool.quoteMultiswap(
-        //     payTokens,
-        //     amounts,
-        //     receiveTokens,
-        //     allocations
-        // );
-        // (receiveAmounts, feeAmount) = pool.multiswap(
-        //     payTokens,
-        //     amounts,
-        //     receiveTokens,
-        //     allocations,
-        //     twoMins
-        // );
-        // assertEq(receiveAmountQuotes[0], receiveAmounts[0], "amountOut 1");
-        // assertEq(receiveAmountQuotes[1], receiveAmounts[1], "amountOut 2");
-        // assertEq(feeQuote, feeAmount, "feeAmount");
-
-        checkMultiswap(
-            pool,
+        allocations[0] = HALF;
+        allocations[1] = HALF;
+        uint256[] memory checkPayAmounts = new uint256[](0);
+        QuoteState memory q = pool._quoteMultiswap(
+            alice,
             payTokens,
-            amounts,
-            receiveTokens,
-            allocations,
-            twoMins
-        );
-    }
-
-    function testBetaMixedStakePayAVAX() public {
-        vm.startPrank(alice);
-        uint256 amount = WAVAX.balanceOf(alice) / 10;
-        address[] memory payTokens = new address[](1);
-        payTokens[0] = address(0);
-        uint256[] memory amounts = new uint256[](1);
-        amounts[0] = amount;
-
-        address[] memory receiveTokens = new address[](2);
-        uint256[] memory allocations = new uint256[](2);
-        receiveTokens[0] = address(pool);
-        receiveTokens[1] = address(BTCb);
-        allocations[0] = 5e17;
-        allocations[1] = 5e17;
-        (receiveAmountQuotes, feeQuote) = pool.quoteMultiswap(
-            payTokens,
-            amounts,
+            payAmounts,
             receiveTokens,
             allocations
         );
-        (receiveAmounts, feeAmount) = pool.multiswap{value: amounts[0]}(
-            payTokens,
-            amounts,
-            receiveTokens,
-            allocations,
-            twoMins
+        checkSelfFinancing(pool, q, message);
+        checkVsExcel(
+            pool,
+            q,
+            checkPayAmounts,
+            checkReceiveAmounts,
+            checkFeeAmount,
+            message
         );
-        assertEq(receiveAmountQuotes[0], receiveAmounts[0], "amountOut 1");
-        assertEq(receiveAmountQuotes[1], receiveAmounts[1], "amountOut 2");
-        assertEq(feeQuote, feeAmount, "feeAmount");
     }
 
-    function testBetaMixedStakeReceiveAVAX() public {
-        address[] memory payTokens = new address[](1);
-        payTokens[0] = address(USDC);
-        uint256[] memory amounts = new uint256[](1);
-        amounts[0] = USDC.balanceOf(address(pool)) / 10;
+    function test_USDC_LP_BTCb() public {
+        uint256 amount;
+        uint256[] memory checkReceiveAmounts = new uint256[](2);
+        uint256 checkFeeAmount;
+        string memory message;
 
-        address[] memory receiveTokens = new address[](2);
-        uint256[] memory allocations = new uint256[](2);
-        receiveTokens[0] = address(pool);
-        receiveTokens[1] = address(0);
-        allocations[0] = 5e17;
-        allocations[1] = 5e17;
-        (receiveAmountQuotes, feeQuote) = pool.quoteMultiswap(
+        amount = USDC.balanceOf(address(pool)) / 10;
+        checkReceiveAmounts[0] = 455939195930566000000000000000000;
+        checkReceiveAmounts[1] = 14440670197238500000000000000;
+        checkFeeAmount = 1369872396386280000000000000000;
+        message = "Amount 10% of pool balance";
+        _testBetaMixedStake(
+            USDC,
+            BTCb,
+            amount,
+            checkReceiveAmounts,
+            checkFeeAmount,
+            message
+        );
+
+        amount = 1;
+        checkReceiveAmounts[0] = 499249999999953000000;
+        checkReceiveAmounts[1] = 16605687676557000;
+        checkFeeAmount = 1499999999999860000;
+        message = "Amount is smallest token unit";
+        _testBetaMixedStake(
+            USDC,
+            BTCb,
+            amount,
+            checkReceiveAmounts,
+            checkFeeAmount,
+            message
+        );
+    }
+
+    function test_WAVAX_LP_WETHe() public {
+        uint256 amount;
+        uint256[] memory checkReceiveAmounts = new uint256[](2);
+        uint256 checkFeeAmount;
+        string memory message;
+
+        amount = WAVAX.balanceOf(address(pool)) / 10;
+        checkReceiveAmounts[0] = 455939195930566000000000000000000;
+        checkReceiveAmounts[1] = 227546514404435000000000000000;
+        checkFeeAmount = 1369872396386280000000000000000;
+        message = "Amount 10% of pool balance";
+        _testBetaMixedStake(
+            WAVAX,
+            WETHe,
+            amount,
+            checkReceiveAmounts,
+            checkFeeAmount,
+            message
+        );
+
+        amount = 1;
+        checkReceiveAmounts[0] = 7239125000;
+        checkReceiveAmounts[1] = 3794091;
+        checkFeeAmount = 21750000;
+        message = "Amount is smallest token unit";
+        _testBetaMixedStake(
+            WAVAX,
+            WETHe,
+            amount,
+            checkReceiveAmounts,
+            checkFeeAmount,
+            message
+        );
+    }
+
+    // function test_AVAX_LP_BTCb() public {
+    //     vm.startPrank(alice);
+    //     uint256 amount = WAVAX.balanceOf(alice) / 10;
+    //     address[] memory payTokens = new address[](1);
+    //     payTokens[0] = address(0);
+    //     uint256[] memory amounts = new uint256[](1);
+    //     amounts[0] = amount;
+
+    //     address[] memory receiveTokens = new address[](2);
+    //     uint256[] memory allocations = new uint256[](2);
+    //     receiveTokens[0] = address(pool);
+    //     receiveTokens[1] = address(BTCb);
+    //     allocations[0] = 5e17;
+    //     allocations[1] = 5e17;
+    //     (receiveAmountQuotes, feeQuote) = pool.quoteMultiswap(
+    //         payTokens,
+    //         amounts,
+    //         receiveTokens,
+    //         allocations
+    //     );
+    //     (receiveAmounts, feeAmount) = pool.multiswap{value: amounts[0]}(
+    //         payTokens,
+    //         amounts,
+    //         receiveTokens,
+    //         allocations,
+    //         twoMins
+    //     );
+    //     assertEq(receiveAmountQuotes[0], receiveAmounts[0], "amountOut 1");
+    //     assertEq(receiveAmountQuotes[1], receiveAmounts[1], "amountOut 2");
+    //     assertEq(feeQuote, feeAmount, "feeAmount");
+    // }
+
+    // function test_USDC_LP_AVAX() public {
+    //     address[] memory payTokens = new address[](1);
+    //     payTokens[0] = address(USDC);
+    //     uint256[] memory amounts = new uint256[](1);
+    //     amounts[0] = USDC.balanceOf(address(pool)) / 10;
+
+    //     address[] memory receiveTokens = new address[](2);
+    //     uint256[] memory allocations = new uint256[](2);
+    //     receiveTokens[0] = address(pool);
+    //     receiveTokens[1] = address(0);
+    //     allocations[0] = 5e17;
+    //     allocations[1] = 5e17;
+    //     (receiveAmountQuotes, feeQuote) = pool.quoteMultiswap(
+    //         payTokens,
+    //         amounts,
+    //         receiveTokens,
+    //         allocations
+    //     );
+    //     (receiveAmounts, feeAmount) = pool.multiswap(
+    //         payTokens,
+    //         amounts,
+    //         receiveTokens,
+    //         allocations,
+    //         twoMins
+    //     );
+    //     assertEq(receiveAmountQuotes[0], receiveAmounts[0], "amountOut 1");
+    //     assertEq(receiveAmountQuotes[1], receiveAmounts[1], "amountOut 2");
+    //     assertEq(feeQuote, feeAmount, "feeAmount");
+    // }
+
+    function _testBetaMixedUnstake(
+        address payToken,
+        address receiveToken,
+        uint256[] memory payAmounts, // Token decimals
+        uint256[] memory checkReceiveAmounts, // Internal decimals
+        uint256 checkFeeAmount, // Internal decimals
+        string memory message
+    ) internal {
+        address[] memory payTokens = new address[](2);
+        payTokens[0] = address(pool);
+        payTokens[1] = payToken;
+        address[] memory receiveTokens = new address[](1);
+        receiveTokens[0] = receiveToken;
+        uint256[] memory allocations = new uint256[](1);
+        allocations[0] = ONE;
+        uint256[] memory checkPayAmounts = new uint256[](0);
+        QuoteState memory q = pool._quoteMultiswap(
+            alice,
             payTokens,
-            amounts,
+            payAmounts,
             receiveTokens,
             allocations
         );
-        (receiveAmounts, feeAmount) = pool.multiswap(
-            payTokens,
-            amounts,
-            receiveTokens,
-            allocations,
-            twoMins
+        checkSelfFinancing(pool, q, message);
+        checkVsExcel(
+            pool,
+            q,
+            checkPayAmounts,
+            checkReceiveAmounts,
+            checkFeeAmount,
+            message
         );
-        assertEq(receiveAmountQuotes[0], receiveAmounts[0], "amountOut 1");
-        assertEq(receiveAmountQuotes[1], receiveAmounts[1], "amountOut 2");
-        assertEq(feeQuote, feeAmount, "feeAmount");
     }
 
-    function testBetaMixedUnstake() public {
-        vm.startPrank(alice);
-        address[] memory payTokens = new address[](2);
-        payTokens[0] = address(pool);
-        payTokens[1] = address(USDC);
-        uint256[] memory amounts = new uint256[](2);
-        amounts[0] = pool.info().balance / 10;
-        amounts[1] = USDC.balanceOf(alice) / 10;
-        address[] memory receiveTokens = new address[](1);
-        receiveTokens[0] = address(BTCb);
-        (receiveAmountQuotes, feeQuote) = pool.quoteMultiswap(
-            payTokens,
-            amounts,
-            receiveTokens,
-            oneAllocation
+    function test_LP_USDC_BTCb() public {
+        uint256[] memory payAmounts = new uint256[](2);
+        uint256[] memory checkReceiveAmounts = new uint256[](1);
+        uint256 checkFeeAmount;
+        string memory message;
+
+        payAmounts[0] = pool.totalSupply() / 10;
+        payAmounts[1] = USDC.balanceOf(address(pool)) / 10;
+        checkReceiveAmounts[0] = 181288544939099000000000000000;
+        checkFeeAmount = 32455430602652800000000000000000;
+        message = "Amount 10% of pool balance";
+        _testBetaMixedUnstake(
+            address(USDC),
+            address(BTCb),
+            payAmounts,
+            checkReceiveAmounts,
+            checkFeeAmount,
+            message
         );
-        (receiveAmounts, feeAmount) = pool.multiswap(
-            payTokens,
-            amounts,
-            receiveTokens,
-            oneAllocation,
-            oneMin
+
+        payAmounts[0] = 1;
+        payAmounts[1] = 1;
+        checkReceiveAmounts[0] = 33161483452330900;
+        checkFeeAmount = 3000000000008700000;
+        message = "Amount is smallest token unit";
+        _testBetaMixedUnstake(
+            address(USDC),
+            address(BTCb),
+            payAmounts,
+            checkReceiveAmounts,
+            checkFeeAmount,
+            message
         );
-        assertEq(receiveAmountQuotes[0], receiveAmounts[0], "amountOut");
-        assertEq(feeQuote, feeAmount, "feeAmount");
     }
 
-    function testBetaMixedUnstakePayAVAX() public {
-        vm.startPrank(alice);
-        uint256 amount = WAVAX.balanceOf(alice) / 10;
-        address[] memory payTokens = new address[](2);
-        payTokens[0] = address(pool);
-        payTokens[1] = address(0);
-        uint256[] memory amounts = new uint256[](2);
-        amounts[0] = pool.info().balance / 10;
-        amounts[1] = amount;
-        address[] memory receiveTokens = new address[](1);
-        receiveTokens[0] = address(BTCb);
-        (receiveAmountQuotes, feeQuote) = pool.quoteMultiswap(
-            payTokens,
-            amounts,
-            receiveTokens,
-            oneAllocation
+    function test_LP_WAVAX_WETHe() public {
+        uint256[] memory payAmounts = new uint256[](2);
+        uint256[] memory checkReceiveAmounts = new uint256[](1);
+        uint256 checkFeeAmount;
+        string memory message;
+
+        payAmounts[0] = pool.totalSupply() / 10;
+        payAmounts[1] = WAVAX.balanceOf(address(pool)) / 10;
+        checkReceiveAmounts[0] = 2856624792264290000000000000000;
+        checkFeeAmount = 32455430602652800000000000000000;
+        message = "Amount 10% of pool balance";
+        _testBetaMixedUnstake(
+            address(WAVAX),
+            address(WETHe),
+            payAmounts,
+            checkReceiveAmounts,
+            checkFeeAmount,
+            message
         );
-        (receiveAmounts, feeAmount) = pool.multiswap{value: amounts[1]}(
-            payTokens,
-            amounts,
-            receiveTokens,
-            oneAllocation,
-            oneMin
+
+        payAmounts[0] = 1;
+        payAmounts[1] = 1;
+        checkReceiveAmounts[0] = 9144392;
+        checkFeeAmount = 52500000;
+        message = "Amount is smallest token unit";
+        _testBetaMixedUnstake(
+            address(WAVAX),
+            address(WETHe),
+            payAmounts,
+            checkReceiveAmounts,
+            checkFeeAmount,
+            message
         );
-        assertEq(receiveAmountQuotes[0], receiveAmounts[0], "amountOut");
-        assertEq(feeQuote, feeAmount, "feeAmount");
     }
 
-    function testBetaMixedUnstakeReceiveAVAX() public {
-        vm.startPrank(alice);
-        address[] memory payTokens = new address[](2);
-        payTokens[0] = address(pool);
-        payTokens[1] = address(USDC);
-        uint256[] memory amounts = new uint256[](2);
-        amounts[0] = pool.info().balance / 10;
-        amounts[1] = USDC.balanceOf(alice) / 10;
-        address[] memory receiveTokens = new address[](1);
-        receiveTokens[0] = address(0);
-        (receiveAmountQuotes, feeQuote) = pool.quoteMultiswap(
-            payTokens,
-            amounts,
-            receiveTokens,
-            oneAllocation
-        );
-        (receiveAmounts, feeAmount) = pool.multiswap(
-            payTokens,
-            amounts,
-            receiveTokens,
-            oneAllocation,
-            oneMin
-        );
-        assertEq(receiveAmountQuotes[0], receiveAmounts[0], "amountOut");
-        assertEq(feeQuote, feeAmount, "feeAmount");
+    // function testBetaMixedUnstakePayAVAX() public {
+    //     vm.startPrank(alice);
+    //     uint256 amount = WAVAX.balanceOf(alice) / 10;
+    //     address[] memory payTokens = new address[](2);
+    //     payTokens[0] = address(pool);
+    //     payTokens[1] = address(0);
+    //     uint256[] memory amounts = new uint256[](2);
+    //     amounts[0] = pool.info().balance / 10;
+    //     amounts[1] = amount;
+    //     address[] memory receiveTokens = new address[](1);
+    //     receiveTokens[0] = address(BTCb);
+    //     (receiveAmountQuotes, feeQuote) = pool.quoteMultiswap(
+    //         payTokens,
+    //         amounts,
+    //         receiveTokens,
+    //         oneAllocation
+    //     );
+    //     (receiveAmounts, feeAmount) = pool.multiswap{value: amounts[1]}(
+    //         payTokens,
+    //         amounts,
+    //         receiveTokens,
+    //         oneAllocation,
+    //         oneMin
+    //     );
+    //     assertEq(receiveAmountQuotes[0], receiveAmounts[0], "amountOut");
+    //     assertEq(feeQuote, feeAmount, "feeAmount");
+    // }
+
+    // function testBetaMixedUnstakeReceiveAVAX() public {
+    //     vm.startPrank(alice);
+    //     address[] memory payTokens = new address[](2);
+    //     payTokens[0] = address(pool);
+    //     payTokens[1] = address(USDC);
+    //     uint256[] memory amounts = new uint256[](2);
+    //     amounts[0] = pool.info().balance / 10;
+    //     amounts[1] = USDC.balanceOf(alice) / 10;
+    //     address[] memory receiveTokens = new address[](1);
+    //     receiveTokens[0] = address(0);
+    //     (receiveAmountQuotes, feeQuote) = pool.quoteMultiswap(
+    //         payTokens,
+    //         amounts,
+    //         receiveTokens,
+    //         oneAllocation
+    //     );
+    //     (receiveAmounts, feeAmount) = pool.multiswap(
+    //         payTokens,
+    //         amounts,
+    //         receiveTokens,
+    //         oneAllocation,
+    //         oneMin
+    //     );
+    //     assertEq(receiveAmountQuotes[0], receiveAmounts[0], "amountOut");
+    //     assertEq(feeQuote, feeAmount, "feeAmount");
+    // }
+
+    function _testBetaAddLiquidity(
+        address token,
+        uint256 amount, // Token decimals
+        string memory message
+    ) internal {
+        QuoteState memory q = pool._quoteAddLiquidity(token, amount);
+
+        checkSelfFinancing(pool, q, message);
     }
 
-    function testBetaAddLiquidity() public {
-        vm.startPrank(alice);
-        uint256 balance = WAVAX.balanceOf(alice);
-        uint256 amount = balance / 10;
+    function test_USDC_AddLiquidity() public {
+        uint256 amount;
+        string memory message;
 
-        payAmountQuotes = pool.quoteAddLiquidity(address(0), amount);
-        payAmounts = pool.addLiquidity{value: amount}(
-            address(0),
+        amount = USDC.balanceOf(address(pool)) / 10;
+        message = "Amount 10% of pool balance";
+        _testBetaAddLiquidity(
+            address(USDC),
             amount,
-            allMaxs
-        );
-        for (uint256 i; i < NTOKENS; i++) {
-            assertEq(payAmountQuotes[i], payAmounts[i], "payAmount");
-        }
-    }
-
-    function testBetaRemoveLiquidity() public {
-        vm.startPrank(alice);
-        uint256 amount = pool.balanceOf(alice);
-        (receiveAmountQuotes, feeQuote) = pool.quoteRemoveLiquidity(amount);
-        (receiveAmounts, feeAmount) = pool.removeLiquidity(amount, allMins);
-        for (uint256 i; i < NTOKENS; i++) {
-            assertEq(
-                receiveAmountQuotes[i],
-                receiveAmounts[i],
-                "receiveAmount"
-            );
-        }
-        assertEq(feeQuote, feeAmount, "feeAmount");
-
-        setUp();
-
-        amount = pool.balanceOf(alice) / 2;
-        (receiveAmountQuotes, feeQuote) = pool.quoteRemoveLiquidity(amount);
-        (receiveAmounts, feeAmount) = pool.removeLiquidity(amount, allMins);
-        for (uint256 i; i < NTOKENS; i++) {
-            assertEq(
-                receiveAmountQuotes[i],
-                receiveAmounts[i],
-                "receiveAmount"
-            );
-        }
-        assertEq(feeQuote, feeAmount, "feeAmount");
-
-        // emit log("=================");
-        // emit log("State after removeLiquidity");
-        // emit log("");
-        // for (uint256 i; i < NTOKENS; i++) {
-        //     emit log_named_uint("amountOut", receiveAmounts[i]);
-        // }
-        // emit log_named_uint("feeAmount", feeAmount);
-        // emit log("");
-        // showPool(pool);
-        // emit log("");
-    }
-
-    function testBetaDiscount() public {
-        vm.startPrank(alice);
-
-        pool.setDiscount(bob, ONE);
-
-        vm.stopPrank();
-
-        vm.startPrank(bob);
-
-        uint256 amount = oneAmount[0] / oneConversion[0];
-        USDC.mint(amount);
-        USDC.approve(address(pool), amount);
-
-        (amountQuote, feeQuote) = pool.quoteSwap(
-            oneAsset[0],
-            anotherAsset[0],
-            amount
+            message
         );
 
-        (amountOut, feeAmount) = pool.swap(
-            oneAsset[0],
-            anotherAsset[0],
+        amount = 1;
+        message = "Amount is smallest token unit";
+        _testBetaAddLiquidity(
+            address(USDC),
             amount,
-            oneMin[0]
+            message
         );
-
-        assertEq(amountQuote, amountOut, "amountOut");
-        assertEq(feeQuote, feeAmount, "feeAmount");
-        assertEq(feeAmount, 0, "feeAmount");
-
-        vm.stopPrank();
-
-        vm.startPrank(alice);
-
-        vm.expectRevert(
-            abi.encodeWithSelector(IUsers.InvalidDiscount.selector, 2 * ONE)
-        );
-        pool.setDiscount(alice, 2 * ONE);
     }
+
+    function test_WAVAX_AddLiquidity() public {
+        uint256 amount;
+        string memory message;
+
+        amount = WAVAX.balanceOf(address(pool)) / 10;
+        message = "Amount 10% of pool balance";
+        _testBetaAddLiquidity(
+            address(WAVAX),
+            amount,
+            message
+        );
+
+        // amount = 1;
+        // message = "Amount is smallest token unit";
+        // _testBetaAddLiquidity(
+        //     address(WAVAX),
+        //     amount,
+        //     message
+        // );
+    }
+
+    function test_LP_AddLiquidity() public {
+        uint256 amount;
+        string memory message;
+
+        amount = pool.totalSupply() / 10;
+        message = "Amount 10% of pool balance";
+        _testBetaAddLiquidity(
+            address(pool),
+            amount,
+            message
+        );
+
+        // amount = pool.totalSupply() / 10 ** 12;
+        // message = "Amount is smallest token unit";
+        // _testBetaAddLiquidity(
+        //     address(pool),
+        //     amount,
+        //     message
+        // );
+    }
+
+    function test_LP_RemoveLiquidity() public {
+        uint256 amount = pool.totalSupply() / 10;
+        string memory message = "Amount 10% of pool balance";
+        QuoteState memory q = pool._quoteRemoveLiquidity(amount);
+
+        checkSelfFinancing(pool, q, message);
+    }
+
+    // function testBetaRemoveLiquidity() public {
+    //     // vm.startPrank(alice);
+    //     // uint256 amount = pool.balanceOf(alice);
+    //     // (receiveAmountQuotes, feeQuote) = pool.quoteRemoveLiquidity(amount);
+    //     // (receiveAmounts, feeAmount) = pool.removeLiquidity(amount, allMins);
+    //     // for (uint256 i; i < NTOKENS; i++) {
+    //     //     assertEq(
+    //     //         receiveAmountQuotes[i],
+    //     //         receiveAmounts[i],
+    //     //         "receiveAmount"
+    //     //     );
+    //     // }
+    //     // assertEq(feeQuote, feeAmount, "feeAmount");
+
+    //     // setUp();
+
+    //     // amount = pool.balanceOf(alice) / 2;
+    //     // (receiveAmountQuotes, feeQuote) = pool.quoteRemoveLiquidity(amount);
+    //     // (receiveAmounts, feeAmount) = pool.removeLiquidity(amount, allMins);
+    //     // for (uint256 i; i < NTOKENS; i++) {
+    //     //     assertEq(
+    //     //         receiveAmountQuotes[i],
+    //     //         receiveAmounts[i],
+    //     //         "receiveAmount"
+    //     //     );
+    //     // }
+    //     // assertEq(feeQuote, feeAmount, "feeAmount");
+
+    //     // setUp();
+
+    //     // amount = pool.balanceOf(alice) / 10;
+
+    //     checkRemoveLiquidity(pool, pool.totalSupply() / 10);
+
+    //     // emit log("=================");
+    //     // emit log("State after removeLiquidity");
+    //     // emit log("");
+    //     // for (uint256 i; i < NTOKENS; i++) {
+    //     //     emit log_named_uint("amountOut", receiveAmounts[i]);
+    //     // }
+    //     // emit log_named_uint("feeAmount", feeAmount);
+    //     // emit log("");
+    //     // showPool(pool);
+    //     // emit log("");
+    // }
+
+    // function testBetaDiscount() public {
+    //     emit log("Start prank on alice");
+    //     vm.startPrank(alice);
+
+    //     emit log("Set bob discount to 100%");
+    //     pool.setDiscount(bob, ONE);
+
+    //     emit log("Stop prank on alice");
+    //     vm.stopPrank();
+
+    //     emit log("Start prank on bob");
+    //     vm.startPrank(bob);
+
+    //     emit log("Mint USDC");
+    //     uint256 amount = oneAmount[0] / oneConversion[0];
+    //     USDC.mint(amount);
+    //     USDC.approve(address(pool), amount);
+
+    //     emit log("Quote swap");
+    //     (amountQuote, feeQuote) = pool.quoteSwap(
+    //         oneAsset[0],
+    //         anotherAsset[0],
+    //         amount
+    //     );
+
+    //     emit log("Swap");
+    //     (amountOut, feeAmount) = pool.swap(
+    //         oneAsset[0],
+    //         anotherAsset[0],
+    //         amount,
+    //         oneMin[0]
+    //     );
+
+    //     assertEq(amountQuote, amountOut, "amountOut");
+    //     assertEq(feeQuote, feeAmount, "feeAmount");
+    //     assertEq(feeAmount, 0, "feeAmount");
+
+    //     emit log("Stop prank on bob");
+    //     vm.stopPrank();
+
+    //     emit log("Start prank on alice");
+    //     vm.startPrank(alice);
+
+    //     emit log("Expect invalid discount");
+    //     emit log_named_uint("alice discount", 2 * ONE);
+    //     vm.expectRevert(
+    //         abi.encodeWithSelector(
+    //             IUsers.InvalidDiscount.selector,
+    //             2 * ONE * TO_INTERNAL
+    //         )
+    //     );
+    //     pool.setDiscount(alice, 2 * ONE);
+    // }
 }

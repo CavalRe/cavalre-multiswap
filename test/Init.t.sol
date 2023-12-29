@@ -6,6 +6,12 @@ import "../contracts/Pool.sol";
 import "./Token.t.sol";
 
 contract InitTest is Test {
+    uint256 private _protocolFee = 5e17;
+    address private _multisigAddress = vm.envAddress("MULTISIG_ADDRESS");
+    uint256 private _tokensPerShare = 1e18;
+    uint256 private _tau = 1e16;
+    address private _wrappedNative = address(1234);
+
     function testInit() public {
         address alice = address(1);
 
@@ -13,7 +19,15 @@ contract InitTest is Test {
 
         Token tokenA = new Token("Foo", "FOOA", 18);
         Token tokenB = new Token("Foo", "FOOB", 18);
-        Pool pool = new Pool("Pool", "P", 2e17, 1e16, address(tokenA));
+        Pool pool = new Pool(
+            "Pool",
+            "P",
+            _protocolFee,
+            _multisigAddress,
+            _tokensPerShare,
+            _tau,
+            _wrappedNative
+        );
         uint256 amount = 1e27;
         uint256 minReceiveAmount = 0;
 
@@ -93,7 +107,15 @@ contract InitTest is Test {
         address bob = address(2);
 
         vm.startPrank(alice);
-        Pool pool = new Pool("Pool", "P", 2e17, 1e16, address(1234));
+        Pool pool = new Pool(
+            "Pool",
+            "P",
+            _protocolFee,
+            _multisigAddress,
+            _tokensPerShare,
+            _tau,
+            _wrappedNative
+        );
         vm.stopPrank();
 
         vm.startPrank(bob);
@@ -108,7 +130,16 @@ contract InitTest is Test {
         Token tokenA = new Token("Foo", "FOOA", 18);
 
         vm.startPrank(alice);
-        Pool pool = new Pool("Pool", "P", 2e17, 1e16, address(tokenA));
+
+        Pool pool = new Pool(
+            "Pool",
+            "P",
+            _protocolFee,
+            _multisigAddress,
+            _tokensPerShare,
+            _tau,
+            _wrappedNative
+        );
         vm.stopPrank();
 
         vm.startPrank(bob);

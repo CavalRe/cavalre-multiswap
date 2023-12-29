@@ -13,46 +13,51 @@ pragma solidity 0.8.19;
 import {ILPToken} from "./interfaces/ILPToken.sol";
 import {Users} from "./Users.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {FixedPointMathLib} from "solady/src/utils/FixedPointMathLib.sol";
+import {FixedPointMathLib} from "./libraries/FixedPointMath/src/FixedPointMathLib.sol";
 
-import { Test } from "forge-std/Test.sol";
-
-contract LPToken is ILPToken, ERC20, Users, Test {
+contract LPToken is ILPToken, ERC20, Users {
     using FixedPointMathLib for uint256;
 
-    mapping(address => uint256) private _balances;
+    uint256 internal _totalTokens; // Internal decimals
+    uint256 internal _tokensPerShare; // Internal decimals
 
-    mapping(address => mapping(address => uint256)) private _allowances;
-
-    uint256 internal _totalTokens;
-    uint256 internal _tokensPerShare;
-
-    uint256 internal _protocolFee;
+    uint256 internal _protocolFee; // Internal decimals
     address internal _protocolFeeRecipient;
 
     constructor(
         string memory name_,
-        string memory symbol_
+        string memory symbol_,
+        uint256 protocolFee_, // 18 decimals
+        address protocolFeeRecipient_,
+        uint256 tokensPerShare_ // 18 decimals
     ) ERC20(name_, symbol_) {
-        _tokensPerShare = 1e18;
-        _protocolFeeRecipient = _msgSender();
+        protocolFee_ *= TO_INTERNAL; // Convert to internal decimals
+        tokensPerShare_ *= TO_INTERNAL; // Convert to internal decimals
+        if (protocolFee_ > HALF) revert InvalidProtocolFee(protocolFee_);
+        if (protocolFeeRecipient_ == address(0)) revert ZeroAddress();
+        if (tokensPerShare_ == 0) revert ZeroTokensPerShare();
+        _protocolFee = protocolFee_;
+        _protocolFeeRecipient = protocolFeeRecipient_;
+        _tokensPerShare = tokensPerShare_;
     }
 
     function totalTokens() public view returns (uint256) {
-        return _totalTokens;
+        return _totalTokens / TO_INTERNAL; // Convert to 18 decimals
     }
 
     function tokensPerShare() public view returns (uint256) {
-        return _tokensPerShare;
+        return _tokensPerShare / TO_INTERNAL; // Convert to 18 decimals
     }
 
     function tokensOf(address account) public view returns (uint256) {
-        return balanceOf(account).mulWadUp(_tokensPerShare);
+        return
+            (balanceOf(account) * TO_INTERNAL).mulUp(_tokensPerShare, ONE) /
+            TO_INTERNAL; // Convert to 18 decimals
     }
 
     function approve(
         address spender,
-        uint256 shares
+        uint256 shares // 18 decimals
     ) public override returns (bool) {
         if (_isBlocked[spender]) revert UserNotAllowed(spender);
         return super.approve(spender, shares);
@@ -61,7 +66,7 @@ contract LPToken is ILPToken, ERC20, Users, Test {
     function transferFrom(
         address from,
         address to,
-        uint256 shares
+        uint256 shares // 18 decimals
     ) public override returns (bool) {
         address spender = _msgSender();
         if (_isBlocked[spender]) revert UserNotAllowed(spender);
@@ -71,47 +76,76 @@ contract LPToken is ILPToken, ERC20, Users, Test {
     function _transfer(
         address from,
         address to,
-        uint256 shares
+        uint256 shares // 18 decimals
     ) internal override {
         if (_isBlocked[to]) revert UserNotAllowed(to);
         return super._transfer(from, to, shares);
     }
 
-    function _mint(address account, uint256 shares) internal override {
-        emit log("Minting shares");
+    function _mint(
+        address account,
+        uint256 shares // 18 decimals
+    ) internal override {
         if (_isBlocked[account]) revert UserNotAllowed(account);
         super._mint(account, shares);
-        _totalTokens = totalSupply().mulWadUp(_tokensPerShare);
+        _totalTokens = (totalSupply() * TO_INTERNAL).mulUp(_tokensPerShare, ONE);
     }
 
-    function _burn(address account, uint256 shares) internal override {
+    function _burn(
+        address account,
+        uint256 shares
+    ) internal override {
         super._burn(account, shares);
-        _totalTokens = totalSupply().mulWadUp(_tokensPerShare);
+        _totalTokens = (totalSupply() * TO_INTERNAL).mulUp(_tokensPerShare, ONE);
+    }
+
+    function _mintTokens(
+        address account,
+        uint256 amount // Internal decimals
+    ) internal {
+        if (_isBlocked[account]) revert UserNotAllowed(account);
+        uint256 shares = amount.divUp(_tokensPerShare, ONE) / TO_INTERNAL; // Convert to 18 decimals
+        super._mint(account, shares);
+        _totalTokens += amount;
+    }
+
+    function _burnTokens(
+        address account,
+        uint256 amount // Internal decimals
+    ) internal {
+        uint256 shares = amount.divUp(_tokensPerShare, ONE) / TO_INTERNAL; // Convert to 18 decimals
+        super._burn(account, shares);
+        _totalTokens -= amount;
     }
 
     function _distributeTokens(
-        uint256 amount // tokens
+        uint256 amount // Internal decimals
     ) internal {
         _totalTokens += amount;
-        _tokensPerShare = _totalTokens.divWadUp(totalSupply());
+        _tokensPerShare = _totalTokens.divUp(totalSupply() * TO_INTERNAL, ONE);
     }
 
-    function _allocateShares(address recipient, uint256 shares) internal {
-        emit log("Allocating shares");
+    function _allocateShares(
+        address recipient,
+        uint256 shares // 18 decimals
+    ) internal {
         super._mint(recipient, shares);
-        _tokensPerShare = _totalTokens.divWadUp(totalSupply());
+        _tokensPerShare = _totalTokens.divUp(totalSupply() * TO_INTERNAL, ONE);
     }
 
     function protocolFee() public view returns (uint256) {
-        return _protocolFee;
+        return _protocolFee / TO_INTERNAL; // Convert to 18 decimals
     }
 
     function protocolFeeRecipient() public view returns (address) {
         return _protocolFeeRecipient;
     }
 
-    function setProtocolFee(uint256 fee) public onlyOwner {
-        if (fee > HALF) revert InvalidProtocolFee(fee);
+    function setProtocolFee(
+        uint256 fee // 18 decimals
+    ) public onlyOwner {
+        fee *= TO_INTERNAL; // Convert to internal decimals
+        if (fee > HALF) revert InvalidProtocolFee(fee / TO_INTERNAL);
         _protocolFee = fee;
     }
 

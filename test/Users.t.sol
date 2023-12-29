@@ -9,14 +9,14 @@ contract UsersTest is PoolTest {
     Token[] private tokens;
 
     function setUp() public {
-        console.log("Setting up UsersTest");
+        emit log("Setting up UsersTest");
 
         uint256 startBalance = type(uint256).max / 2;
         vm.deal(alice, startBalance);
         vm.deal(bob, startBalance);
         vm.deal(carol, startBalance);
 
-        console.log("Transferred tokens to users.");
+        emit log("Transferred tokens to users.");
 
         vm.startPrank(alice);
 
@@ -34,13 +34,13 @@ contract UsersTest is PoolTest {
 
         uint256 amount = USDC.balanceOf(address(pool)) / 10;
 
-        console.log("Minting USDC for Bob.");
+        emit log("Minting USDC for Bob.");
         USDC.mint(amount);
-        console.log("Approving USDC for Bob.");
+        emit log("Approving USDC for Bob.");
         USDC.increaseAllowance(address(pool), amount);
-        console.log("Staking USDC");
+        emit log("Staking USDC");
         pool.stake(address(USDC), amount, 0);
-        console.log("Stake completed");
+        emit log("Stake completed");
 
         assertGt(pool.balanceOf(bob), 0, "Bob's balance is greater than 0.");
 
@@ -48,9 +48,9 @@ contract UsersTest is PoolTest {
 
         vm.startPrank(alice);
 
-        console.log("Block bob.");
+        emit log("Block bob.");
         pool.setIsAllowed(bob, false);
-        console.log("Bob blocked.");
+        emit log("Bob blocked.");
 
         assertFalse(
             pool.isAllowed(bob),
@@ -63,7 +63,7 @@ contract UsersTest is PoolTest {
             "Bob's balance is 0 after being disallowed."
         );
 
-        console.log("Block alice");
+        emit log("Block alice");
 
         vm.expectRevert(
             abi.encodeWithSelector(IUsers.CannotModify.selector, alice)

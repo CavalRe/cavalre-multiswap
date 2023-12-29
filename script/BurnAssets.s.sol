@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-import "../contracts/Pool.sol";
-import "../test/Token.t.sol";
+import {Pool, FixedPointMathLib} from "../contracts/Pool.sol";
+import {Token} from "../test/Token.t.sol";
 import "forge-std/Script.sol";
 import "forge-std/Test.sol";
-import {FixedPointMathLib} from "solady/src/utils/FixedPointMathLib.sol";
 
 contract BurnAssetsScript is Script, Test {
     using FixedPointMathLib for uint256;

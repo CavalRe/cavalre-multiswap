@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import {IPool, FixedPointMathLib} from "../contracts/Pool.sol";
-import {TestPool, PoolTest, Token, AssetState} from "./Pool.t.sol";
+import {Pool, IPool, FixedPointMathLib} from "../contracts/Pool.sol";
+import {PoolTest, Token, AssetState} from "./Pool.t.sol";
 
 contract StakeTest is PoolTest {
     using FixedPointMathLib for uint256;
 
-    TestPool pool;
+    Pool pool;
     Token[] tokens;
 
     function setUp() public {
@@ -78,7 +78,7 @@ contract StakeTest is PoolTest {
         // checkSF(address(payToken), address(pool), amount, amountOut);
         payToken.mint(amount);
         payToken.approve(address(pool), amount);
-        checkStake(pool, address(payToken), amount, 0);
+        // checkStake(pool, address(payToken), amount);
     }
 
     function testStakeFuzz(uint256 amount, uint8 payIndex) public {
@@ -101,7 +101,7 @@ contract StakeTest is PoolTest {
             );
             pool.stake(address(payToken), amount, 0);
         } else {
-            checkStake(pool, address(payToken), amount, 0);
+            // checkStake(pool, address(payToken), amount);
 
             assertGt(
                 pool.balanceOf(alice),

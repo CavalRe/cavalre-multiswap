@@ -14,7 +14,7 @@ async function main() {
   );
 
   await pool.waitForDeployment();
-  console.log(`Pool deployed to ${pool.target}`);
+  emit log(`Pool deployed to ${pool.target}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
