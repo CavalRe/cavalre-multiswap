@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 // import {Pool, FixedPointMathLib} from "../contracts/Pool.sol";
-import {FloatingPoint as FP, Float, Float10} from "../contracts/libraries/FloatingPoint/src/FloatingPoint.sol";
+import {FloatingPoint as FP, Float} from "../contracts/libraries/FloatingPoint/src/FloatingPoint.sol";
 
 import {Test} from "forge-std/Test.sol";
 
@@ -10,7 +10,6 @@ contract TestMath is Test {
     using FP for uint256;
     using FP for int256;
     using FP for Float;
-    using FP for Float10;
 
     Float internal ZERO;
     Float internal HALF;
@@ -34,29 +33,6 @@ contract TestMath is Test {
     Float internal SEVENnHALF;
     Float internal EIGHTnHALF;
     Float internal NINEnHALF;
-
-    Float10 internal ZERO10;
-    Float10 internal HALF10;
-    Float10 internal ONE10;
-    Float10 internal TWO10;
-    Float10 internal THREE10;
-    Float10 internal FOUR10;
-    Float10 internal FIVE10;
-    Float10 internal SIX10;
-    Float10 internal SEVEN10;
-    Float10 internal EIGHT10;
-    Float10 internal NINE10;
-    Float10 internal TEN10;
-
-    Float10 internal ONEnHALF10;
-    Float10 internal TWOnHALF10;
-    Float10 internal THREEnHALF10;
-    Float10 internal FOURnHALF10;
-    Float10 internal FIVEnHALF10;
-    Float10 internal SIXnHALF10;
-    Float10 internal SEVENnHALF10;
-    Float10 internal EIGHTnHALF10;
-    Float10 internal NINEnHALF10;
 
     Float internal a;
     Float internal b;
@@ -104,39 +80,16 @@ contract TestMath is Test {
         NINE = FP.normalize(Float(9, FP.bias(0)));
         TEN = FP.normalize(Float(10, FP.bias(0)));
 
-        HALF = FP.normalize(Float(1, FP.bias(-1)));
-        ONEnHALF = FP.normalize(Float(3, FP.bias(-1)));
-        TWOnHALF = FP.normalize(Float(5, FP.bias(-1)));
-        THREEnHALF = FP.normalize(Float(7, FP.bias(-1)));
-        FOURnHALF = FP.normalize(Float(9, FP.bias(-1)));
-        FIVEnHALF = FP.normalize(Float(11, FP.bias(-1)));
-        SIXnHALF = FP.normalize(Float(13, FP.bias(-1)));
-        SEVENnHALF = FP.normalize(Float(15, FP.bias(-1)));
-        EIGHTnHALF = FP.normalize(Float(17, FP.bias(-1)));
-        NINEnHALF = FP.normalize(Float(19, FP.bias(-1)));
-
-        ZERO10 = FP.normalize(Float10(0, FP.bias(0)));
-        ONE10 = FP.normalize(Float10(1, FP.bias(0)));
-        TWO10 = FP.normalize(Float10(2, FP.bias(0)));
-        THREE10 = FP.normalize(Float10(3, FP.bias(0)));
-        FOUR10 = FP.normalize(Float10(4, FP.bias(0)));
-        FIVE10 = FP.normalize(Float10(5, FP.bias(0)));
-        SIX10 = FP.normalize(Float10(6, FP.bias(0)));
-        SEVEN10 = FP.normalize(Float10(7, FP.bias(0)));
-        EIGHT10 = FP.normalize(Float10(8, FP.bias(0)));
-        NINE10 = FP.normalize(Float10(9, FP.bias(0)));
-        TEN10 = FP.normalize(Float10(10, FP.bias(0)));
-
-        HALF10 = FP.normalize(Float10(5, FP.bias(-1)));
-        ONEnHALF10 = FP.normalize(Float10(15, FP.bias(-1)));
-        TWOnHALF10 = FP.normalize(Float10(25, FP.bias(-1)));
-        THREEnHALF10 = FP.normalize(Float10(35, FP.bias(-1)));
-        FOURnHALF10 = FP.normalize(Float10(45, FP.bias(-1)));
-        FIVEnHALF10 = FP.normalize(Float10(55, FP.bias(-1)));
-        SIXnHALF10 = FP.normalize(Float10(65, FP.bias(-1)));
-        SEVENnHALF10 = FP.normalize(Float10(75, FP.bias(-1)));
-        EIGHTnHALF10 = FP.normalize(Float10(85, FP.bias(-1)));
-        NINEnHALF10 = FP.normalize(Float10(95, FP.bias(-1)));
+        HALF = FP.normalize(Float(5, FP.bias(-1)));
+        ONEnHALF = FP.normalize(Float(15, FP.bias(-1)));
+        TWOnHALF = FP.normalize(Float(25, FP.bias(-1)));
+        THREEnHALF = FP.normalize(Float(35, FP.bias(-1)));
+        FOURnHALF = FP.normalize(Float(45, FP.bias(-1)));
+        FIVEnHALF = FP.normalize(Float(55, FP.bias(-1)));
+        SIXnHALF = FP.normalize(Float(65, FP.bias(-1)));
+        SEVENnHALF = FP.normalize(Float(75, FP.bias(-1)));
+        EIGHTnHALF = FP.normalize(Float(85, FP.bias(-1)));
+        NINEnHALF = FP.normalize(Float(95, FP.bias(-1)));
 
         ZERO_unnormalized = Float(0, FP.bias(0));
         HALF_unnormalized = Float(1, FP.bias(-1));
@@ -188,259 +141,136 @@ contract TestMath is Test {
         return floats;
     }
 
-    function getFloat10s() public view returns (Float10[] memory) {
-        Float10[] memory floats = new Float10[](21);
-        floats[0] = ZERO10;
-        floats[1] = HALF10;
-        floats[2] = ONE10;
-        floats[3] = ONEnHALF10;
-        floats[4] = TWO10;
-        floats[5] = TWOnHALF10;
-        floats[6] = THREE10;
-        floats[7] = THREEnHALF10;
-        floats[8] = FOUR10;
-        floats[9] = FOURnHALF10;
-        floats[10] = FIVE10;
-        floats[11] = FIVEnHALF10;
-        floats[12] = SIX10;
-        floats[13] = SIXnHALF10;
-        floats[14] = SEVEN10;
-        floats[15] = SEVENnHALF10;
-        floats[16] = EIGHT10;
-        floats[17] = EIGHTnHALF10;
-        floats[18] = NINE10;
-        floats[19] = NINEnHALF10;
-        floats[20] = TEN10;
-        return floats;
+    function testToString() public {
+        Float[] memory floats = getFloats();
+        for (uint256 i = 0; i < floats.length; i++) {
+            emit log_named_string("Float to string", floats[i].toString());
+        }
+        int256 exponent = 19;
+        Float memory float = ONE
+            .divide(Float(9, FP.bias(exponent)))
+            .normalize();
+        for (uint256 i = 0; i < uint256(2 * exponent); i++) {
+            emit log_named_string("Float to string", float.toString());
+            float = float.times(TEN);
+        }
+        float = Float(1, FP.bias(exponent))
+            .divide(Float(9, FP.bias(0)))
+            .normalize();
+        for (uint256 i = 0; i < uint256(2 * exponent); i++) {
+            emit log_named_string("Float to string", float.toString());
+            float = float.divide(TEN);
+        }
     }
-
-    // function toString(Float memory number) public returns (string memory) {
-    //     // Handle the special case of zero.
-    //     if (number.mantissa == 0) {
-    //         return "0.0";
-    //     }
-
-    //     uint256 integerPartUint = FP.integerPart(number);
-    //     if (number.exponent >= FP.EXPONENT_BIAS) {
-    //         return string(abi.encodePacked(FP.toString(integerPartUint), ".0"));
-    //     }
-
-    //     emit log_named_uint("number.mantissa", number.mantissa);
-    //     emit log_named_uint("number.exponent", number.exponent);
-    //     emit log_named_uint("integerPartUint", integerPartUint);
-
-    //     Float memory integerPartFloat = Float(integerPartUint, FP.bias(0));
-    //     Float memory fractionalPartFloat = FP.minus(
-    //         number,
-    //         integerPartFloat
-    //     );
-
-    //     emit log_named_uint("integerPartFloat.mantissa", integerPartFloat.mantissa);
-    //     emit log_named_uint("integerPartFloat.exponent", integerPartFloat.exponent);
-    //     emit log_named_uint("fractionalPartFloat.mantissa", fractionalPartFloat.mantissa);
-    //     emit log_named_uint("fractionalPartFloat.exponent", fractionalPartFloat.exponent);
-
-    //     // Determine the length of the decimal number.
-    //     uint256 temp = integerPartUint;
-    //     uint256 integerDigits;
-    //     while (temp != 0) {
-    //         integerDigits++;
-    //         temp /= 10;
-    //     }
-    //     uint256 fractionalDigits = 18 - integerDigits;
-    //     uint256 fractionalPartUint = FP.integerPart(
-    //         FP.times(fractionalPartFloat, Float(10 ** fractionalDigits, FP.bias(0)))
-    //     );
-
-    //     return
-    //         string(
-    //             abi.encodePacked(
-    //                 FP.toString(integerPartUint),
-    //                 ".",
-    //                 FP.toString(fractionalPartUint)
-    //             )
-    //         );
-    // }
-
-    // function testToString() public {
-    //     // emit log_named_uint("EXPONENT_BIAS", FP.EXPONENT_BIAS);
-    //     // emit log_named_string("toString", FP.toString(123542646535276));
-    //     // emit log_named_string("toString", FP.shiftStringLeft("123", 3));
-    //     // string memory result;
-    //     // string memory remainder;
-    //     // (result, remainder) = FP.shiftStringRight("123", 5);
-    //     // emit log_named_string("result", result);
-    //     // emit log_named_string("remainder", remainder);
-    //     Float[] memory floats = getFloats();
-    //     for (uint256 i = 0; i < floats.length; i++) {
-    //         emit log("--------------------------------");
-    //         emit log_named_string("Index", FP.toString(i));
-    //         emit log_named_string("Float to string", toString(floats[i]));
-    //     }
-    //     // Float memory float = ONE.divide(Float(90000000000, FP.bias(0)));
-    //     // emit log("--------------------------------");
-    //     // string memory label;
-    //     // for (uint256 i = 0; i < 40; i++) {
-    //     //     // emit log(Float(10 ** i, FP.bias(0)).toString());
-    //     //     // label = string(
-    //     //     //     abi.encodePacked(
-    //     //     //         "10^",
-    //     //     //         FP.toString(i)
-    //     //     //     )
-    //     //     // );
-    //     //     // emit log_named_string(label, float.toString());
-    //     //     // emit log_named_uint("float.mantissa", float.mantissa);
-    //     //     // emit log_named_uint("float.exponent", float.exponent);
-    //     //     // emit log("Split float");
-    //     //     // (result, remainder) = splitFloat(float);
-    //     //     // // emit log_named_string("float", float.toString());
-    //     //     // emit log_named_string("result", result);
-    //     //     // emit log_named_string("remainder", remainder);
-    //     //     // emit log("float.toString()");
-    //     //     emit log(float.toString());
-    //     //     // emit log("float.toString()");
-    //     //     float = float.times(TEN);
-    //     // }
-    //     // emit log_named_string("ONE.divide(NINE)", ONE.divide(NINE).toString());
-    //     // emit log_named_string("TEN.divide(NINE)", TEN.divide(NINE).toString());
-    //     // emit log_named_string("HUNDRED.divide(NINE)", TEN.times(TEN).divide(NINE).toString());
-    // }
 
     function assertEq(
         Float memory x,
         Float memory y,
         string memory message
     ) internal {
-        assertEq(x.mantissa, y.mantissa, message);
-        assertEq(x.exponent, y.exponent, message);
+        x = x.normalize();
+        y = y.normalize();
+        assertEq(x.mantissa, y.mantissa, "mantissa");
+        assertEq(x.exponent, y.exponent, "exponent");
+        if (failed) emit log(message);
     }
 
     function testGasBlank() public pure {}
 
-    function testGasNormalizeParts() public pure {
-        FP.normalize(1, FP.bias(0));
-    }
-
-    function testGasNormalizeStruct() public view {
+    function testGasNormalize() public view {
         FP.normalize(ONE_unnormalized);
     }
 
-    function testGasNormalizeNormalizedStruct() public view {
+    function testGasNormalizeNormalized() public view {
         FP.normalize(ONE);
     }
 
-    function testGasAlignParts() public view {
-        FP.align(
-            mantissaONE,
-            exponentONE,
-            mantissaTWO_unnormalized,
-            exponentTWO_unnormalized
-        );
-    }
-
-    function testGasAlignStruct() public view {
+    function testGasAlign() public view {
         FP.align(ONE, TWO_unnormalized);
     }
 
-    function testGasAddParts() public view {
-        FP.plus(ONE.mantissa, ONE.exponent, TWO.mantissa, TWO.exponent);
-    }
-
-    function testGasAddStruct() public view {
-        // FP.plus(ONE.mantissa, ONE.exponent, TWO.mantissa, TWO.exponent);
+    function testGasAdd() public view {
         ONE.plus(TWO);
     }
 
-    function testGasAddStruct10() public view {
-        // FP.plus(ONE.mantissa, ONE.exponent, TWO.mantissa, TWO.exponent);
-        ONE10.plus(TWO10);
-    }
-
-    function testGasSubParts() public view {
-        FP.minus(TWO.mantissa, TWO.exponent, ONE.mantissa, ONE.exponent);
-    }
-
-    function testGasSubStruct() public view {
+    function testGasSub() public view {
         TWO.minus(ONE);
     }
 
-    function testGasSubStruct10() public view {
-        TWO10.minus(ONE10);
-    }
-
-    function testGasMulParts() public view {
-        FP.times(ONE.mantissa, ONE.exponent, TWO.mantissa, TWO.exponent);
-    }
-
-    function testGasMulStruct() public view {
+    function testGasMul() public view {
         ONE.times(TWO);
     }
 
-    function testGasDivParts() public view {
-        FP.divide(ONE.mantissa, ONE.exponent, TWO.mantissa, TWO.exponent);
-    }
-
-    function testGasDivStruct() public view {
+    function testGasDiv() public view {
         ONE.divide(TWO);
     }
 
-    function testAlign() public {
-        uint256 exponent;
-        (mantissaONE, mantissaTWO_unnormalized, exponent) = FP.align(
-            mantissaONE,
-            exponentONE,
-            mantissaTWO_unnormalized,
-            exponentTWO_unnormalized
-        );
-        exponentONE = exponent;
-        exponentTWO_unnormalized = exponent;
-        (ONE, TWO_unnormalized) = FP.align(ONE, TWO_unnormalized);
-        assertEq(mantissaONE, ONE.mantissa, "mantissa");
-        assertEq(exponentONE, ONE.exponent, "exponent");
+    // function testMSB() public view {
+    //     assertEq(FP.msb(0), 0, "0");
+    //     assertEq(FP.msb(1), 1, "1");
+    //     assertEq(FP.msb(2), 2, "2");
+    //     assertEq(FP.msb(3), 2, "3");
+    //     assertEq(FP.msb(4), 3, "4");
+    //     assertEq(FP.msb(5), 3, "5");
+    //     assertEq(FP.msb(6), 3, "6");
+    //     assertEq(FP.msb(7), 3, "7");
+    //     assertEq(FP.msb(8), 4, "8");
+    //     assertEq(FP.msb(9), 4, "9");
+    //     assertEq(FP.msb(10), 4, "10");
+    //     assertEq(FP.msb(11), 4, "11");
+    //     assertEq(FP.msb(12), 4, "12");
+    //     assertEq(FP.msb(13), 4, "13");
+    //     assertEq(FP.msb(14), 4, "14");
+    //     assertEq(FP.msb(15), 4, "15");
+    //     assertEq(FP.msb(16), 5, "16");
+    //     assertEq(FP.msb(17), 5, "17");
+    //     assertEq(FP.msb(18), 5, "18");
+    //     assertEq(FP.msb(19), 5, "19");
+    //     assertEq(FP.msb(20), 5, "20");
+    //     assertEq(FP.msb(21), 5, "21");
+    //     assertEq(FP.msb(22), 5, "22");
+    //     assertEq(FP.msb(23), 5, "23");
+    //     assertEq(FP.msb(24), 5, "24");
+    //     assertEq(FP.msb(25), 5, "25");
+    //     assertEq(FP.msb(26), 5, "26");
+    //     assertEq(FP.msb(27), 5, "27");
+    //     assertEq(FP.msb(28), 5, "28");
+    //     assertEq(FP.msb(29), 5, "29");
+    //     assertEq(FP.msb(30), 5, "30");
+    // }
+
+    function testNormalize() public {
         assertEq(
-            mantissaTWO_unnormalized,
-            TWO_unnormalized.mantissa,
-            "mantissa"
+            ONE_unnormalized.normalize().mantissa.msb(),
+            FP.SIGNIFICANT_DIGITS,
+            "mantissa (from unnormalized)"
         );
         assertEq(
-            exponentTWO_unnormalized,
-            TWO_unnormalized.exponent,
+            ONE.mantissa.msb(),
+            FP.SIGNIFICANT_DIGITS,
+            "mantissa (from normalized)"
+        );
+        assertEq(
+            ONE.exponent,
+            ONE_unnormalized.normalize().exponent,
             "exponent"
         );
-        if (failed) {
-            emit log_named_uint("mantissaONE", mantissaONE);
-            emit log_named_uint("ONE.mantissa", ONE.mantissa);
-            emit log_named_uint("exponentONE", exponentONE);
-            emit log_named_uint("ONE.exponent", ONE.exponent);
-            emit log_named_uint(
-                "mantissaTWO_unnormalized",
-                mantissaTWO_unnormalized
-            );
-            emit log_named_uint(
-                "TWO_unnormalized.mantissa",
-                TWO_unnormalized.mantissa
-            );
-            emit log_named_uint(
-                "exponentTWO_unnormalized",
-                exponentTWO_unnormalized
-            );
-            emit log_named_uint(
-                "TWO_unnormalized.exponent",
-                TWO_unnormalized.exponent
-            );
-        }
+    }
+
+    function testAlign() public {
+        (a, b) = FP.align(ONE, TWO_unnormalized);
+        assertEq(a, ONE, "a!=ONE");
+        assertEq(b, TWO_unnormalized, "b!=TWO_unnormalized");
+        assertEq(a.exponent, b.exponent, "exponent");
     }
 
     function testONE() public {
-        uint256 mantissa;
-        uint256 exponent;
-        (mantissa, exponent) = FP.normalize(1, FP.bias(0));
-        assertEq(mantissa, 576460752303423488, "mantissa");
-        assertEq(exponent, 68, "exponent");
+        a = Float(1, FP.bias(0));
+        a = FP.normalize(a);
+        assertEq(FP.msb(a.mantissa), 18, "msb");
         if (failed) {
-            emit log_named_uint("ONE.mantissa", mantissa);
-            emit log_named_uint("ONE.exponent", exponent);
-            emit log_named_uint("EXPONENT_BIAS", FP.EXPONENT_BIAS);
+            emit log_named_uint("ONE.mantissa", a.mantissa);
+            emit log_named_uint("ONE.exponent", a.exponent);
         }
     }
 
@@ -1211,23 +1041,23 @@ contract TestMath is Test {
         assertEq(TEN.divide(TEN), ONE, "10/10!=1");
     }
 
-    function testMulDiv() public {
-        Float[] memory floats = getFloats();
-        for (uint256 i; i < floats.length; i++) {
-            for (uint256 j; j < floats.length; j++) {
-                for (uint256 k = 1; k < floats.length; k++) {
-                    a = floats[i];
-                    b = floats[j];
-                    c = floats[k];
-                    assertEq(
-                        FP.mulDiv(a, b, c),
-                        a.times(b).divide(c),
-                        "muDiv(a,b,c)!=(a*b)/c"
-                    );
-                }
-            }
-        }
-    }
+    // function testMulDiv() public {
+    //     Float[] memory floats = getFloats();
+    //     for (uint256 i; i < floats.length; i++) {
+    //         for (uint256 j; j < floats.length; j++) {
+    //             for (uint256 k = 1; k < floats.length; k++) {
+    //                 a = floats[i];
+    //                 b = floats[j];
+    //                 c = floats[k];
+    //                 assertEq(
+    //                     FP.mulDiv(a, b, c),
+    //                     a.times(b).divide(c),
+    //                     "muDiv(a,b,c)!=(a*b)/c"
+    //                 );
+    //             }
+    //         }
+    //     }
+    // }
 
     // function testEncode() public {
     //     uint256 x = FP.encode(1, 1);
