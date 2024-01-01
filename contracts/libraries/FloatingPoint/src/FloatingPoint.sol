@@ -3,28 +3,14 @@ pragma solidity 0.8.19;
 
 struct Float {
     uint256 mantissa;
-    uint256 exponent; // Biased
+    int256 exponent;
 }
 
 library FloatingPoint {
     uint256 constant SIGNIFICANT_DIGITS = 18;
-    uint256 constant EXPONENT_MAX = 76;
-    uint256 constant EXPONENT_BIAS = EXPONENT_MAX / 2; // (-38,38)
-
-    function bias(
-        int256 exponent // Unbiased
-    ) internal pure returns (uint256) {
-        return uint256(exponent + int256(EXPONENT_BIAS));
-    }
-
-    function unbias(
-        uint256 exponent // Biased
-    ) internal pure returns (int256) {
-        return int256(exponent) - int256(EXPONENT_BIAS);
-    }
 
     function normalize(Float memory a) internal pure returns (Float memory) {
-        if (a.mantissa == 0) return Float(0, bias(0));
+        if (a.mantissa == 0) return Float(0, 0);
         while (a.mantissa >= 10 ** SIGNIFICANT_DIGITS) {
             a.mantissa /= 10;
             a.exponent++;
@@ -33,43 +19,21 @@ library FloatingPoint {
             a.mantissa *= 10;
             a.exponent--; // Will revert on underflow
         }
-        if (a.exponent > EXPONENT_MAX)
-            revert("FloatingPoint: exponent overflow");
         return a;
     }
-
-    // function decode(
-    //     uint256 fpNumber
-    // ) internal pure returns (uint256 mantissa, uint256 biasedExponent) {
-    //     mantissa = fpNumber >> EXPONENT_BITS;
-    //     biasedExponent = fpNumber & EXPONENT_MASK;
-    // }
-
-    // function encode(
-    //     uint256 mantissa,
-    //     uint256 exponent // Biased
-    // ) internal pure returns (uint256) {
-    //     (mantissa, exponent) = normalize(mantissa, exponent);
-    //     if (exponent > EXPONENT_MASK)
-    //         revert("FloatingPoint: exponent overflow");
-    //     return (mantissa << EXPONENT_BITS) | exponent;
-    // }
 
     function align(
         Float memory a,
         Float memory b
     ) internal pure returns (Float memory, Float memory) {
-        if (a.exponent == b.exponent) {
-            return (a, b);
-        } else if (a.exponent > b.exponent) {
-            a.mantissa *= 10 ** (a.exponent - b.exponent);
+        if (a.exponent > b.exponent) {
+            a.mantissa *= 10 ** uint256(a.exponent - b.exponent);
             a.exponent = b.exponent;
-            return (a, b);
-        } else {
-            b.mantissa *= 10 ** (b.exponent - a.exponent);
+        } else if (a.exponent < b.exponent) {
+            b.mantissa *= 10 ** uint256(b.exponent - a.exponent);
             b.exponent = a.exponent;
-            return (a, b);
         }
+        return (a, b);
     }
 
     // function equal(uint256 a, uint256 b) internal pure returns (bool) {
@@ -91,7 +55,13 @@ library FloatingPoint {
         Float memory a,
         Float memory b
     ) internal pure returns (Float memory) {
-        (a, b) = align(a, b);
+        if (a.exponent > b.exponent) {
+            a.mantissa *= 10 ** uint256(a.exponent - b.exponent);
+            a.exponent = b.exponent;
+        } else if (a.exponent < b.exponent) {
+            b.mantissa *= 10 ** uint256(b.exponent - a.exponent);
+            b.exponent = a.exponent;
+        }
         return normalize(Float(a.mantissa + b.mantissa, a.exponent));
         // return Float(a.mantissa + b.mantissa, a.exponent);
     }
@@ -100,7 +70,13 @@ library FloatingPoint {
         Float memory a,
         Float memory b
     ) internal pure returns (Float memory) {
-        (a, b) = align(a, b);
+        if (a.exponent > b.exponent) {
+            a.mantissa *= 10 ** uint256(a.exponent - b.exponent);
+            a.exponent = b.exponent;
+        } else if (a.exponent < b.exponent) {
+            b.mantissa *= 10 ** uint256(b.exponent - a.exponent);
+            b.exponent = a.exponent;
+        }
         return normalize(Float(a.mantissa - b.mantissa, a.exponent));
         // return Float(a.mantissa - b.mantissa, a.exponent);
     }
@@ -109,43 +85,41 @@ library FloatingPoint {
         Float memory a,
         Float memory b
     ) internal pure returns (Float memory) {
-        // if (a.mantissa == 0 || b.mantissa == 0) return Float(0, bias(0));
-        a = normalize(a);
-        b = normalize(b);
+        // if (a.mantissa == 0 || b.mantissa == 0) return Float(0, 0);
+        // a = normalize(a);
+        // b = normalize(b);
 
+        // return
+        //     normalize(Float(a.mantissa * b.mantissa, a.exponent + b.exponent));
         return
             normalize(
                 Float(
                     (a.mantissa * b.mantissa) / 10 ** SIGNIFICANT_DIGITS,
-                    SIGNIFICANT_DIGITS + a.exponent + b.exponent - EXPONENT_BIAS
+                    int256(SIGNIFICANT_DIGITS) + a.exponent + b.exponent
                 )
             );
-        // return
-        //     Float(
-        //         a.mantissa * b.mantissa,
-        //         a.exponent + b.exponent - EXPONENT_BIAS
-        //     );
+        // return Float(a.mantissa * b.mantissa, a.exponent + b.exponent);
     }
 
     function divide(
         Float memory a,
         Float memory b
     ) internal pure returns (Float memory) {
-        // if (a.mantissa == 0) return Float(0, bias(0));
-        a = normalize(a);
-        b = normalize(b);
+        // if (a.mantissa == 0) return Float(0, 0);
+        // a = normalize(a);
+        // b = normalize(b);
 
         return
             normalize(
                 Float(
                     (a.mantissa * 10 ** SIGNIFICANT_DIGITS) / b.mantissa,
-                    EXPONENT_BIAS + a.exponent - b.exponent - SIGNIFICANT_DIGITS
+                    a.exponent - b.exponent - int256(SIGNIFICANT_DIGITS)
                 )
             );
         // return
         //     Float(
         //         (a.mantissa * 10 ** SIGNIFICANT_DIGITS) / b.mantissa,
-        //         EXPONENT_BIAS + a.exponent - b.exponent - SIGNIFICANT_DIGITS
+        //         a.exponent - b.exponent - int256(SIGNIFICANT_DIGITS)
         //     );
     }
 
@@ -170,16 +144,22 @@ library FloatingPoint {
         Float memory a,
         Float memory b,
         Float memory c
-    ) internal pure returns (uint256, uint256) {
-        // if (a.mantissa == 0 || b.mantissa == 0) return (0, bias(0));
-        a = normalize(a);
-        b = normalize(b);
-        c = normalize(c);
+    ) internal pure returns (Float memory) {
+        // if (a.mantissa == 0 || b.mantissa == 0) return (0, 0);
+        // a = normalize(a);
+        // b = normalize(b);
+        // c = normalize(c);
 
         return
-            (
-                (a.mantissa * b.mantissa) / c.mantissa,
-                a.exponent + b.exponent - c.exponent
+            normalize(
+                Float(
+                    (a.mantissa * b.mantissa * 10 ** SIGNIFICANT_DIGITS) /
+                        c.mantissa,
+                    a.exponent +
+                        b.exponent -
+                        c.exponent -
+                        int256(SIGNIFICANT_DIGITS)
+                )
             );
     }
 
@@ -250,6 +230,24 @@ library FloatingPoint {
     //     // Encode and return the result
     //     return encode(mantissa, exponent);
     // }
+
+    function mulDivAdd(
+        Float memory a,
+        Float memory b,
+        Float memory db
+    ) internal pure returns (Float memory) {
+        (b, db) = align(b, db);
+
+        // Normalize result
+        return
+            normalize(
+                Float(
+                    (a.mantissa * db.mantissa * 10 ** SIGNIFICANT_DIGITS) /
+                        (b.mantissa + db.mantissa),
+                    a.exponent - int256(SIGNIFICANT_DIGITS)
+                )
+            );
+    }
 
     // function mulDivAdd(
     //     uint256 mantissaA,
@@ -695,10 +693,10 @@ library FloatingPoint {
         // Handle the special case of zero.
         if (number.mantissa == 0) {
             return 0;
-        } else if (number.exponent >= EXPONENT_BIAS) {
-            return number.mantissa * 10 ** (number.exponent - EXPONENT_BIAS);
+        } else if (number.exponent >= 0) {
+            return number.mantissa * 10 ** uint256(number.exponent);
         } else {
-            return number.mantissa / 10 ** (EXPONENT_BIAS - number.exponent);
+            return number.mantissa / 10 ** uint256(-number.exponent);
         }
     }
 
@@ -729,11 +727,11 @@ library FloatingPoint {
         }
 
         uint256 integerPartUint = integerPart(number);
-        if (number.exponent >= EXPONENT_BIAS) {
+        if (number.exponent >= 0) {
             return string(abi.encodePacked(toString(integerPartUint), ".0"));
         }
 
-        Float memory integerPartFloat = Float(integerPartUint, bias(0));
+        Float memory integerPartFloat = Float(integerPartUint, 0);
         Float memory fractionalPartFloat = normalize(
             minus(number, integerPartFloat)
         );
@@ -754,12 +752,11 @@ library FloatingPoint {
         uint256 zeroPadding;
         if (
             integerPartUint == 0 &&
-            EXPONENT_BIAS > (fractionalPartFloat.exponent + SIGNIFICANT_DIGITS)
+            int256(SIGNIFICANT_DIGITS) < -fractionalPartFloat.exponent
         ) {
-            zeroPadding =
-                EXPONENT_BIAS -
-                fractionalPartFloat.exponent -
-                SIGNIFICANT_DIGITS;
+            zeroPadding = uint256(
+                -fractionalPartFloat.exponent - int256(SIGNIFICANT_DIGITS)
+            );
         }
 
         bytes memory fractionalPartBytesFull = toStringBytes(
@@ -800,7 +797,7 @@ library FloatingPoint {
 
     //     Float memory fractionalPartFloat = minus(
     //         number,
-    //         Float(integerPartUint, bias(0))
+    //         Float(integerPartUint, 0)
     //     );
 
     //     // Determine the length of the decimal number.
@@ -812,7 +809,7 @@ library FloatingPoint {
     //     }
     //     uint256 fractionalDigits = 18 - integerDigits;
     //     uint256 fractionalPartUint = integerPart(
-    //         times(fractionalPartFloat, Float(10 ** fractionalDigits, bias(0)))
+    //         times(fractionalPartFloat, Float(10 ** fractionalDigits, 0))
     //     );
 
     //     return
@@ -838,7 +835,7 @@ library FloatingPoint {
 
     //     Float memory fractionalPartFloat = minus(
     //         number,
-    //         Float(integerPartUint, bias(0))
+    //         Float(integerPartUint, 0)
     //     );
 
     //     // Determine the length of the decimal number.
@@ -850,7 +847,7 @@ library FloatingPoint {
     //     }
     //     uint256 fractionalDigits = 18 - integerDigits;
     //     uint256 fractionalPartUint = integerPart(
-    //         times(fractionalPartFloat, Float(10 ** fractionalDigits, bias(0)))
+    //         times(fractionalPartFloat, Float(10 ** fractionalDigits, 0))
     //     );
 
     //     return
@@ -910,5 +907,22 @@ library FloatingPoint {
     //                 fractionalPart
     //             )
     //         );
+    // }
+
+    // function decode(
+    //     uint256 fpNumber
+    // ) internal pure returns (uint256 mantissa, uint256 biasedExponent) {
+    //     mantissa = fpNumber >> EXPONENT_BITS;
+    //     biasedExponent = fpNumber & EXPONENT_MASK;
+    // }
+
+    // function encode(
+    //     uint256 mantissa,
+    //     uint256 exponent // Biased
+    // ) internal pure returns (uint256) {
+    //     (mantissa, exponent) = normalize(mantissa, exponent);
+    //     if (exponent > EXPONENT_MASK)
+    //         revert("FloatingPoint: exponent overflow");
+    //     return (mantissa << EXPONENT_BITS) | exponent;
     // }
 }
