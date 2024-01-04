@@ -5,27 +5,27 @@ pragma solidity 0.8.19;
 
 import {IUsers} from "./interfaces/IUsers.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {FloatingPoint, Float} from "./libraries/FloatingPoint/src/FloatingPoint.sol";
 
 import {Test} from "forge-std/Test.sol";
 
 contract Users is IUsers, Ownable2Step, Test {
-    // uint256 internal constant ONE = 1e27;
-    // uint256 internal constant TO_INTERNAL = 1e9;
-    // uint256 internal constant HALF = 5e26;
-    uint8 internal constant INTERNAL_DECIMALS = 27;
-    uint256 internal constant ONE = 10 ** INTERNAL_DECIMALS;
-    uint256 internal constant TO_INTERNAL = 10 ** (INTERNAL_DECIMALS - 18);
-    uint256 internal constant HALF = 5 * 10 ** (INTERNAL_DECIMALS - 1);
+    using FloatingPoint for uint256;
+    using FloatingPoint for Float;
+    uint256 internal constant ONE = 10 ** 18;
+    uint256 internal constant HALF = 5 * 10 ** 17;
+    Float internal ZERO_FLOAT = Float(0,0);
+    Float internal ONE_FLOAT = Float(1,0).normalize();
 
     mapping(address => bool) internal _isBlocked;
-    mapping(address => uint256) internal _discount; // Internal decimals
+    mapping(address => Float) internal _discount; // 18 decimals
 
     function isAllowed(address user_) public view returns (bool) {
         return !_isBlocked[user_];
     }
 
     function discount(address user_) public view returns (uint256) {
-        return _discount[user_];
+        return _discount[user_].toWad();
     }
 
     function setDiscount(
@@ -34,9 +34,8 @@ contract Users is IUsers, Ownable2Step, Test {
     ) public onlyOwner {
         if (_isBlocked[user_]) revert UserNotAllowed(user_);
         if (user_ == address(0)) revert ZeroAddress();
-        discount_ *= TO_INTERNAL; // Convert to internal decimals
         emit log_named_uint("discount", discount_);
         if (discount_ > ONE) revert InvalidDiscount(discount_);
-        _discount[user_] = discount_;
+        _discount[user_] = discount_.fromWad();
     }
 }

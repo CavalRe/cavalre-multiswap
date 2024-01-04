@@ -9,6 +9,54 @@ struct Float {
 library FloatingPoint {
     uint256 constant SIGNIFICANT_DIGITS = 18;
 
+    function fromWad(uint256 a) internal pure returns (Float memory) {
+        return normalize(Float(a, -int256(SIGNIFICANT_DIGITS)));
+    }
+
+    function toWad(Float memory a) internal pure returns (uint256) {
+        return
+            integerPart(
+                Float(a.mantissa, a.exponent + int256(SIGNIFICANT_DIGITS))
+            );
+    }
+
+    function fromDecimals(
+        uint256 a,
+        uint8 decimals
+    ) internal pure returns (Float memory) {
+        return normalize(Float(a, -int256(int8(decimals))));
+    }
+
+    function toDecimals(
+        Float memory a,
+        uint8 decimals
+    ) internal pure returns (uint256) {
+        // a.exponent += int256(int8(decimals));
+        return
+            integerPart(Float(a.mantissa, a.exponent + int256(int8(decimals))));
+    }
+
+    function toFloatArray(
+        uint256[] memory a
+    ) internal pure returns (Float[] memory) {
+        Float[] memory result = new Float[](a.length);
+        for (uint256 i = 0; i < a.length; i++) {
+            result[i] = fromWad(a[i]);
+        }
+        return result;
+    }
+
+    function toFloatArray(
+        uint256[] memory a,
+        uint8[] memory decimals
+    ) internal pure returns (Float[] memory) {
+        Float[] memory result = new Float[](a.length);
+        for (uint256 i = 0; i < a.length; i++) {
+            result[i] = fromDecimals(a[i], decimals[i]);
+        }
+        return result;
+    }
+
     function normalize(Float memory a) internal pure returns (Float memory) {
         if (a.mantissa == 0) return Float(0, 0);
         while (a.mantissa >= 10 ** SIGNIFICANT_DIGITS) {
@@ -34,6 +82,34 @@ library FloatingPoint {
             b.exponent = a.exponent;
         }
         return (a, b);
+    }
+
+    function isEqual(
+        Float memory a,
+        Float memory b
+    ) internal pure returns (bool) {
+        (a, b) = align(a, b);
+        return a.mantissa == b.mantissa;
+    }
+
+    function gt(Float memory a, Float memory b) internal pure returns (bool) {
+        (a, b) = align(a, b);
+        return a.mantissa > b.mantissa;
+    }
+
+    function gte(Float memory a, Float memory b) internal pure returns (bool) {
+        (a, b) = align(a, b);
+        return a.mantissa >= b.mantissa;
+    }
+
+    function lt(Float memory a, Float memory b) internal pure returns (bool) {
+        (a, b) = align(a, b);
+        return a.mantissa < b.mantissa;
+    }
+
+    function lte(Float memory a, Float memory b) internal pure returns (bool) {
+        (a, b) = align(a, b);
+        return a.mantissa <= b.mantissa;
     }
 
     // function equal(uint256 a, uint256 b) internal pure returns (bool) {
@@ -101,6 +177,20 @@ library FloatingPoint {
         // return Float(a.mantissa * b.mantissa, a.exponent + b.exponent);
     }
 
+    function times(
+        Float memory a,
+        uint256 b
+    ) internal pure returns (Float memory) {
+        return times(a, Float(b, 0));
+    }
+
+    function times(
+        uint256 a,
+        Float memory b
+    ) internal pure returns (Float memory) {
+        return times(Float(a, 0), b);
+    }
+
     function divide(
         Float memory a,
         Float memory b
@@ -121,6 +211,20 @@ library FloatingPoint {
         //         (a.mantissa * 10 ** SIGNIFICANT_DIGITS) / b.mantissa,
         //         a.exponent - b.exponent - int256(SIGNIFICANT_DIGITS)
         //     );
+    }
+
+    function divide(
+        Float memory a,
+        uint256 b
+    ) internal pure returns (Float memory) {
+        return divide(a, Float(b, 0));
+    }
+
+    function divide(
+        uint256 a,
+        Float memory b
+    ) internal pure returns (Float memory) {
+        return divide(Float(a, 0), b);
     }
 
     // function divide(uint256 a, uint256 b) internal pure returns (uint256) {

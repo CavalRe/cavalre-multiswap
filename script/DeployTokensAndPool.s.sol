@@ -15,7 +15,6 @@ contract DeployTokensAndPoolScript is Script, Test {
     uint256 private protocolFee = 5e17;
     address private multisigAddress = vm.envAddress("MULTISIG_ADDRESS");
     uint256 private tokensPerShare = 1e18;
-    uint256 private tau = 1e16;
     uint256 private bps = 1e14;
     uint256 private marketCap = 1e25;
 
@@ -71,7 +70,6 @@ contract DeployTokensAndPoolScript is Script, Test {
             protocolFee,
             multisigAddress,
             tokensPerShare,
-            tau,
             vm.envAddress("WRAPPED_NATIVE_TOKEN")
         );
 

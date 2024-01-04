@@ -18,7 +18,7 @@ contract StakeTest is PoolTest {
 
         vm.startPrank(alice);
 
-        (pool, tokens) = setUpPool("Pool", "P", 2e17, 1e16);
+        (pool, tokens) = setUpPool("Pool", "P", 2e17);
 
         // for (uint256 i; i < NTOKENS; i++) {
         //     allMaxs[i] = type(uint256).max;

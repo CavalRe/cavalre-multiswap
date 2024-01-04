@@ -18,7 +18,7 @@ contract SwapTest is PoolTest {
 
         vm.startPrank(alice);
 
-        (pool, tokens) = setUpPool("Pool", "P", 2e17, 1e16);
+        (pool, tokens) = setUpPool("Pool", "P", 2e17);
     }
 
     /*

@@ -9,7 +9,6 @@ contract InitTest is Test {
     uint256 private _protocolFee = 5e17;
     address private _multisigAddress = vm.envAddress("MULTISIG_ADDRESS");
     uint256 private _tokensPerShare = 1e18;
-    uint256 private _tau = 1e16;
     address private _wrappedNative = address(1234);
 
     function testInit() public {
@@ -25,7 +24,6 @@ contract InitTest is Test {
             _protocolFee,
             _multisigAddress,
             _tokensPerShare,
-            _tau,
             _wrappedNative
         );
         uint256 amount = 1e27;
@@ -93,7 +91,7 @@ contract InitTest is Test {
         );
         pool.initialize();
 
-        AssetState[] memory assets = pool.assets();
+        AssetState[] memory assets = pool._assets();
         for (uint256 i; i < assets.length; i++) {
             address token = assets[i].token;
             assertEq(token, assets[assets[i].index].token);
@@ -113,7 +111,6 @@ contract InitTest is Test {
             _protocolFee,
             _multisigAddress,
             _tokensPerShare,
-            _tau,
             _wrappedNative
         );
         vm.stopPrank();
@@ -137,7 +134,6 @@ contract InitTest is Test {
             _protocolFee,
             _multisigAddress,
             _tokensPerShare,
-            _tau,
             _wrappedNative
         );
         vm.stopPrank();

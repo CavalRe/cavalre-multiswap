@@ -22,7 +22,6 @@ contract DeployEmptyPoolScript is Script, Test {
             protocolFee,
             multisigAddress,
             tokensPerShare,
-            tau,
             vm.envAddress("WRAPPED_NATIVE_TOKEN")
         );
 

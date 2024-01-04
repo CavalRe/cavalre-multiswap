@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {console} from "forge-std/console.sol";
 import {TestRoot} from "./TestRoot.t.sol";
-import {Pool, FixedPointMathLib, AssetState, IPool} from "../contracts/Pool.sol";
+import {Pool, FloatingPoint, AssetState, AssetStateExternal, IPool} from "../contracts/Pool.sol";
 import {Token} from "./Token.t.sol";
 
 struct State {
@@ -13,7 +13,7 @@ struct State {
 }
 
 contract MultiswapTest is TestRoot {
-    using FixedPointMathLib for uint256;
+    using FloatingPoint for uint256;
 
     function testMultiSmoke() public {
         Token payToken = tokens[0];
@@ -498,7 +498,7 @@ contract MultiswapTest is TestRoot {
 
     function checkScale() internal {
         uint256 scale = pool.info().scale;
-        AssetState[] memory initialAssets = pool.assets();
+        AssetStateExternal[] memory initialAssets = pool.assets();
         uint256 scaleSum = 0;
 
         for (uint256 i; i < initialAssets.length; i++) {

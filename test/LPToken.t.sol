@@ -13,8 +13,7 @@ contract PoolMintable is Pool {
         string memory symbol_,
         uint256 protocolFee_,
         address protocolFeeRecipient_,
-        uint256 tokensPerShare_,
-        uint256 tau_
+        uint256 tokensPerShare_
     )
         Pool(
             name_,
@@ -22,7 +21,6 @@ contract PoolMintable is Pool {
             protocolFee_,
             protocolFeeRecipient_,
             tokensPerShare_,
-            tau_,
             address(1234)
         )
     {}
@@ -61,8 +59,7 @@ contract LPTokenTest is Test {
             "P",
             protocolFee,
             multisigAddress,
-            tokensPerShare,
-            tau
+            tokensPerShare
         );
     }
 

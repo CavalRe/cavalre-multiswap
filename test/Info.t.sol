@@ -7,18 +7,16 @@ import {PoolState, IPool, AssetState} from "../contracts/Pool.sol";
 contract InfoTest is TestRoot {
     /// @dev check number of tokens return is equal to the initial number of tokens
     function testAssets() public {
-        AssetState[] memory assets = pool.assets();
+        AssetState[] memory assets = pool._assets();
         assertEq(assets.length, NTOKENS);
     }
 
     /// @dev check that `pool` returns expected values
     function testPool() public {
-        PoolState memory pool_ = pool.info();
+        PoolState memory pool_ = pool._info();
         assertEq(pool_.token, address(pool));
         assertEq(pool_.name, "Pool");
         assertEq(pool_.symbol, "P");
-        assertEq(pool_.balance, pool_.meanBalance);
-        assertEq(pool_.scale, pool_.meanScale);
     }
 
     /// @dev check that `balance` returns some balance
@@ -29,8 +27,8 @@ contract InfoTest is TestRoot {
 
     /// @dev smoke test for `asset`
     function testAsset() public {
-        AssetState memory asset = pool.asset(address(tokens[0]));
-        assertGt(asset.balance, 0);
+        AssetState memory asset = pool._asset(address(tokens[0]));
+        assertGt(asset.balance.mantissa, 0);
     }
 
     /// @dev `asset` should revert with `AssetNotFound` if the address is not a managed asset
