@@ -7,8 +7,9 @@ import "forge-std/Test.sol";
 
 import {Token} from "./Token.t.sol";
 import {Pool, FloatingPoint, Float, PoolState, AssetState, IPool} from "../contracts/Pool.sol";
+import {PoolUtils} from "./PoolUtils.t.sol";
 
-contract ContractTest is Context, Test {
+contract ContractTest is Context, PoolUtils {
     using FloatingPoint for uint256;
     using FloatingPoint for Float;
 
@@ -32,10 +33,6 @@ contract ContractTest is Context, Test {
     uint256[] private fees;
     uint256[] private scales;
     uint256[] private amounts;
-
-    Float internal ZERO_FLOAT = Float(0, 0);
-    Float internal HALF_FLOAT = Float(5, -1).normalize();
-    Float internal ONE_FLOAT = Float(1, 0).normalize();
 
     address[] private oneAsset = new address[](1);
     address[] private anotherAsset = new address[](1);
@@ -401,36 +398,38 @@ contract ContractTest is Context, Test {
         emit log("");
     }
 
-    function weight(address token_) public view returns (Float memory) {
-        if (token_ == address(pool)) return ONE_FLOAT;
-        AssetState memory asset_ = pool._asset(token_);
-        return asset_.scale.divide(pool.info().scale);
-    }
+    // function weight(address token_) public view returns (Float memory) {
+    //     if (token_ == address(pool)) return ONE_FLOAT;
+    //     AssetState memory asset_ = pool._asset(token_);
+    //     return asset_.scale.divide(pool.info().scale);
+    // }
 
-    function price(address token_) public view returns (Float memory) {
-        if (token_ == address(pool)) return ONE_FLOAT;
-        AssetState memory asset_ = pool._asset(token_);
-        Float memory weight_ = weight(token_);
-        return weight_.times(pool._info().balance).divide(asset_.balance);
-    }
+    // function price(address token_) public view returns (Float memory) {
+    //     if (token_ == address(pool)) return ONE_FLOAT;
+    //     AssetState memory asset_ = pool._asset(token_);
+    //     Float memory weight_ = weight(token_);
+    //     return weight_.times(pool._info().balance).divide(asset_.balance);
+    // }
 
     function test2_addLiquidity() public {
+        vm.startPrank(alice);
+
         Float[] memory preTradePrices = new Float[](addresses.length);
         Float[] memory postTradePrices = new Float[](addresses.length);
         for (uint256 i; i < addresses.length; i++) {
-            preTradePrices[i] = price(addresses[i]);
+            preTradePrices[i] = price(pool, addresses[i], address(pool));
         }
-        emit log("=============");
-        emit log("Initial state");
-        emit log("=============");
-        emit log("");
-        showPool(pool);
-        emit log("");
+        // emit log("=============");
+        // emit log("Initial state");
+        // emit log("=============");
+        // emit log("");
+        // showPool(pool);
+        // emit log("");
         uint256[] memory payAmounts;
         (payAmounts,) = pool.addLiquidity(address(pool), 1e18, allMaxs);
         emit log("======================");
         for (uint256 i; i < addresses.length; i++) {
-            postTradePrices[i] = price(addresses[i]);
+            postTradePrices[i] = price(pool, addresses[i], address(pool));
             emit log_named_uint("Pay Amount", payAmounts[i]);
             emit log_named_uint("Pre-Trade Price", preTradePrices[i].toDecimals(tokens[i].decimals()));
             emit log_named_uint("Post-Trade Price", postTradePrices[i].toDecimals(tokens[i].decimals()));

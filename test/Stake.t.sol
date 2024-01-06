@@ -7,9 +7,6 @@ import {PoolTest, Token, AssetState} from "./Pool.t.sol";
 contract StakeTest is PoolTest {
     using FixedPointMathLib for uint256;
 
-    Pool pool;
-    Token[] tokens;
-
     function setUp() public {
         uint256 startBalance = type(uint256).max / 2;
         vm.deal(alice, startBalance);
@@ -18,7 +15,7 @@ contract StakeTest is PoolTest {
 
         vm.startPrank(alice);
 
-        (pool, tokens) = setUpPool("Pool", "P", 2e17);
+        setUpPool("Pool", "P", 2e17);
 
         // for (uint256 i; i < NTOKENS; i++) {
         //     allMaxs[i] = type(uint256).max;

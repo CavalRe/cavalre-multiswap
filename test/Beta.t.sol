@@ -37,8 +37,6 @@ contract BetaTest is PoolTest {
     using FloatingPoint for uint256;
     using FloatingPoint for Float;
 
-    Pool internal pool;
-    Token[] internal tokens;
     address internal wrappedNative;
 
     address[] private oneAsset = new address[](1);
@@ -76,7 +74,7 @@ contract BetaTest is PoolTest {
 
         vm.startPrank(alice);
 
-        (pool, tokens) = setUpPool("Pool", "P", 3e17);
+        setUpPool("Pool", "P", 3e17);
 
         for (uint256 i; i < NTOKENS; i++) {
             allMaxs[i] = type(uint256).max;

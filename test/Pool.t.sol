@@ -20,6 +20,9 @@ contract PoolTest is PoolUtils {
     address internal bob = address(2);
     address internal carol = address(3);
 
+    Pool internal pool;
+    Token[] internal tokens;
+
     // uint256 internal constant INTERNAL_DECIMALS = 27;
     // uint256 internal constant ONE = 10 ** INTERNAL_DECIMALS;
     // uint256 internal constant PCT = 10 ** (INTERNAL_DECIMALS - 2);
@@ -39,12 +42,11 @@ contract PoolTest is PoolUtils {
 
     uint256 internal marketCap = 1e25;
 
-
     function setUpPool(
         string memory name_,
         string memory symbol_,
         uint256 protocolFee_ // 18 decimals
-    ) public returns (Pool pool, Token[] memory tokens) {
+    ) public {
         pool = new Pool(
             name_,
             symbol_,

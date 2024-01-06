@@ -248,7 +248,7 @@ interface IPool is ILPToken {
         Float[] memory amounts,
         address[] memory receiveTokens,
         Float[] memory allocations
-    ) external view returns (QuoteState memory quoteState);
+    ) external returns (QuoteState memory quoteState);
 
     function quoteMultiswap(
         address[] memory payTokens,
@@ -257,7 +257,6 @@ interface IPool is ILPToken {
         uint256[] memory allocations
     )
         external
-        view
         returns (uint256[] memory receiveAmounts, uint256 feeAmount);
 
     function multiswap(
@@ -275,13 +274,13 @@ interface IPool is ILPToken {
         address payToken,
         address receiveToken,
         Float memory payAmount
-    ) external view returns (QuoteState memory);
+    ) external returns (QuoteState memory);
 
     function quoteSwap(
         address payToken,
         address receiveToken,
         uint256 payAmount
-    ) external view returns (uint256 receiveAmount, uint256 feeAmount);
+    ) external returns (uint256 receiveAmount, uint256 feeAmount);
 
     function swap(
         address payToken,
@@ -293,7 +292,7 @@ interface IPool is ILPToken {
     function _quoteStake(
         address payToken,
         Float memory payAmount
-    ) external view returns (QuoteState memory);
+    ) external returns (QuoteState memory);
 
     function quoteStake(
         address payToken,
@@ -309,12 +308,12 @@ interface IPool is ILPToken {
     function _quoteUnstake(
         address receiveToken,
         Float memory payAmount
-    ) external view returns (QuoteState memory);
+    ) external returns (QuoteState memory);
 
     function quoteUnstake(
         address receiveToken,
         uint256 payAmount
-    ) external view returns (uint256 receiveAmount, uint256 feeAmount);
+    ) external returns (uint256 receiveAmount, uint256 feeAmount);
 
     function unstake(
         address receiveToken,
@@ -345,13 +344,12 @@ interface IPool is ILPToken {
 
     function _quoteRemoveLiquidity(
         Float memory amount
-    ) external view returns (QuoteState memory);
+    ) external returns (QuoteState memory);
 
     function quoteRemoveLiquidity(
         uint256 amount
     )
         external
-        view
         returns (uint256[] memory receiveAmounts, uint256 feeAmount);
 
     function removeLiquidity(

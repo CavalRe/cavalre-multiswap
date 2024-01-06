@@ -6,7 +6,7 @@ import {FloatingPoint as FP, Float} from "../contracts/libraries/FloatingPoint/s
 
 import {Test} from "forge-std/Test.sol";
 
-contract TestMath is Test {
+contract FloatingPointTest is Test {
     using FP for uint256;
     using FP for int256;
     using FP for Float;
@@ -149,6 +149,9 @@ contract TestMath is Test {
     }
 
     function testToString() public {
+        emit log_named_int("Max int256", type(int256).max);
+        emit log_named_int("Min int256", type(int256).min);
+
         Float[] memory floats = getFloats();
         for (uint256 i = 0; i < floats.length; i++) {
             emit log_named_string("Float to string", floats[i].toString());

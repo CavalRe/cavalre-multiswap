@@ -354,7 +354,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         Float[] memory payAmounts,
         address[] memory receiveTokens,
         Float[] memory allocations
-    ) public view returns (QuoteState memory q) {
+    ) public returns (QuoteState memory q) {
         Float memory totalSupply_ = totalSupply().fromWad();
         uint256 assetAddressesLength = _assetAddresses.length;
         uint256 payTokensLength = payTokens.length;
@@ -399,18 +399,39 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                 q.allocations[0].times(ONE_FLOAT.minus(q.fee))
             );
         }
+        emit log_named_string("Fee", q.fee.toString());
+        emit log_named_string("Discount", q.discount.toString());
+        emit log_named_string("Pool allocation", q.poolAlloc.toString());
 
         // Compute scaledValueIn from assets only
         Float memory amount;
+        Float memory R;
         for (uint256 i; i < payTokensLength; i++) {
             address payToken = payTokens[i];
             if (payToken == address(this)) continue;
             AssetState storage assetIn = _assetState[payToken];
             amount = payAmounts[i];
+            emit log("Compute scaledValueIn");
+            // emit log_named_string("assetIn.balance.plus(amount)", assetIn.balance.plus(amount).toString());
+            // emit log_named_string("assetIn.scale.times(amount)", assetIn.scale.times(amount).toString());
+            // emit log_named_string(
+            //     "amount.divide(assetIn.balance.plus(amount))",
+            //     amount.divide(assetIn.balance.plus(amount)).toString()
+            // );
+            R = amount.divide(assetIn.balance);
+            emit log_named_string("R", R.toString());
+            emit log_named_string("1+R", (ONE_FLOAT.plus(R)).toString());
+            emit log_named_string("R/(1+R)", R.divide(ONE_FLOAT.plus(R)).toString());
             q.scaledValueIn = q.scaledValueIn.plus(
-                assetIn.scale.times(amount).divide(assetIn.balance.plus(amount))
+                assetIn.scale.times(R.divide(ONE_FLOAT.plus(R)))
+            );
+            emit log_named_string(
+                "Scaled value in",
+                q.scaledValueIn.toString()
             );
         }
+
+        emit log_named_string("Scaled value in", q.scaledValueIn.toString());
 
         // Compute poolOut
         q.lastPoolBalance = _poolState.balance;
@@ -487,7 +508,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256[] memory allocations // 18 decimals
     )
         public
-        view
         returns (
             uint256[] memory receiveAmounts, // Token decimals
             uint256 feeAmount // Token decimals
@@ -799,7 +819,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         address payToken,
         address receiveToken,
         Float memory payAmount
-    ) public view returns (QuoteState memory) {
+    ) public returns (QuoteState memory) {
         address[] memory payTokens = new address[](1);
         Float[] memory amounts = new Float[](1);
         address[] memory receiveTokens = new address[](1);
@@ -826,7 +846,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256 payAmount // Token decimals
     )
         public
-        view
         returns (
             uint256 receiveAmount, // Token decimals
             uint256 feeAmount // Token decimals
@@ -913,7 +932,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     function _quoteStake(
         address payToken,
         Float memory payAmount
-    ) public view returns (QuoteState memory) {
+    ) public returns (QuoteState memory) {
         address[] memory payTokens = new address[](1);
         Float[] memory amounts = new Float[](1);
         address[] memory receiveTokens = new address[](1);
@@ -1017,7 +1036,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     function _quoteUnstake(
         address receiveToken,
         Float memory payAmount // Token decimals
-    ) public view returns (QuoteState memory) {
+    ) public returns (QuoteState memory) {
         address[] memory payTokens = new address[](1);
         Float[] memory amounts = new Float[](1);
         address[] memory receiveTokens = new address[](1);
@@ -1041,7 +1060,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     function quoteUnstake(
         address receiveToken,
         uint256 payAmount // Token decimals
-    ) public view returns (uint256 receiveAmount, uint256 feeAmount) {
+    ) public returns (uint256 receiveAmount, uint256 feeAmount) {
         address[] memory payTokens = new address[](1);
         Float[] memory amounts = new Float[](1);
         address[] memory receiveTokens = new address[](1);
@@ -1171,11 +1190,14 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             uint256 receiveAmount
         )
     {
+        Float memory amountFloat;
+        if (token == address(this)) {
+            amountFloat = amount.fromWad();
+        } else {
+            amountFloat = amount.fromDecimals(_assetState[token].decimals);
+        }
         payAmounts = new uint256[](_assetAddresses.length);
-        QuoteState memory q = _quoteAddLiquidity(
-            token,
-            amount.fromDecimals(_assetState[token].decimals)
-        );
+        QuoteState memory q = _quoteAddLiquidity(token, amountFloat);
         receiveAmount = q.receiveAmounts[0].toWad(); // Convert to token decimals
         for (uint256 i; i < payAmounts.length; i++) {
             payAmounts[i] = q.payAmounts[i].toDecimals(
@@ -1234,7 +1256,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
 
     function _quoteRemoveLiquidity(
         Float memory amount
-    ) public view returns (QuoteState memory) {
+    ) public returns (QuoteState memory) {
         uint256 n = _assetAddresses.length;
         address[] memory payTokens = new address[](1);
         Float[] memory amounts = new Float[](1);
@@ -1275,7 +1297,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
 
     function quoteRemoveLiquidity(
         uint256 amount
-    ) public view returns (uint256[] memory receiveAmounts, uint256 feeAmount) {
+    ) public returns (uint256[] memory receiveAmounts, uint256 feeAmount) {
         QuoteState memory q = _quoteRemoveLiquidity(amount.fromWad());
         for (uint256 i; i < _assetAddresses.length; i++) {
             receiveAmounts[i] = q.receiveAmounts[i].toDecimals(

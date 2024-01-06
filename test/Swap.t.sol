@@ -7,9 +7,6 @@ import {IPool, AssetState, FixedPointMathLib} from "../contracts/Pool.sol";
 contract SwapTest is PoolTest {
     using FixedPointMathLib for uint256;
 
-    Pool pool;
-    Token[] tokens;
-
     function setUp() public {
         uint256 startBalance = type(uint256).max / 2;
         vm.deal(alice, startBalance);
@@ -18,7 +15,7 @@ contract SwapTest is PoolTest {
 
         vm.startPrank(alice);
 
-        (pool, tokens) = setUpPool("Pool", "P", 2e17);
+        setUpPool("Pool", "P", 2e17);
     }
 
     /*
