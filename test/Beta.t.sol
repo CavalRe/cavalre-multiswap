@@ -30,12 +30,12 @@ pragma solidity 0.8.19;
 // (9) 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
 
 import {PoolTest, Token} from "./Pool.t.sol";
-import {Pool, AssetState, AssetStateExternal, QuoteState, FloatingPoint, Float} from "../contracts/Pool.sol";
+import {Pool, AssetState, AssetStateExternal, QuoteState, FloatingPoint, UFloat} from "../contracts/Pool.sol";
 import {Users, IUsers} from "../contracts/Users.sol";
 
 contract BetaTest is PoolTest {
     using FloatingPoint for uint256;
-    using FloatingPoint for Float;
+    using FloatingPoint for UFloat;
 
     address internal wrappedNative;
 
@@ -139,12 +139,12 @@ contract BetaTest is PoolTest {
         for (uint256 i = 1; i < NTOKENS; i++) {
             assertEq(assets[i].symbol, tokens[i].symbol(), "Asset symbol");
             assertEq(
-                assets[i].balance.toDecimals(assets[i].decimals),
+                assets[i].balance.toUInt(assets[i].decimals),
                 tokens[i].balanceOf(address(pool)),
                 "Asset balance"
             );
-            assertEq(assets[i].scale.toWad(), marketCap, "Asset scale");
-            assertEq(assets[i].fee.toWad(), fees[i], "Asset fee");
+            assertEq(assets[i].scale.toUInt(), marketCap, "Asset scale");
+            assertEq(assets[i].fee.toUInt(), fees[i], "Asset fee");
         }
     }
 
@@ -152,20 +152,20 @@ contract BetaTest is PoolTest {
         Token payToken,
         Token receiveToken,
         uint256 payAmount, // Token decimals
-        Float memory checkReceiveAmount,
-        Float memory checkFeeAmount,
+        UFloat memory checkReceiveAmount,
+        UFloat memory checkFeeAmount,
         string memory message
     ) internal {
         address[] memory payTokens = new address[](1);
         payTokens[0] = address(payToken);
-        Float[] memory payAmounts = new Float[](1);
-        payAmounts[0] = payAmount.fromDecimals(payToken.decimals());
+        UFloat[] memory payAmounts = new UFloat[](1);
+        payAmounts[0] = payAmount.toUFloat(payToken.decimals());
         address[] memory receiveTokens = new address[](1);
         receiveTokens[0] = address(receiveToken);
-        Float[] memory allocations = new Float[](1);
+        UFloat[] memory allocations = new UFloat[](1);
         allocations[0] = ONE_FLOAT;
-        Float[] memory checkPayAmounts = new Float[](0);
-        Float[] memory checkReceiveAmounts = new Float[](1);
+        UFloat[] memory checkPayAmounts = new UFloat[](0);
+        UFloat[] memory checkReceiveAmounts = new UFloat[](1);
         checkReceiveAmounts[0] = checkReceiveAmount;
         QuoteState memory q = pool._quoteMultiswap(
             alice,
@@ -196,25 +196,25 @@ contract BetaTest is PoolTest {
         // );
         // assertEq(
         //     receiveAmount,
-        //     q.receiveAmounts[0].toDecimals(receiveToken.decimals()),
+        //     q.receiveAmounts[0].toUInt(receiveToken.decimals()),
         //     "receiveAmount"
         // );
         // assertEq(
         //     feeAmount,
-        //     q.feeAmount.toDecimals(receiveToken.decimals()),
+        //     q.feeAmount.toUInt(receiveToken.decimals()),
         //     "feeAmount"
         // );
     }
 
     function test_USDC_BTCb() public {
         uint256 amount;
-        Float memory checkReceiveAmount;
-        Float memory checkFeeAmount;
+        UFloat memory checkReceiveAmount;
+        UFloat memory checkFeeAmount;
         string memory message;
 
         amount = USDC.balanceOf(address(pool)) / 10;
-        checkReceiveAmount = Float(27641479913510000000000000000, -27).normalize();
-        checkFeeAmount = Float(2727347109466620000000000000000, -27).normalize();
+        checkReceiveAmount = UFloat(27641479913510000000000000000, -27).normalize();
+        checkFeeAmount = UFloat(2727347109466620000000000000000, -27).normalize();
         message = "Amount 10% of pool balance";
         _testBetaSwap(
             USDC,
@@ -226,8 +226,8 @@ contract BetaTest is PoolTest {
         );
 
         amount = 1;
-        checkReceiveAmount = Float(33161483452231400, -27).normalize();
-        checkFeeAmount = Float(2999999999999700000, -27).normalize();
+        checkReceiveAmount = UFloat(33161483452231400, -27).normalize();
+        checkFeeAmount = UFloat(2999999999999700000, -27).normalize();
         message = "Amount is smallest token unit";
         _testBetaSwap(
             USDC,
@@ -243,13 +243,13 @@ contract BetaTest is PoolTest {
 
     function test_BTCb_USDC() public {
         uint256 amount;
-        Float memory checkReceiveAmount;
-        Float memory checkFeeAmount;
+        UFloat memory checkReceiveAmount;
+        UFloat memory checkFeeAmount;
         string memory message;
 
         amount = BTCb.balanceOf(address(pool)) / 10;
-        checkReceiveAmount = Float(832951372890395000000000000000000, -27).normalize();
-        checkFeeAmount = Float(454547520620854000000000000000, -27).normalize();
+        checkReceiveAmount = UFloat(832951372890395000000000000000000, -27).normalize();
+        checkFeeAmount = UFloat(454547520620854000000000000000, -27).normalize();
         message = "Amount 10% of pool balance";
         _testBetaSwap(
             BTCb,
@@ -261,8 +261,8 @@ contract BetaTest is PoolTest {
         );
 
         amount = 1;
-        checkReceiveAmount = Float(300499674984487000000000, -27).normalize();
-        checkFeeAmount = Float(150324999996757000000, -27).normalize();
+        checkReceiveAmount = UFloat(300499674984487000000000, -27).normalize();
+        checkFeeAmount = UFloat(150324999996757000000, -27).normalize();
         message = "Amount is smallest token unit";
         _testBetaSwap(
             BTCb,
@@ -276,13 +276,13 @@ contract BetaTest is PoolTest {
 
     function test_WAVAX_WETHe() public {
         uint256 amount;
-        Float memory checkReceiveAmount;
-        Float memory checkFeeAmount;
+        UFloat memory checkReceiveAmount;
+        UFloat memory checkFeeAmount;
         string memory message;
 
         amount = WAVAX.balanceOf(address(pool)) / 10;
-        checkReceiveAmount = Float(435556128724704000000000000000, -27).normalize();
-        checkFeeAmount = Float(2727347109466620000000000000000, -27).normalize();
+        checkReceiveAmount = UFloat(435556128724704000000000000000, -27).normalize();
+        checkFeeAmount = UFloat(2727347109466620000000000000000, -27).normalize();
         message = "Amount 10% of pool balance";
         _testBetaSwap(
             WAVAX,
@@ -294,8 +294,8 @@ contract BetaTest is PoolTest {
         );
 
         amount = 1;
-        checkReceiveAmount = Float(757678197064989,-35).normalize();
-        checkFeeAmount = Float(4350000000000000,-35).normalize();
+        checkReceiveAmount = UFloat(757678197064989,-35).normalize();
+        checkFeeAmount = UFloat(4350000000000000,-35).normalize();
         message = "Amount is smallest token unit";
         _testBetaSwap(
             WAVAX,
@@ -309,13 +309,13 @@ contract BetaTest is PoolTest {
 
     function test_WAVAX_USDC() public {
         uint256 amount;
-        Float memory checkReceiveAmount;
-        Float memory checkFeeAmount;
+        UFloat memory checkReceiveAmount;
+        UFloat memory checkFeeAmount;
         string memory message;
 
         amount = WAVAX.balanceOf(address(pool)) / 10;
-        checkReceiveAmount = Float(832951372973874000000000000000000, -27).normalize();
-        checkFeeAmount = Float(454547520670548000000000000000, -27).normalize();
+        checkReceiveAmount = UFloat(832951372973874000000000000000000, -27).normalize();
+        checkFeeAmount = UFloat(454547520670548000000000000000, -27).normalize();
         message = "Amount 10% of pool balance";
         _testBetaSwap(
             WAVAX,
@@ -327,8 +327,8 @@ contract BetaTest is PoolTest {
         );
 
         amount = 1;
-        checkReceiveAmount = Float(14492750000, -27).normalize();
-        checkFeeAmount = Float(7250000, -27).normalize();
+        checkReceiveAmount = UFloat(14492750000, -27).normalize();
+        checkFeeAmount = UFloat(7250000, -27).normalize();
         message = "Amount is smallest token unit";
         _testBetaSwap(
             WAVAX,
@@ -342,8 +342,8 @@ contract BetaTest is PoolTest {
 
     function test_USDC_WAVAX() public {
         uint256 amount;
-        Float memory checkReceiveAmount;
-        Float memory checkFeeAmount;
+        UFloat memory checkReceiveAmount;
+        UFloat memory checkFeeAmount;
         string memory message;
 
         // amount = USDC.balanceOf(address(pool)) / 10;
@@ -360,8 +360,8 @@ contract BetaTest is PoolTest {
         // );
 
         amount = 1;
-        checkReceiveAmount = Float(68862068965503500000, -27).normalize();
-        checkFeeAmount = Float(1499999999999850000, -27).normalize();
+        checkReceiveAmount = UFloat(68862068965503500000, -27).normalize();
+        checkFeeAmount = UFloat(1499999999999850000, -27).normalize();
         message = "Amount is smallest token unit";
         _testBetaSwap(
             USDC,
@@ -420,10 +420,10 @@ contract BetaTest is PoolTest {
             address(0),
             amount
         );
-        emit log_named_string("Pay amount", amount.fromDecimals(USDC.decimals()).toString());
-        emit log_named_string("Pay amount", amount.fromDecimals(USDC.decimals()).toString());
-        emit log_named_string("amountQuote", amountQuote.fromWad().toString());
-        emit log_named_string("feeQuote", feeQuote.fromWad().toString());
+        emit log_named_string("Pay amount", amount.toUFloat(USDC.decimals()).toString());
+        emit log_named_string("Pay amount", amount.toUFloat(USDC.decimals()).toString());
+        emit log_named_string("amountQuote", amountQuote.toUFloat().toString());
+        emit log_named_string("feeQuote", feeQuote.toUFloat().toString());
 
         emit log("Execute swap");
         (amountOut, feeAmount) = pool.swap(
@@ -432,8 +432,8 @@ contract BetaTest is PoolTest {
             amount,
             oneMin[0]
         );
-        emit log_named_string("amountOut", amountOut.fromWad().toString());
-        emit log_named_string("feeAmount", feeAmount.fromWad().toString());
+        emit log_named_string("amountOut", amountOut.toUFloat().toString());
+        emit log_named_string("feeAmount", feeAmount.toUFloat().toString());
 
         assertEq(amountQuote, amountOut, "amountOut");
         assertEq(feeQuote, feeAmount, "feeAmount");
@@ -442,19 +442,19 @@ contract BetaTest is PoolTest {
     function _testBetaStake(
         Token payToken,
         uint256 payAmount, // Token decimals
-        Float memory checkReceiveAmount,
+        UFloat memory checkReceiveAmount,
         string memory message
     ) internal {
         address[] memory payTokens = new address[](1);
         payTokens[0] = address(payToken);
-        Float[] memory payAmounts = new Float[](1);
-        payAmounts[0] = payAmount.fromDecimals(payToken.decimals());
+        UFloat[] memory payAmounts = new UFloat[](1);
+        payAmounts[0] = payAmount.toUFloat(payToken.decimals());
         address[] memory receiveTokens = new address[](1);
         receiveTokens[0] = address(pool);
-        Float[] memory allocations = new Float[](1);
+        UFloat[] memory allocations = new UFloat[](1);
         allocations[0] = ONE_FLOAT;
-        Float[] memory checkPayAmounts = new Float[](0);
-        Float[] memory checkReceiveAmounts = new Float[](1);
+        UFloat[] memory checkPayAmounts = new UFloat[](0);
+        UFloat[] memory checkReceiveAmounts = new UFloat[](1);
         checkReceiveAmounts[0] = checkReceiveAmount;
         QuoteState memory q = pool._quoteMultiswap(
             alice,
@@ -469,32 +469,32 @@ contract BetaTest is PoolTest {
 
     function test_USDC_LP() public {
         uint256 amount;
-        Float memory checkReceiveAmount;
+        UFloat memory checkReceiveAmount;
         string memory message;
 
         amount = USDC.balanceOf(address(pool)) / 10;
-        checkReceiveAmount = Float(917431192660551000000000000000000, -27).normalize();  // LP tokens
+        checkReceiveAmount = UFloat(917431192660551000000000000000000, -27).normalize();  // LP tokens
         message = "Amount 10% of pool balance";
         _testBetaStake(USDC, amount, checkReceiveAmount, message);
 
         amount = 1;
-        checkReceiveAmount = Float(999999999999910000000, -27).normalize(); // LP tokens
+        checkReceiveAmount = UFloat(999999999999910000000, -27).normalize(); // LP tokens
         message = "Amount is smallest token unit";
         _testBetaStake(USDC, amount, checkReceiveAmount, message);
     }
 
     function test_WAVAX_LP() public {
         uint256 amount;
-        Float memory checkReceiveAmount;
+        UFloat memory checkReceiveAmount;
         string memory message;
 
         amount = WAVAX.balanceOf(address(pool)) / 10;
-        checkReceiveAmount = Float(917431192660551000000000000000000, -27).normalize();
+        checkReceiveAmount = UFloat(917431192660551000000000000000000, -27).normalize();
         message = "Amount 10% of pool balance";
         _testBetaStake(WAVAX, amount, checkReceiveAmount, message);
 
         amount = 1;
-        checkReceiveAmount = Float(14500000000, -27).normalize();
+        checkReceiveAmount = UFloat(14500000000, -27).normalize();
         message = "Amount is smallest token unit";
         _testBetaStake(WAVAX, amount, checkReceiveAmount, message);
     }
@@ -528,20 +528,20 @@ contract BetaTest is PoolTest {
     function _testBetaUnstake(
         Token receiveToken,
         uint256 shareAmount, // Token decimals
-        Float memory checkReceiveAmount,
-        Float memory, // checkFeeAmount,
+        UFloat memory checkReceiveAmount,
+        UFloat memory, // checkFeeAmount,
         string memory message
     ) internal {
         address[] memory payTokens = new address[](1);
         payTokens[0] = address(pool);
-        Float[] memory payAmounts = new Float[](1);
-        payAmounts[0] = shareAmount.fromWad();
+        UFloat[] memory payAmounts = new UFloat[](1);
+        payAmounts[0] = shareAmount.toUFloat();
         address[] memory receiveTokens = new address[](1);
         receiveTokens[0] = address(receiveToken);
-        Float[] memory allocations = new Float[](1);
+        UFloat[] memory allocations = new UFloat[](1);
         allocations[0] = ONE_FLOAT;
-        // Float[] memory checkPayAmounts = new Float[](0);
-        Float[] memory checkReceiveAmounts = new Float[](1);
+        // UFloat[] memory checkPayAmounts = new UFloat[](0);
+        UFloat[] memory checkReceiveAmounts = new UFloat[](1);
         checkReceiveAmounts[0] = checkReceiveAmount;
         QuoteState memory q = pool._quoteMultiswap(
             alice,
@@ -563,13 +563,13 @@ contract BetaTest is PoolTest {
 
     function test_LP_USDC() public {
         uint256 amount;
-        Float memory checkReceiveAmount;
-        Float memory checkFeeAmount;
+        UFloat memory checkReceiveAmount;
+        UFloat memory checkFeeAmount;
         string memory message;
 
         amount = pool.totalSupply() / 10;
-        checkReceiveAmount = Float(5261772525071730000000000000000000, -27).normalize();
-        checkFeeAmount = Float(5000000000000000000000000000000, -27).normalize();
+        checkReceiveAmount = UFloat(5261772525071730000000000000000000, -27).normalize();
+        checkFeeAmount = UFloat(5000000000000000000000000000000, -27).normalize();
         message = "Amount 10% of pool balance";
         _testBetaUnstake(
             USDC,
@@ -580,8 +580,8 @@ contract BetaTest is PoolTest {
         );
 
         amount = 1;
-        checkReceiveAmount = Float(2998500000, -27).normalize();
-        checkFeeAmount = Float(1500000, -27).normalize();
+        checkReceiveAmount = UFloat(2998500000, -27).normalize();
+        checkFeeAmount = UFloat(1500000, -27).normalize();
         message = "Amount is smallest token unit";
         _testBetaUnstake(
             USDC,
@@ -594,13 +594,13 @@ contract BetaTest is PoolTest {
 
     function test_LP_WAVAX() public {
         uint256 amount;
-        Float memory checkReceiveAmount;
-        Float memory checkFeeAmount;
+        UFloat memory checkReceiveAmount;
+        UFloat memory checkFeeAmount;
         string memory message;
 
         amount = pool.totalSupply() / 10;
-        checkReceiveAmount = Float(362689642459207000000000000000000, -27).normalize();
-        checkFeeAmount = Float(15000000000000000000000000000000, -27).normalize();
+        checkReceiveAmount = UFloat(362689642459207000000000000000000, -27).normalize();
+        checkFeeAmount = UFloat(15000000000000000000000000000000, -27).normalize();
         message = "Amount 10% of pool balance";
         _testBetaUnstake(
             WAVAX,
@@ -611,8 +611,8 @@ contract BetaTest is PoolTest {
         );
 
         amount = 1;
-        checkReceiveAmount = Float(206586207, -27).normalize();
-        checkFeeAmount = Float(4500000, -27).normalize();
+        checkReceiveAmount = UFloat(206586207, -27).normalize();
+        checkFeeAmount = UFloat(4500000, -27).normalize();
         message = "Amount is smallest token unit";
         _testBetaUnstake(
             WAVAX,
@@ -642,21 +642,21 @@ contract BetaTest is PoolTest {
         Token payToken,
         Token receiveToken,
         uint256 payAmount, // Token decimals
-        Float[] memory, // checkReceiveAmounts, // Internal decimals
-        Float memory, // checkFeeAmount, // Internal decimals
+        UFloat[] memory, // checkReceiveAmounts, // Internal decimals
+        UFloat memory, // checkFeeAmount, // Internal decimals
         string memory message
     ) internal {
         address[] memory payTokens = new address[](1);
         payTokens[0] = address(payToken);
-        Float[] memory payAmounts = new Float[](1);
-        payAmounts[0] = payAmount.fromDecimals(payToken.decimals());
+        UFloat[] memory payAmounts = new UFloat[](1);
+        payAmounts[0] = payAmount.toUFloat(payToken.decimals());
         address[] memory receiveTokens = new address[](2);
         receiveTokens[0] = address(pool);
         receiveTokens[1] = address(receiveToken);
-        Float[] memory allocations = new Float[](2);
+        UFloat[] memory allocations = new UFloat[](2);
         allocations[0] = HALF_FLOAT;
         allocations[1] = HALF_FLOAT;
-        // Float[] memory checkPayAmounts = new Float[](0);
+        // UFloat[] memory checkPayAmounts = new UFloat[](0);
         QuoteState memory q = pool._quoteMultiswap(
             alice,
             payTokens,
@@ -677,14 +677,14 @@ contract BetaTest is PoolTest {
 
     function test_USDC_LP_BTCb() public {
         uint256 amount;
-        Float[] memory checkReceiveAmounts = new Float[](2);
-        Float memory checkFeeAmount;
+        UFloat[] memory checkReceiveAmounts = new UFloat[](2);
+        UFloat memory checkFeeAmount;
         string memory message;
 
         amount = USDC.balanceOf(address(pool)) / 10;
-        checkReceiveAmounts[0] = Float(455939195930566000000000000000000, -27).normalize();
-        checkReceiveAmounts[1] = Float(14440670197238500000000000000, -27).normalize();
-        checkFeeAmount = Float(1369872396386280000000000000000, -27).normalize();
+        checkReceiveAmounts[0] = UFloat(455939195930566000000000000000000, -27).normalize();
+        checkReceiveAmounts[1] = UFloat(14440670197238500000000000000, -27).normalize();
+        checkFeeAmount = UFloat(1369872396386280000000000000000, -27).normalize();
         message = "Amount 10% of pool balance";
         _testBetaMixedStake(
             USDC,
@@ -696,9 +696,9 @@ contract BetaTest is PoolTest {
         );
 
         amount = 1;
-        checkReceiveAmounts[0] = Float(499249999999953000000, -27).normalize();
-        checkReceiveAmounts[1] = Float(16605687676557000, -27).normalize();
-        checkFeeAmount = Float(1499999999999860000, -27).normalize();
+        checkReceiveAmounts[0] = UFloat(499249999999953000000, -27).normalize();
+        checkReceiveAmounts[1] = UFloat(16605687676557000, -27).normalize();
+        checkFeeAmount = UFloat(1499999999999860000, -27).normalize();
         message = "Amount is smallest token unit";
         _testBetaMixedStake(
             USDC,
@@ -712,14 +712,14 @@ contract BetaTest is PoolTest {
 
     function test_WAVAX_LP_WETHe() public {
         uint256 amount;
-        Float[] memory checkReceiveAmounts = new Float[](2);
-        Float memory checkFeeAmount;
+        UFloat[] memory checkReceiveAmounts = new UFloat[](2);
+        UFloat memory checkFeeAmount;
         string memory message;
 
         amount = WAVAX.balanceOf(address(pool)) / 10;
-        checkReceiveAmounts[0] = Float(455939195930566000000000000000000, -27).normalize();
-        checkReceiveAmounts[1] = Float(227546514404435000000000000000, -27).normalize();
-        checkFeeAmount = Float(1369872396386280000000000000000, -27).normalize();
+        checkReceiveAmounts[0] = UFloat(455939195930566000000000000000000, -27).normalize();
+        checkReceiveAmounts[1] = UFloat(227546514404435000000000000000, -27).normalize();
+        checkFeeAmount = UFloat(1369872396386280000000000000000, -27).normalize();
         message = "Amount 10% of pool balance";
         _testBetaMixedStake(
             WAVAX,
@@ -731,9 +731,9 @@ contract BetaTest is PoolTest {
         );
 
         amount = 1;
-        checkReceiveAmounts[0] = Float(7239125000, -27).normalize();
-        checkReceiveAmounts[1] = Float(3794091, -27).normalize();
-        checkFeeAmount = Float(21750000, -27).normalize();
+        checkReceiveAmounts[0] = UFloat(7239125000, -27).normalize();
+        checkReceiveAmounts[1] = UFloat(3794091, -27).normalize();
+        checkFeeAmount = UFloat(21750000, -27).normalize();
         message = "Amount is smallest token unit";
         _testBetaMixedStake(
             WAVAX,
@@ -811,23 +811,23 @@ contract BetaTest is PoolTest {
         address payToken,
         address receiveToken,
         uint256[] memory payAmounts, // Token decimals
-        Float[] memory, // checkReceiveAmounts,
-        Float memory, // checkFeeAmount,
+        UFloat[] memory, // checkReceiveAmounts,
+        UFloat memory, // checkFeeAmount,
         string memory message
     ) internal {
         address[] memory payTokens = new address[](2);
         payTokens[0] = address(pool);
         payTokens[1] = payToken;
-        Float[] memory payAmountsFloat = new Float[](2);
-        payAmountsFloat[0] = payAmounts[0].fromWad();
-        payAmountsFloat[1] = payAmounts[1].fromDecimals(
+        UFloat[] memory payAmountsFloat = new UFloat[](2);
+        payAmountsFloat[0] = payAmounts[0].toUFloat();
+        payAmountsFloat[1] = payAmounts[1].toUFloat(
             pool.asset(payToken).decimals
         );
         address[] memory receiveTokens = new address[](1);
         receiveTokens[0] = receiveToken;
-        Float[] memory allocations = new Float[](1);
+        UFloat[] memory allocations = new UFloat[](1);
         allocations[0] = ONE_FLOAT;
-        // Float[] memory checkPayAmounts = new Float[](0);
+        // UFloat[] memory checkPayAmounts = new UFloat[](0);
         QuoteState memory q = pool._quoteMultiswap(
             alice,
             payTokens,
@@ -848,14 +848,14 @@ contract BetaTest is PoolTest {
 
     function test_LP_USDC_BTCb() public {
         uint256[] memory payAmounts = new uint256[](2);
-        Float[] memory checkReceiveAmounts = new Float[](1);
-        Float memory checkFeeAmount;
+        UFloat[] memory checkReceiveAmounts = new UFloat[](1);
+        UFloat memory checkFeeAmount;
         string memory message;
 
         payAmounts[0] = pool.totalSupply() / 10;
         payAmounts[1] = USDC.balanceOf(address(pool)) / 10;
-        checkReceiveAmounts[0] = Float(181288544939099000000000000000, -27).normalize();
-        checkFeeAmount = Float(32455430602652800000000000000000, -27).normalize();
+        checkReceiveAmounts[0] = UFloat(181288544939099000000000000000, -27).normalize();
+        checkFeeAmount = UFloat(32455430602652800000000000000000, -27).normalize();
         message = "Amount 10% of pool balance";
         _testBetaMixedUnstake(
             address(USDC),
@@ -868,8 +868,8 @@ contract BetaTest is PoolTest {
 
         payAmounts[0] = 1;
         payAmounts[1] = 1;
-        checkReceiveAmounts[0] = Float(33161483452330900, -27).normalize();
-        checkFeeAmount = Float(3000000000008700000, -27).normalize();
+        checkReceiveAmounts[0] = UFloat(33161483452330900, -27).normalize();
+        checkFeeAmount = UFloat(3000000000008700000, -27).normalize();
         message = "Amount is smallest token unit";
         _testBetaMixedUnstake(
             address(USDC),
@@ -883,14 +883,14 @@ contract BetaTest is PoolTest {
 
     function test_LP_WAVAX_WETHe() public {
         uint256[] memory payAmounts = new uint256[](2);
-        Float[] memory checkReceiveAmounts = new Float[](1);
-        Float memory checkFeeAmount;
+        UFloat[] memory checkReceiveAmounts = new UFloat[](1);
+        UFloat memory checkFeeAmount;
         string memory message;
 
         payAmounts[0] = pool.totalSupply() / 10;
         payAmounts[1] = WAVAX.balanceOf(address(pool)) / 10;
-        checkReceiveAmounts[0] = Float(2856624792264290000000000000000, -27).normalize();
-        checkFeeAmount = Float(32455430602652800000000000000000, -27).normalize();
+        checkReceiveAmounts[0] = UFloat(2856624792264290000000000000000, -27).normalize();
+        checkFeeAmount = UFloat(32455430602652800000000000000000, -27).normalize();
         message = "Amount 10% of pool balance";
         _testBetaMixedUnstake(
             address(WAVAX),
@@ -903,8 +903,8 @@ contract BetaTest is PoolTest {
 
         payAmounts[0] = 1;
         payAmounts[1] = 1;
-        checkReceiveAmounts[0] = Float(9144392, -27).normalize();
-        checkFeeAmount = Float(52500000, -27).normalize();
+        checkReceiveAmounts[0] = UFloat(9144392, -27).normalize();
+        checkFeeAmount = UFloat(52500000, -27).normalize();
         message = "Amount is smallest token unit";
         _testBetaMixedUnstake(
             address(WAVAX),
@@ -977,11 +977,11 @@ contract BetaTest is PoolTest {
         string memory message
     ) internal {
         emit log("Get quote");
-        Float memory amountFloat;
+        UFloat memory amountFloat;
         if (token == address(pool)) {
-            amountFloat = amount.fromWad();
+            amountFloat = amount.toUFloat();
         } else {
-            amountFloat = amount.fromDecimals(pool.asset(token).decimals);
+            amountFloat = amount.toUFloat(pool.asset(token).decimals);
         }
         QuoteState memory q = pool._quoteAddLiquidity(
             token,
@@ -1044,7 +1044,7 @@ contract BetaTest is PoolTest {
     function test_LP_RemoveLiquidity() public {
         uint256 amount = pool.totalSupply() / 10;
         string memory message = "Amount 10% of pool balance";
-        QuoteState memory q = pool._quoteRemoveLiquidity(amount.fromWad());
+        QuoteState memory q = pool._quoteRemoveLiquidity(amount.toUFloat());
 
         checkSelfFinancing(pool, q, message);
     }

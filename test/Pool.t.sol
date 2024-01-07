@@ -5,14 +5,14 @@ import {Pool} from "../contracts/Pool.sol";
 import {PoolState, AssetState, QuoteState} from "../contracts/interfaces/IPool.sol";
 import {Token} from "./Token.t.sol";
 import {FixedPointMathLib} from "../contracts/libraries/FixedPointMath/src/FixedPointMathLib.sol";
-import {FloatingPoint, Float} from "../contracts/libraries/FloatingPoint/src/FloatingPoint.sol";
+import {FloatingPoint, UFloat} from "../contracts/libraries/FloatingPoint/src/FloatingPoint.sol";
 import {PoolUtils} from "./PoolUtils.t.sol";
 
 contract PoolTest is PoolUtils {
     using FixedPointMathLib for uint256;
     using FloatingPoint for uint256;
     using FloatingPoint for int256;
-    using FloatingPoint for Float;
+    using FloatingPoint for UFloat;
 
     uint256 internal constant NTOKENS = 10;
 

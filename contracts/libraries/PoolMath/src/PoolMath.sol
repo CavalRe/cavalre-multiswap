@@ -1,23 +1,27 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {FloatingPoint as FP, Float} from "../../FloatingPoint/src/FloatingPoint.sol";
+import {FloatingPoint as FP, UFloat, Float} from "../../FloatingPoint/src/FloatingPoint.sol";
 
 library PoolMath {
     using FP for uint256;
-    using FP for Float;
+    using FP for UFloat;
 
     // function scaledValueFlow(
-    //     Float memory scale,
-    //     Float memory balance,
-    //     int256 amount
-    // ) internal pure returns (Float memory) {
-    //     if (amount == 0) {
-    //         return Float(10 ** FP.SIGNIFICANT_DIGITS, -int256(FP.SIGNIFICANT_DIGITS)); // ONE = Float(1,0).normalize()
+    //     UFloat memory scale,
+    //     UFloat memory balance,
+    //     Float memory amount
+    // ) internal pure returns (UFloat memory) {
+    //     UFloat memory denom;
+    //     if (amount.mantissa == 0) {
+    //         return UFloat(0, 0);
+    //     } else {
+    //         denom = balance.toFloat().plus(amount);
     //     }
     //     if (amount > 0) {
-    //         return scale.times(uint256(amount)).divide(uint256(int256(balance) + amount));
+    //         return scale.times(amount).add(amount.toUFloat());
+    //     } else {
+    //         return scale.mul(balance).sub((-amount).toUFloat());
     //     }
-    //     return scale.mul(amount.toUint256()).div(balance);
     // }
 }

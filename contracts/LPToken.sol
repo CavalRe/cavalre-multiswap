@@ -11,19 +11,19 @@
 pragma solidity 0.8.19;
 
 import {ILPToken} from "./interfaces/ILPToken.sol";
-import {Users, FloatingPoint, Float} from "./Users.sol";
+import {Users, FloatingPoint, UFloat} from "./Users.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {FixedPointMathLib} from "./libraries/FixedPointMath/src/FixedPointMathLib.sol";
 
 contract LPToken is ILPToken, ERC20, Users {
     using FixedPointMathLib for uint256;
     using FloatingPoint for uint256;
-    using FloatingPoint for Float;
+    using FloatingPoint for UFloat;
 
-    Float internal _totalTokens;
-    Float internal _tokensPerShare;
+    UFloat internal _totalTokens;
+    UFloat internal _tokensPerShare;
 
-    Float internal _protocolFee;
+    UFloat internal _protocolFee;
     address internal _protocolFeeRecipient;
 
     constructor(
@@ -36,21 +36,21 @@ contract LPToken is ILPToken, ERC20, Users {
         if (protocolFee_ > HALF) revert InvalidProtocolFee(protocolFee_);
         if (protocolFeeRecipient_ == address(0)) revert ZeroAddress();
         if (tokensPerShare_ == 0) revert ZeroTokensPerShare();
-        _protocolFee = protocolFee_.fromWad();
+        _protocolFee = protocolFee_.toUFloat();
         _protocolFeeRecipient = protocolFeeRecipient_;
-        _tokensPerShare = tokensPerShare_.fromWad();
+        _tokensPerShare = tokensPerShare_.toUFloat();
     }
 
     function totalTokens() public view returns (uint256) {
-        return _totalTokens.toWad(); // Convert to 18 decimals
+        return _totalTokens.toUInt(); // Convert to 18 decimals
     }
 
     function tokensPerShare() public view returns (uint256) {
-        return _tokensPerShare.toWad(); // Convert to 18 decimals
+        return _tokensPerShare.toUInt(); // Convert to 18 decimals
     }
 
     function tokensOf(address account) public view returns (uint256) {
-        return balanceOf(account).fromWad().times(_tokensPerShare).toWad(); // Convert to 18 decimals
+        return balanceOf(account).toUFloat().times(_tokensPerShare).toUInt(); // Convert to 18 decimals
     }
 
     function approve(
@@ -86,30 +86,30 @@ contract LPToken is ILPToken, ERC20, Users {
     ) internal override {
         if (_isBlocked[account]) revert UserNotAllowed(account);
         super._mint(account, shares);
-        _totalTokens = totalSupply().fromWad().times(_tokensPerShare);
+        _totalTokens = totalSupply().toUFloat().times(_tokensPerShare);
     }
 
     function _burn(address account, uint256 shares) internal override {
         super._burn(account, shares);
-        _totalTokens = totalSupply().fromWad().times(_tokensPerShare);
+        _totalTokens = totalSupply().toUFloat().times(_tokensPerShare);
     }
 
-    function _mintTokens(address account, Float memory amount) internal {
+    function _mintTokens(address account, UFloat memory amount) internal {
         if (_isBlocked[account]) revert UserNotAllowed(account);
         _totalTokens = _totalTokens.plus(amount);
-        uint256 shares = amount.divide(_tokensPerShare).toWad(); // Convert to 18 decimals
+        uint256 shares = amount.divide(_tokensPerShare).toUInt(); // Convert to 18 decimals
         super._mint(account, shares);
     }
 
-    function _burnTokens(address account, Float memory amount) internal {
+    function _burnTokens(address account, UFloat memory amount) internal {
         _totalTokens = _totalTokens.minus(amount);
-        uint256 shares = amount.divide(_tokensPerShare).toWad(); // Convert to 18 decimals
+        uint256 shares = amount.divide(_tokensPerShare).toUInt(); // Convert to 18 decimals
         super._burn(account, shares);
     }
 
-    function _distributeTokens(Float memory amount) internal {
+    function _distributeTokens(UFloat memory amount) internal {
         _totalTokens = _totalTokens.plus(amount);
-        _tokensPerShare = _totalTokens.divide(totalSupply().fromWad());
+        _tokensPerShare = _totalTokens.divide(totalSupply().toUFloat());
     }
 
     function _allocateShares(
@@ -117,11 +117,11 @@ contract LPToken is ILPToken, ERC20, Users {
         uint256 shares // 18 decimals
     ) internal {
         super._mint(recipient, shares);
-        _tokensPerShare = _totalTokens.divide(totalSupply().fromWad());
+        _tokensPerShare = _totalTokens.divide(totalSupply().toUFloat());
     }
 
     function protocolFee() public view returns (uint256) {
-        return _protocolFee.toWad(); // Convert to 18 decimals
+        return _protocolFee.toUInt(); // Convert to 18 decimals
     }
 
     function protocolFeeRecipient() public view returns (address) {
@@ -132,7 +132,7 @@ contract LPToken is ILPToken, ERC20, Users {
         uint256 fee // 18 decimals
     ) public onlyOwner {
         if (fee > HALF) revert InvalidProtocolFee(fee);
-        _protocolFee = fee.fromWad();
+        _protocolFee = fee.toUFloat();
     }
 
     function setProtocolFeeRecipient(address recipient) public onlyOwner {

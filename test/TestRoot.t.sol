@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {Pool, AssetState} from "../contracts/Pool.sol";
-import {FloatingPoint, Float} from "./Pool.t.sol";
+import {FloatingPoint, UFloat} from "./Pool.t.sol";
 import {Token} from "./Token.t.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
@@ -10,16 +10,16 @@ import "forge-std/Test.sol";
 
 contract TestRoot is Test, Context {
     using FloatingPoint for uint256;
-    using FloatingPoint for Float;
+    using FloatingPoint for UFloat;
     using Strings for uint256;
 
     uint256 internal constant ONE = 1e18;
     uint256 internal constant NTOKENS = 100;
     uint256 internal constant TO_INTERNAL = 1e9;
 
-    Float internal ZERO_FLOAT = Float(0, 0);
-    Float internal HALF_FLOAT = Float(5, -1).normalize();
-    Float internal ONE_FLOAT = Float(1, 0).normalize();
+    UFloat internal ZERO_FLOAT = UFloat(0, 0);
+    UFloat internal HALF_FLOAT = UFloat(5, -1).normalize();
+    UFloat internal ONE_FLOAT = UFloat(1, 0).normalize();
 
     Token[] internal tokens;
     address[] internal addresses;
@@ -81,20 +81,20 @@ contract TestRoot is Test, Context {
         pool.initialize();
     }
 
-    function weight(address token) public view returns (Float memory) {
+    function weight(address token) public view returns (UFloat memory) {
         if (token == address(pool)) return ONE_FLOAT;
         AssetState memory asset_ = pool._asset(token);
         return asset_.scale.divide(pool._info().scale);
     }
 
-    function price(address token) public view returns (Float memory) {
+    function price(address token) public view returns (UFloat memory) {
         if (token == address(pool)) return ONE_FLOAT;
         AssetState memory asset_ = pool._asset(token);
-        Float memory weight_ = weight(token);
+        UFloat memory weight_ = weight(token);
         return weight_.times(pool._info().balance).divide(asset_.balance);
     }
 
-    function fee(address token) public view returns (Float memory) {
+    function fee(address token) public view returns (UFloat memory) {
         if (token == address(pool)) return ZERO_FLOAT;
         AssetState memory asset_ = pool._asset(token);
         return asset_.fee;
@@ -110,12 +110,12 @@ contract TestRoot is Test, Context {
         assertGt(receiveAmount, 0, "Receive amount must be greater than 0");
 
         emit log_named_uint("Protocol fee", pool.protocolFee());
-        Float memory valueIn = payAmount
-            .fromDecimals(pool._asset(payToken).decimals)
+        UFloat memory valueIn = payAmount
+            .toUFloat(pool._asset(payToken).decimals)
             .times(price(payToken));
         emit log_named_string("Value in", valueIn.toString());
-        Float memory valueOut = receiveAmount
-            .fromDecimals(pool._asset(receiveToken).decimals)
+        UFloat memory valueOut = receiveAmount
+            .toUFloat(pool._asset(receiveToken).decimals)
             .times(price(receiveToken));
         emit log_named_string("Value out", valueOut.toString());
         valueOut = valueOut.plus(fee(receiveToken).times(valueIn));
@@ -149,20 +149,20 @@ contract TestRoot is Test, Context {
         uint256[] memory allocations,
         uint256[] memory receiveAmounts
     ) public {
-        Float memory valueIn;
-        Float memory valueOut;
+        UFloat memory valueIn;
+        UFloat memory valueOut;
 
         for (uint256 i; i < payTokens.length; i++) {
             valueIn = valueIn.plus(
                 amounts[i]
-                    .fromDecimals(pool._asset(payTokens[i]).decimals)
+                    .toUFloat(pool._asset(payTokens[i]).decimals)
                     .times(price(payTokens[i]))
             );
         }
 
         assertGt(valueIn.mantissa, 0, "Value in must be greater than 0");
 
-        Float memory fee_;
+        UFloat memory fee_;
         for (uint256 i; i < receiveTokens.length; i++) {
             fee_ = fee_.plus(allocations[i].times(fee(receiveTokens[i])));
             valueOut = valueOut.plus(

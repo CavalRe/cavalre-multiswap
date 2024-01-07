@@ -4,15 +4,15 @@
 pragma solidity 0.8.19;
 
 import {ILPToken} from "./ILPToken.sol";
-import {Float} from "../libraries/FloatingPoint/src/FloatingPoint.sol";
+import {UFloat} from "../libraries/FloatingPoint/src/FloatingPoint.sol";
 
 struct PoolState {
     address token;
     string name;
     string symbol;
-    Float tokensPerShare; // LP token price per share
-    Float balance; // # of LP tokens
-    Float scale;
+    UFloat tokensPerShare; // LP token price per share
+    UFloat balance; // # of LP tokens
+    UFloat scale;
     uint256 lastUpdated;
 }
 
@@ -32,9 +32,9 @@ struct AssetState {
     string name;
     string symbol;
     uint8 decimals;
-    Float fee;
-    Float balance;
-    Float scale;
+    UFloat fee;
+    UFloat balance;
+    UFloat scale;
     uint256 lastUpdated;
 }
 
@@ -53,30 +53,30 @@ struct AssetStateExternal {
 struct QuoteState {
     // Inputs
     address[] payTokens;
-    Float[] payAmounts;
+    UFloat[] payAmounts;
     address[] receiveTokens;
-    Float[] allocations;
+    UFloat[] allocations;
     // Outputs
-    Float[] receiveAmounts;
-    Float feeAmount;
+    UFloat[] receiveAmounts;
+    UFloat feeAmount;
     // Initial LP token state
-    Float initialTokens;
-    Float initialShares;
-    Float initialTokensPerShare;
+    UFloat initialTokens;
+    UFloat initialShares;
+    UFloat initialTokensPerShare;
     // Final LP token state
-    Float finalTokens;
-    Float finalTokensPerShare;
-    Float finalShares;
+    UFloat finalTokens;
+    UFloat finalTokensPerShare;
+    UFloat finalShares;
     // Intermediate state
-    Float fee;
-    Float discount;
-    Float poolAlloc;
-    Float lastPoolBalance;
-    Float scaledPoolOut;
-    Float sharesIn;
-    Float poolIn;
-    Float poolOut;
-    Float scaledValueIn;
+    UFloat fee;
+    UFloat discount;
+    UFloat poolAlloc;
+    UFloat lastPoolBalance;
+    UFloat scaledPoolOut;
+    UFloat sharesIn;
+    UFloat poolIn;
+    UFloat poolOut;
+    UFloat scaledValueIn;
 }
 
 interface IPool is ILPToken {
@@ -245,9 +245,9 @@ interface IPool is ILPToken {
     function _quoteMultiswap(
         address sender,
         address[] memory payTokens,
-        Float[] memory amounts,
+        UFloat[] memory amounts,
         address[] memory receiveTokens,
-        Float[] memory allocations
+        UFloat[] memory allocations
     ) external returns (QuoteState memory quoteState);
 
     function quoteMultiswap(
@@ -273,7 +273,7 @@ interface IPool is ILPToken {
     function _quoteSwap(
         address payToken,
         address receiveToken,
-        Float memory payAmount
+        UFloat memory payAmount
     ) external returns (QuoteState memory);
 
     function quoteSwap(
@@ -291,7 +291,7 @@ interface IPool is ILPToken {
 
     function _quoteStake(
         address payToken,
-        Float memory payAmount
+        UFloat memory payAmount
     ) external returns (QuoteState memory);
 
     function quoteStake(
@@ -307,7 +307,7 @@ interface IPool is ILPToken {
 
     function _quoteUnstake(
         address receiveToken,
-        Float memory payAmount
+        UFloat memory payAmount
     ) external returns (QuoteState memory);
 
     function quoteUnstake(
@@ -323,7 +323,7 @@ interface IPool is ILPToken {
 
     function _quoteAddLiquidity(
         address token,
-        Float memory amount
+        UFloat memory amount
     ) external returns (QuoteState memory);
 
     function quoteAddLiquidity(
@@ -343,7 +343,7 @@ interface IPool is ILPToken {
         returns (uint256[] memory payAmounts, uint256 receiveAmount);
 
     function _quoteRemoveLiquidity(
-        Float memory amount
+        UFloat memory amount
     ) external returns (QuoteState memory);
 
     function quoteRemoveLiquidity(

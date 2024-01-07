@@ -2,17 +2,17 @@
 pragma solidity 0.8.19;
 
 import {Pool, PoolState, AssetState, QuoteState} from "../contracts/Pool.sol";
-import {FloatingPoint, Float} from "../contracts/libraries/FloatingPoint/src/FloatingPoint.sol";
+import {FloatingPoint, UFloat} from "../contracts/libraries/FloatingPoint/src/FloatingPoint.sol";
 import {Token} from "./Token.t.sol";
 import {Test} from "forge-std/Test.sol";
 
 contract PoolUtils is Test {
     using FloatingPoint for uint256;
-    using FloatingPoint for Float;
+    using FloatingPoint for UFloat;
 
-    Float internal ZERO_FLOAT = Float(0, 0);
-    Float internal HALF_FLOAT = Float(5, -1).normalize();
-    Float internal ONE_FLOAT = Float(1, 0).normalize();
+    UFloat internal ZERO_FLOAT = UFloat(0, 0);
+    UFloat internal HALF_FLOAT = UFloat(5, -1).normalize();
+    UFloat internal ONE_FLOAT = UFloat(1, 0).normalize();
 
     Token internal WAVAX = new Token("Wrapped AVAX", "WAVAX", 18);
     Token internal USDC = new Token("USD Coin", "USDC", 6);
@@ -49,14 +49,14 @@ contract PoolUtils is Test {
     function weight(
         Pool pool,
         address token
-    ) public view returns (Float memory) {
+    ) public view returns (UFloat memory) {
         return pool._asset(token).scale.divide(pool._info().scale);
     }
 
     function scale(
         Pool pool,
         address token
-    ) public view returns (Float memory) {
+    ) public view returns (UFloat memory) {
         if (token == address(pool)) return pool._info().scale;
         return pool._asset(token).scale;
     }
@@ -64,7 +64,7 @@ contract PoolUtils is Test {
     function balance(
         Pool pool,
         address token
-    ) public view returns (Float memory) {
+    ) public view returns (UFloat memory) {
         if (token == address(pool)) return pool._info().balance;
         return pool._asset(token).balance;
     }
@@ -73,18 +73,18 @@ contract PoolUtils is Test {
         Pool pool,
         address token,
         address numeraire
-    ) public view returns (Float memory) {
-        Float memory scaleToken = scale(pool, token);
-        Float memory scaleNumeraire = scale(pool, numeraire);
-        Float memory balanceToken = balance(pool, token);
-        Float memory balanceNumeraire = balance(pool, numeraire);
+    ) public view returns (UFloat memory) {
+        UFloat memory scaleToken = scale(pool, token);
+        UFloat memory scaleNumeraire = scale(pool, numeraire);
+        UFloat memory balanceToken = balance(pool, token);
+        UFloat memory balanceNumeraire = balance(pool, numeraire);
         return
             scaleToken.times(balanceNumeraire).divide(
                 scaleNumeraire.times(balanceToken)
             );
     }
 
-    function fee(Pool pool, address token) public view returns (Float memory) {
+    function fee(Pool pool, address token) public view returns (UFloat memory) {
         if (token == address(pool)) return ZERO_FLOAT;
         return pool._asset(token).fee;
     }
@@ -92,12 +92,12 @@ contract PoolUtils is Test {
     function scaledValueIn(
         Pool pool,
         QuoteState memory q
-    ) public view returns (Float memory) {
-        Float memory scale_;
-        Float memory amount_;
-        Float memory poolIn_;
-        Float memory finalBalance_;
-        Float memory scaledValueIn_;
+    ) public view returns (UFloat memory) {
+        UFloat memory scale_;
+        UFloat memory amount_;
+        UFloat memory poolIn_;
+        UFloat memory finalBalance_;
+        UFloat memory scaledValueIn_;
         for (uint256 i; i < q.payTokens.length; i++) {
             address payToken = q.payTokens[i];
             amount_ = q.payAmounts[i];
@@ -122,13 +122,13 @@ contract PoolUtils is Test {
     function scaledValueOut(
         Pool pool,
         QuoteState memory q
-    ) public view returns (Float memory) {
-        Float memory scale_;
-        Float memory amount_;
-        Float memory finalBalance_;
-        Float memory poolScale_;
-        Float memory poolAmount_;
-        Float memory scaledValueOut_;
+    ) public view returns (UFloat memory) {
+        UFloat memory scale_;
+        UFloat memory amount_;
+        UFloat memory finalBalance_;
+        UFloat memory poolScale_;
+        UFloat memory poolAmount_;
+        UFloat memory scaledValueOut_;
         for (uint256 i; i < q.receiveTokens.length; i++) {
             address receiveToken = q.receiveTokens[i];
             amount_ = q.receiveAmounts[i];
@@ -155,7 +155,7 @@ contract PoolUtils is Test {
         AssetState memory asset = pool._asset(token);
         emit log("-------");
         emit log_named_string("name", asset.name);
-        Float memory price_ = price(pool, token, numeraire);
+        UFloat memory price_ = price(pool, token, numeraire);
         emit log_named_string("price", price_.toString());
         emit log_named_string("balance", asset.balance.toString());
         emit log_named_string(
@@ -283,12 +283,12 @@ contract PoolUtils is Test {
         Pool pool,
         QuoteState memory q,
         // address[] memory payTokens,
-        // Float memory[] memory payAmounts, // Token decimals
+        // UFloat memory[] memory payAmounts, // Token decimals
         // address[] memory receiveTokens,
-        // Float memory[] memory allocations, // 18 decimals
-        Float[] memory checkPayAmounts,
-        Float[] memory checkReceiveAmounts,
-        Float memory checkFeeAmount,
+        // UFloat memory[] memory allocations, // 18 decimals
+        UFloat[] memory checkPayAmounts,
+        UFloat[] memory checkReceiveAmounts,
+        UFloat memory checkFeeAmount,
         string memory message
     ) public {
         for (uint256 i; i < checkPayAmounts.length; i++) {
@@ -391,8 +391,8 @@ contract PoolUtils is Test {
         //     decimals_,
         //     "scaledValueIn"
         // );
-        Float memory scaledValueInFloat;
-        Float memory scaledValueOutFloat;
+        UFloat memory scaledValueInFloat;
+        UFloat memory scaledValueOutFloat;
         (scaledValueInFloat, scaledValueOutFloat) = scaledValueIn(pool, q)
             .align(scaledValueOut(pool, q));
         assertApproxEqAbs(

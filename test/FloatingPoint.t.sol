@@ -2,46 +2,46 @@
 pragma solidity 0.8.19;
 
 // import {Pool, FixedPointMathLib} from "../contracts/Pool.sol";
-import {FloatingPoint as FP, Float} from "../contracts/libraries/FloatingPoint/src/FloatingPoint.sol";
+import {FloatingPoint as FP, UFloat} from "../contracts/libraries/FloatingPoint/src/FloatingPoint.sol";
 
 import {Test} from "forge-std/Test.sol";
 
 contract FloatingPointTest is Test {
     using FP for uint256;
     using FP for int256;
-    using FP for Float;
+    using FP for UFloat;
 
-    Float internal ZERO;
-    Float internal HALF;
-    Float internal ONE;
-    Float internal TWO;
-    Float internal THREE;
-    Float internal FOUR;
-    Float internal FIVE;
-    Float internal SIX;
-    Float internal SEVEN;
-    Float internal EIGHT;
-    Float internal NINE;
-    Float internal TEN;
+    UFloat internal ZERO;
+    UFloat internal HALF;
+    UFloat internal ONE;
+    UFloat internal TWO;
+    UFloat internal THREE;
+    UFloat internal FOUR;
+    UFloat internal FIVE;
+    UFloat internal SIX;
+    UFloat internal SEVEN;
+    UFloat internal EIGHT;
+    UFloat internal NINE;
+    UFloat internal TEN;
 
-    Float internal ONEnHALF;
-    Float internal TWOnHALF;
-    Float internal THREEnHALF;
-    Float internal FOURnHALF;
-    Float internal FIVEnHALF;
-    Float internal SIXnHALF;
-    Float internal SEVENnHALF;
-    Float internal EIGHTnHALF;
-    Float internal NINEnHALF;
+    UFloat internal ONEnHALF;
+    UFloat internal TWOnHALF;
+    UFloat internal THREEnHALF;
+    UFloat internal FOURnHALF;
+    UFloat internal FIVEnHALF;
+    UFloat internal SIXnHALF;
+    UFloat internal SEVENnHALF;
+    UFloat internal EIGHTnHALF;
+    UFloat internal NINEnHALF;
 
-    Float internal a;
-    Float internal b;
-    Float internal c;
+    UFloat internal a;
+    UFloat internal b;
+    UFloat internal c;
 
-    Float internal ZERO_unnormalized;
-    Float internal HALF_unnormalized;
-    Float internal ONE_unnormalized;
-    Float internal TWO_unnormalized;
+    UFloat internal ZERO_unnormalized;
+    UFloat internal HALF_unnormalized;
+    UFloat internal ONE_unnormalized;
+    UFloat internal TWO_unnormalized;
 
     uint256 internal mantissaZERO;
     int256 internal exponentZERO;
@@ -62,8 +62,8 @@ contract FloatingPointTest is Test {
     int256 internal exponentTWO_unnormalized;
 
     function assertEq(
-        Float memory x,
-        Float memory y,
+        UFloat memory x,
+        UFloat memory y,
         string memory message
     ) internal {
         failed = failed;
@@ -75,33 +75,33 @@ contract FloatingPointTest is Test {
     }
 
     function setUp() public {
-        ZERO = FP.normalize(Float(0, 0));
-        ONE = FP.normalize(Float(1, 0));
-        TWO = FP.normalize(Float(2, 0));
-        THREE = FP.normalize(Float(3, 0));
-        FOUR = FP.normalize(Float(4, 0));
-        FIVE = FP.normalize(Float(5, 0));
-        SIX = FP.normalize(Float(6, 0));
-        SEVEN = FP.normalize(Float(7, 0));
-        EIGHT = FP.normalize(Float(8, 0));
-        NINE = FP.normalize(Float(9, 0));
-        TEN = FP.normalize(Float(10, 0));
+        ZERO = FP.normalize(UFloat(0, 0));
+        ONE = FP.normalize(UFloat(1, 0));
+        TWO = FP.normalize(UFloat(2, 0));
+        THREE = FP.normalize(UFloat(3, 0));
+        FOUR = FP.normalize(UFloat(4, 0));
+        FIVE = FP.normalize(UFloat(5, 0));
+        SIX = FP.normalize(UFloat(6, 0));
+        SEVEN = FP.normalize(UFloat(7, 0));
+        EIGHT = FP.normalize(UFloat(8, 0));
+        NINE = FP.normalize(UFloat(9, 0));
+        TEN = FP.normalize(UFloat(10, 0));
 
-        HALF = FP.normalize(Float(5, -1));
-        ONEnHALF = FP.normalize(Float(15, -1));
-        TWOnHALF = FP.normalize(Float(25, -1));
-        THREEnHALF = FP.normalize(Float(35, -1));
-        FOURnHALF = FP.normalize(Float(45, -1));
-        FIVEnHALF = FP.normalize(Float(55, -1));
-        SIXnHALF = FP.normalize(Float(65, -1));
-        SEVENnHALF = FP.normalize(Float(75, -1));
-        EIGHTnHALF = FP.normalize(Float(85, -1));
-        NINEnHALF = FP.normalize(Float(95, -1));
+        HALF = FP.normalize(UFloat(5, -1));
+        ONEnHALF = FP.normalize(UFloat(15, -1));
+        TWOnHALF = FP.normalize(UFloat(25, -1));
+        THREEnHALF = FP.normalize(UFloat(35, -1));
+        FOURnHALF = FP.normalize(UFloat(45, -1));
+        FIVEnHALF = FP.normalize(UFloat(55, -1));
+        SIXnHALF = FP.normalize(UFloat(65, -1));
+        SEVENnHALF = FP.normalize(UFloat(75, -1));
+        EIGHTnHALF = FP.normalize(UFloat(85, -1));
+        NINEnHALF = FP.normalize(UFloat(95, -1));
 
-        ZERO_unnormalized = Float(0, 0);
-        HALF_unnormalized = Float(1, -1);
-        ONE_unnormalized = Float(1, 0);
-        TWO_unnormalized = Float(2, 0);
+        ZERO_unnormalized = UFloat(0, 0);
+        HALF_unnormalized = UFloat(1, -1);
+        ONE_unnormalized = UFloat(1, 0);
+        TWO_unnormalized = UFloat(2, 0);
 
         mantissaZERO = ZERO.mantissa;
         exponentZERO = ZERO.exponent;
@@ -122,8 +122,8 @@ contract FloatingPointTest is Test {
         exponentTWO_unnormalized = TWO_unnormalized.exponent;
     }
 
-    function getFloats() public view returns (Float[] memory) {
-        Float[] memory floats = new Float[](21);
+    function getFloats() public view returns (UFloat[] memory) {
+        UFloat[] memory floats = new UFloat[](21);
         floats[0] = ZERO;
         floats[1] = HALF;
         floats[2] = ONE;
@@ -149,22 +149,19 @@ contract FloatingPointTest is Test {
     }
 
     function testToString() public {
-        emit log_named_int("Max int256", type(int256).max);
-        emit log_named_int("Min int256", type(int256).min);
-
-        Float[] memory floats = getFloats();
+        UFloat[] memory floats = getFloats();
         for (uint256 i = 0; i < floats.length; i++) {
-            emit log_named_string("Float to string", floats[i].toString());
+            emit log_named_string("UFloat to string", floats[i].toString());
         }
         int256 exponent = 19;
-        Float memory float = ONE.divide(Float(9, exponent)).normalize();
+        UFloat memory float = ONE.divide(UFloat(9, exponent)).normalize();
         for (uint256 i = 0; i < uint256(2 * exponent); i++) {
-            emit log_named_string("Float to string", float.toString());
+            emit log_named_string("UFloat to string", float.toString());
             float = float.times(TEN);
         }
-        float = Float(1, exponent).divide(Float(9, 0)).normalize();
+        float = UFloat(1, exponent).divide(UFloat(9, 0)).normalize();
         for (uint256 i = 0; i < uint256(2 * exponent); i++) {
-            emit log_named_string("Float to string", float.toString());
+            emit log_named_string("UFloat to string", float.toString());
             float = float.divide(TEN);
         }
     }
@@ -275,7 +272,7 @@ contract FloatingPointTest is Test {
     }
 
     function testONE() public {
-        a = Float(1, 0);
+        a = UFloat(1, 0);
         a = FP.normalize(a);
         assertEq(FP.msb(a.mantissa), 18, "msb");
         if (failed) {
@@ -1052,7 +1049,7 @@ contract FloatingPointTest is Test {
     }
 
     function testMulDiv() public {
-        Float[] memory floats = getFloats();
+        UFloat[] memory floats = getFloats();
         for (uint256 i; i < floats.length; i++) {
             for (uint256 j; j < floats.length; j++) {
                 for (uint256 k = 1; k < floats.length; k++) {
@@ -1070,7 +1067,7 @@ contract FloatingPointTest is Test {
     }
 
     function testMulDivAdd() public {
-        Float[] memory floats = getFloats();
+        UFloat[] memory floats = getFloats();
         for (uint256 i; i < floats.length; i++) {
             for (uint256 j; j < floats.length; j++) {
                 for (uint256 k = 1; k < floats.length; k++) {

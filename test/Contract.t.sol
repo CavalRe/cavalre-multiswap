@@ -6,12 +6,12 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "forge-std/Test.sol";
 
 import {Token} from "./Token.t.sol";
-import {Pool, FloatingPoint, Float, PoolState, AssetState, IPool} from "../contracts/Pool.sol";
+import {Pool, FloatingPoint, UFloat, PoolState, AssetState, IPool} from "../contracts/Pool.sol";
 import {PoolUtils} from "./PoolUtils.t.sol";
 
 contract ContractTest is Context, PoolUtils {
     using FloatingPoint for uint256;
-    using FloatingPoint for Float;
+    using FloatingPoint for UFloat;
 
     uint256 private constant NTOKENS = 10;
 
@@ -398,24 +398,24 @@ contract ContractTest is Context, PoolUtils {
         emit log("");
     }
 
-    // function weight(address token_) public view returns (Float memory) {
+    // function weight(address token_) public view returns (UFloat memory) {
     //     if (token_ == address(pool)) return ONE_FLOAT;
     //     AssetState memory asset_ = pool._asset(token_);
     //     return asset_.scale.divide(pool.info().scale);
     // }
 
-    // function price(address token_) public view returns (Float memory) {
+    // function price(address token_) public view returns (UFloat memory) {
     //     if (token_ == address(pool)) return ONE_FLOAT;
     //     AssetState memory asset_ = pool._asset(token_);
-    //     Float memory weight_ = weight(token_);
+    //     UFloat memory weight_ = weight(token_);
     //     return weight_.times(pool._info().balance).divide(asset_.balance);
     // }
 
     function test2_addLiquidity() public {
         vm.startPrank(alice);
 
-        Float[] memory preTradePrices = new Float[](addresses.length);
-        Float[] memory postTradePrices = new Float[](addresses.length);
+        UFloat[] memory preTradePrices = new UFloat[](addresses.length);
+        UFloat[] memory postTradePrices = new UFloat[](addresses.length);
         for (uint256 i; i < addresses.length; i++) {
             preTradePrices[i] = price(pool, addresses[i], address(pool));
         }
@@ -431,8 +431,8 @@ contract ContractTest is Context, PoolUtils {
         for (uint256 i; i < addresses.length; i++) {
             postTradePrices[i] = price(pool, addresses[i], address(pool));
             emit log_named_uint("Pay Amount", payAmounts[i]);
-            emit log_named_uint("Pre-Trade Price", preTradePrices[i].toDecimals(tokens[i].decimals()));
-            emit log_named_uint("Post-Trade Price", postTradePrices[i].toDecimals(tokens[i].decimals()));
+            emit log_named_uint("Pre-Trade Price", preTradePrices[i].toUInt(tokens[i].decimals()));
+            emit log_named_uint("Post-Trade Price", postTradePrices[i].toUInt(tokens[i].decimals()));
             emit log("");
         }
         emit log("======================");

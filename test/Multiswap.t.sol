@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {console} from "forge-std/console.sol";
 import {PoolTest} from "./Pool.t.sol";
-import {Pool, FloatingPoint, Float, AssetState, AssetStateExternal, QuoteState, IPool} from "../contracts/Pool.sol";
+import {Pool, FloatingPoint, UFloat, AssetState, AssetStateExternal, QuoteState, IPool} from "../contracts/Pool.sol";
 import {Token} from "./Token.t.sol";
 
 struct State {
@@ -14,7 +14,7 @@ struct State {
 
 contract MultiswapTest is PoolTest {
     using FloatingPoint for uint256;
-    using FloatingPoint for Float;
+    using FloatingPoint for UFloat;
 
     function setUp() public {
         uint256 startBalance = type(uint256).max / 2;
@@ -36,7 +36,7 @@ contract MultiswapTest is PoolTest {
         uint256 amount;
         // amount = 167898529394108508548957337378873748730842084596241128;
         amount = 40220187134998107484890218317601876816937911541436243019270437539076288474593;
-        emit log_named_string("amountFloat", Float(amount, 0).normalize().toString());
+        emit log_named_string("amountFloat", UFloat(amount, 0).normalize().toString());
         emit log_named_uint("amount / type(uint256).max", amount / type(uint256).max);
         amount = payToken.balanceOf(address(pool)) * (amount / type(uint256).max);
         emit log_named_uint("amount", amount);
@@ -55,9 +55,9 @@ contract MultiswapTest is PoolTest {
         uint256[] memory receiveAmounts = new uint256[](1);
         uint256 feeAmount;
 
-        Float[] memory amountsFloat = new Float[](1);
-        amountsFloat[0] = amount.fromDecimals(payToken.decimals());
-        Float[] memory allocationsFloat = new Float[](1);
+        UFloat[] memory amountsFloat = new UFloat[](1);
+        amountsFloat[0] = amount.toUFloat(payToken.decimals());
+        UFloat[] memory allocationsFloat = new UFloat[](1);
         allocationsFloat[0] = ONE_FLOAT;
 
         QuoteState memory q = pool._quoteMultiswap(
@@ -122,9 +122,9 @@ contract MultiswapTest is PoolTest {
             minReceiveAmounts
         );
 
-        Float[] memory amountsFloat = new Float[](1);
-        amountsFloat[0] = amount.fromDecimals(payToken.decimals());
-        Float[] memory allocationsFloat = new Float[](1);
+        UFloat[] memory amountsFloat = new UFloat[](1);
+        amountsFloat[0] = amount.toUFloat(payToken.decimals());
+        UFloat[] memory allocationsFloat = new UFloat[](1);
         allocationsFloat[0] = ONE_FLOAT;
 
         QuoteState memory q = pool._quoteMultiswap(
@@ -139,7 +139,7 @@ contract MultiswapTest is PoolTest {
 
     function testMultiFuzzAmount(uint64 mantissa, int8 exponent) public {
         vm.assume(mantissa > 0);
-        Float memory amount = Float(mantissa, exponent).normalize();
+        UFloat memory amount = UFloat(mantissa, exponent).normalize();
 
         Token payToken = WAVAX;
         Token receiveToken = USDC;
@@ -159,10 +159,10 @@ contract MultiswapTest is PoolTest {
         // uint256[] memory receiveAmounts = new uint256[](1);
         // uint256 feeAmount;
 
-        Float[] memory amounts = new Float[](1);
+        UFloat[] memory amounts = new UFloat[](1);
         amounts[0] = amount;
-        // amountsFloat[0] = amount.fromDecimals(payToken.decimals());
-        Float[] memory allocations = new Float[](1);
+        // amountsFloat[0] = amount.toUFloat(payToken.decimals());
+        UFloat[] memory allocations = new UFloat[](1);
         allocations[0] = ONE_FLOAT;
 
         QuoteState memory q = pool._quoteMultiswap(
@@ -186,7 +186,7 @@ contract MultiswapTest is PoolTest {
         //         allocations,
         //         minReceiveAmounts
         //     );
-        // } else if (q.receiveAmounts[0].toDecimals(receiveToken.decimals()) == 0) {
+        // } else if (q.receiveAmounts[0].toUInt(receiveToken.decimals()) == 0) {
         //     vm.expectRevert(
         //         abi.encodeWithSelector(IPool.ZeroAmount.selector)
         //     );
