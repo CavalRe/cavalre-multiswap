@@ -149,6 +149,8 @@ contract FloatingPointTest is Test {
     }
 
     function testToString() public {
+        emit log_named_string("1.15 x 10^77", UFloat(115, 75).toString());
+
         UFloat[] memory floats = getFloats();
         for (uint256 i = 0; i < floats.length; i++) {
             emit log_named_string("UFloat to string", floats[i].toString());

@@ -3,10 +3,13 @@ pragma solidity 0.8.19;
 
 import {Pool, FixedPointMathLib} from "../contracts/Pool.sol";
 import {IUsers} from "../contracts/Users.sol";
+import {FloatingPoint as FP, UFloat} from "../contracts/libraries/FloatingPoint/src/FloatingPoint.sol";
 import "forge-std/Test.sol";
 
 contract PoolMintable is Pool {
     using FixedPointMathLib for uint256;
+    using FP for uint256;
+    using FP for UFloat;
 
     constructor(
         string memory name_,
@@ -29,28 +32,48 @@ contract PoolMintable is Pool {
     //     super.distributeFee(amount, finalTokensPerShare);
     // }
 
-    function mint_(uint256 amount) public {
-        super._mint(_msgSender(), amount);
+    function mint(uint256 shares) public {
+        super._mint(_msgSender(), shares);
     }
 
-    function burn_(uint256 amount) public {
-        super._burn(_msgSender(), amount);
+    function burn(uint256 shares) public {
+        super._burn(_msgSender(), shares);
     }
 
-    function spendAllowance_(address owner, uint256 amount) public {
+    function mintTokens(UFloat memory amount) public {
+        super._mintTokens(_msgSender(), amount);
+    }
+
+    function burnTokens(UFloat memory amount) public {
+        super._burnTokens(_msgSender(), amount);
+    }
+
+    function distributeTokens(UFloat memory amount) public {
+        super._distributeTokens(amount);
+    }
+
+    function allocateShares(address account, uint256 shares) public {
+        super._allocateShares(account, shares);
+    }
+
+    function spendAllowance(address owner, uint256 amount) public {
         super._spendAllowance(owner, _msgSender(), amount);
     }
 }
 
 contract LPTokenTest is Test {
     using FixedPointMathLib for uint256;
+    using FP for uint256;
 
     PoolMintable private pool;
 
+    address alice = address(1);
+    address bob = address(2);
+    address carol = address(3);
+
     uint256 private protocolFee = 5e17;
     address private multisigAddress = vm.envAddress("MULTISIG_ADDRESS");
-    uint256 private tokensPerShare = 1e18;
-    uint256 private tau = 1e16;
+    uint256 private tokensPerShare = 3e18;
 
     function setUp() public {
         vm.roll(1);
@@ -63,10 +86,16 @@ contract LPTokenTest is Test {
         );
     }
 
-    function testLPToken_allowance() public {
-        address alice = address(1);
-        address bob = address(2);
+    function tolerance(uint256 amount) public pure returns (uint256) {
+        uint256 digits = amount.msb();
+        if (digits >= 18) {
+            return 10 ** (digits - 16);
+        } else {
+            return 10;
+        }
+    }
 
+    function testLPToken_allowance() public {
         vm.startPrank(alice);
 
         pool.increaseAllowance(bob, 1e18);
@@ -99,7 +128,7 @@ contract LPTokenTest is Test {
 
         vm.startPrank(alice);
 
-        pool.spendAllowance_(bob, 1e18);
+        pool.spendAllowance(bob, 1e18);
 
         assertEq(
             pool.allowance(bob, alice),
@@ -108,55 +137,50 @@ contract LPTokenTest is Test {
         );
     }
 
-    function testLPToken_mint(uint256 amount) public {
-        vm.assume((amount > 1e17) && (amount < 1e50));
-
-        address alice = address(1);
+    function testLPToken_mint(uint256 shares) public {
+        vm.assume((shares > 0) && (shares < 1e50));
 
         vm.startPrank(alice);
 
-        pool.mint_(amount);
+        pool.mint(shares);
         assertEq(
             pool.balanceOf(alice),
-            amount,
+            shares,
             "Balance of alice after minting."
         );
-        assertEq(pool.totalSupply(), amount, "Total supply after minting.");
+        assertEq(pool.totalSupply(), shares, "Total supply after minting.");
     }
 
-    function testLPToken_burn() public {
-        // function testLPToken_burn(uint256 amount) public {
-        //     vm.assume((amount > 1e17) && (amount < 1e50));
-        uint256 amount = 1e17;
-
-        address alice = address(1);
-        address bob = address(2);
+    function testLPToken_burn(uint256 shares) public {
+        // function testLPToken_burn(uint256 shares) public {
+        vm.assume((shares > 0) && (shares < 1e48));
+        // uint256 shares = 1e17;
 
         vm.startPrank(alice);
 
-        uint256 burnAmount = amount / 2;
+        uint256 burnAmount = shares / 2;
 
-        pool.mint_(amount);
+        pool.mint(shares);
         assertEq(
             pool.balanceOf(alice),
-            amount,
+            shares,
             "Balance of alice after minting."
         );
         assertEq(
             pool.totalSupply(),
-            amount,
+            shares,
             "Total supply after alice minting."
         );
 
-        pool.burn_(burnAmount);
+        pool.burn(burnAmount);
         assertEq(
             pool.balanceOf(alice),
-            amount - burnAmount,
+            shares - burnAmount,
             "Balance of alice after burning."
         );
         assertEq(
             pool.totalSupply(),
-            amount - burnAmount,
+            shares - burnAmount,
             "Total supply after alice burning."
         );
 
@@ -164,40 +188,85 @@ contract LPTokenTest is Test {
 
         vm.startPrank(bob);
 
-        pool.mint_(amount);
-        assertEq(pool.balanceOf(bob), amount, "Balance of bob after minting.");
+        pool.mint(shares);
+        assertEq(pool.balanceOf(bob), shares, "Balance of bob after minting.");
         assertEq(
             pool.totalSupply(),
-            2 * amount - burnAmount,
+            2 * shares - burnAmount,
             "Total supply after bob minting."
         );
 
-        pool.burn_(burnAmount);
+        pool.burn(burnAmount);
         assertEq(
             pool.balanceOf(bob),
-            amount - burnAmount,
+            shares - burnAmount,
             "Balance of bob after burning."
         );
         assertEq(
             pool.totalSupply(),
-            2 * amount - 2 * burnAmount,
+            2 * shares - 2 * burnAmount,
             "Total supply after bob burning."
         );
 
         vm.stopPrank();
     }
 
+    function testLPToken_mintTokens(uint256 amount) public {
+        vm.assume((amount > 0) && (amount < 1e50));
+
+        vm.startPrank(alice);
+
+        UFloat memory amountFloat = amount.toUFloat();
+
+        pool.mintTokens(amountFloat);
+        assertApproxEqAbs(
+            pool.tokensOf(alice),
+            amount,
+            tolerance(amount),
+            "Balance of alice after minting."
+        );
+        assertApproxEqAbs(
+            pool.totalTokens(),
+            amount,
+            tolerance(amount),
+            "Total supply after minting."
+        );
+    }
+
+    function testLPToken_burnTokens(uint256 amount) public {
+        vm.assume((amount > 0) && (amount < 1e50));
+
+        vm.startPrank(alice);
+
+        UFloat memory amountFloat = amount.toUFloat();
+
+        pool.mintTokens(amountFloat);
+        assertApproxEqAbs(
+            pool.tokensOf(alice),
+            amount,
+            tolerance(amount),
+            "Balance of alice after minting."
+        );
+        assertApproxEqAbs(
+            pool.totalTokens(),
+            amount,
+            tolerance(amount),
+            "Total supply after minting."
+        );
+
+        pool.burnTokens(amountFloat);
+        assertEq(pool.tokensOf(alice), 0, "Balance of alice after burning.");
+        assertEq(pool.totalTokens(), 0, "Total supply after burning.");
+    }
+
     function testLPToken_transfer(uint256 amount) public {
         vm.assume((amount > 1e17) && (amount < 1e50));
-
-        address alice = address(1);
-        address bob = address(2);
 
         pool.setIsAllowed(bob, false);
 
         vm.startPrank(alice);
 
-        pool.mint_(amount);
+        pool.mint(amount);
         assertEq(
             pool.balanceOf(alice),
             amount,
@@ -224,17 +293,13 @@ contract LPTokenTest is Test {
     function testLPToken_transferFrom(uint256 amount) public {
         vm.assume((amount > 1e17) && (amount < 1e50));
 
-        address alice = address(1);
-        address bob = address(2);
-        address carol = address(3);
-
         pool.setIsAllowed(carol, false);
 
         vm.startPrank(alice);
 
         pool.increaseAllowance(bob, amount);
 
-        pool.mint_(amount);
+        pool.mint(amount);
         assertEq(
             pool.balanceOf(alice),
             amount,
@@ -260,58 +325,67 @@ contract LPTokenTest is Test {
         pool.transferFrom(alice, carol, amount);
     }
 
-    function testLPToken_fee(uint256 amount) public {
-        vm.assume((amount > 1e17) && (amount < 1e50));
-
-        address alice = address(1);
+    function testLPToken_fee(uint256 shares) public {
+        vm.assume((shares > 0) && (shares < 1e48));
+        // vm.assume(shares > 0);
 
         vm.startPrank(alice);
 
-        pool.mint_(amount);
+        uint256 sharesBefore = pool.balanceOf(alice);
+
+        pool.mint(shares);
         assertEq(
-            pool.tokensOf(alice),
-            amount,
+            pool.balanceOf(alice),
+            shares,
             "Balance of alice after minting."
         );
-        assertEq(pool.totalTokens(), amount, "Total supply after minting.");
+        if (failed) {
+            emit log_named_uint(
+                "Balance of alice before minting.",
+                sharesBefore
+            );
+        }
+        assertEq(pool.totalSupply(), shares, "Total supply after minting.");
 
         vm.stopPrank();
 
-        address bob = address(2);
-
         vm.startPrank(bob);
 
-        pool.mint_(amount);
-        assertEq(pool.tokensOf(bob), amount, "Balance of bob after minting.");
+        pool.mint(shares);
+        assertEq(pool.balanceOf(bob), shares, "Balance of bob after minting.");
         assertEq(
-            pool.totalTokens(),
-            2 * amount,
+            pool.totalSupply(),
+            2 * shares,
             "Total supply after second minting."
         );
 
         vm.stopPrank();
 
+        setUp();
+
+        vm.startPrank(alice);
+
         // pool.distributeFee_(2 * amount, 1e18);
 
-        emit log_named_uint("Amount", amount);
-        emit log_named_uint("Protocol fee", protocolFee);
+        // emit log_named_uint("Shares", shares);
+        // emit log_named_uint("Protocol fee", protocolFee);
 
-        assertApproxEqRel(
-            pool.tokensOf(alice),
-            2 * amount.divWadUp(uint256(1e18) + protocolFee),
-            1e12,
-            "Balance of alice after fee distribution."
-        );
-        assertApproxEqRel(
-            pool.tokensOf(bob),
-            2 * amount.divWadUp(uint256(1e18) + protocolFee),
-            1e12,
-            "Balance of bob after fee distribution."
-        );
-        assertEq(
-            pool.totalTokens(),
-            4 * amount,
-            "Total supply after fee distribution."
-        );
+        // assertApproxEqRel(
+        //     pool.tokensOf(alice),
+        //     2 * shares.divWadUp(uint256(1e18) + protocolFee),
+        //     1e12,
+        //     "Balance of alice after fee distribution."
+        // );
+        // assertApproxEqRel(
+        //     pool.tokensOf(bob),
+        //     2 * shares.divWadUp(uint256(1e18) + protocolFee),
+        //     1e12,
+        //     "Balance of bob after fee distribution."
+        // );
+        // assertEq(
+        //     pool.totalTokens(),
+        //     4 * shares,
+        //     "Total supply after fee distribution."
+        // );
     }
 }

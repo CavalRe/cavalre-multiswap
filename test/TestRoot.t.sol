@@ -164,9 +164,9 @@ contract TestRoot is Test, Context {
 
         UFloat memory fee_;
         for (uint256 i; i < receiveTokens.length; i++) {
-            fee_ = fee_.plus(allocations[i].times(fee(receiveTokens[i])));
+            fee_ = fee_.plus(allocations[i].toUFloat().times(fee(receiveTokens[i])));
             valueOut = valueOut.plus(
-                receiveAmounts[i].times(price(receiveTokens[i]))
+                receiveAmounts[i].toUFloat(pool._asset(payTokens[i]).decimals).times(price(receiveTokens[i]))
             );
         }
         valueOut = valueOut.plus(fee_.times(valueIn));

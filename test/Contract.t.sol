@@ -160,7 +160,7 @@ contract ContractTest is Context, PoolUtils {
         }
     }
 
-    function test1_Multiswap() public {
+    function testGasMultiswap() public {
         pool.multiswap(
             oneAsset,
             oneAmount,
@@ -170,27 +170,27 @@ contract ContractTest is Context, PoolUtils {
         );
     }
 
-    function test1_Swap() public {
+    function testGasSwap() public {
         pool.swap(oneAsset[0], anotherAsset[0], oneAmount[0], oneMin[0]);
     }
 
-    function test1_Multistake() public {
+    function testGasMultistake() public {
         pool.multiswap(oneAsset, oneAmount, onePool, oneAllocation, oneMin);
     }
 
-    function test1_Stake() public {
+    function testGasStake() public {
         pool.stake(oneAsset[0], oneAmount[0], oneMin[0]);
     }
 
-    function test1_Multiunstake() public {
+    function testGasMultiunstake() public {
         pool.multiswap(oneAsset, oneAmount, onePool, oneAllocation, oneMin);
     }
 
-    function test1_Unstake() public {
+    function testGasUnstake() public {
         pool.unstake(oneAsset[0], oneAmount[0], oneMin[0]);
     }
 
-    function test1_RemoveLiquidity() public {
+    function testGasRemoveLiquidity() public {
         pool.removeLiquidity(oneAmount[0], allMins);
     }
 

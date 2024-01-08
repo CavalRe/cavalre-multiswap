@@ -6,6 +6,7 @@ pragma solidity 0.8.19;
 import {IPool, PoolState, AssetState, QuoteState, PoolStateExternal, AssetStateExternal} from "./interfaces/IPool.sol";
 import {LPToken, FixedPointMathLib, FloatingPoint, UFloat} from "./LPToken.sol";
 import {IWrappedNative} from "./interfaces/IWrappedNative.sol";
+import {PoolMath} from "./libraries/PoolMath/src/PoolMath.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -16,8 +17,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     using FloatingPoint for int256;
     using FloatingPoint for UFloat;
     using FloatingPoint for uint256[];
-    using FixedPointMathLib for uint256;
-    using FixedPointMathLib for int256;
+    using PoolMath for UFloat;
 
     uint256 private _isInitialized;
 
@@ -277,7 +277,9 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         return _assetAddresses;
     }
 
-    function assetDecimals(address[] memory addresses) public view returns (uint8[] memory) {
+    function assetDecimals(
+        address[] memory addresses
+    ) public view returns (uint8[] memory) {
         uint8[] memory assetDecimals_ = new uint8[](addresses.length);
         for (uint256 i; i < addresses.length; i++) {
             assetDecimals_[i] = _assetState[addresses[i]].decimals;
@@ -304,10 +306,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     ) internal {
         AssetState storage asset_ = _assetState[token];
         if (asset_.decimals == 0) revert AssetNotFound(token);
-        emit log(_assetState[token].symbol);
-        emit log_named_string("initial balance", asset_.balance.toString());
-        emit log_named_string("increaseAmount", increaseAmount.toString());
-        emit log_named_string("decreaseAmount", decreaseAmount.toString());
         asset_.balance = asset_.balance.plus(increaseAmount).minus(
             decreaseAmount
         );
@@ -362,7 +360,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         UFloat[] memory payAmounts,
         address[] memory receiveTokens,
         UFloat[] memory allocations
-    ) public returns (QuoteState memory q) {
+    ) public view returns (QuoteState memory q) {
         UFloat memory totalSupply_ = totalSupply().toUFloat();
         uint256 assetAddressesLength = _assetAddresses.length;
         uint256 payTokensLength = payTokens.length;
@@ -407,39 +405,18 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                 q.allocations[0].times(ONE_FLOAT.minus(q.fee))
             );
         }
-        emit log_named_string("Fee", q.fee.toString());
-        emit log_named_string("Discount", q.discount.toString());
-        emit log_named_string("Pool allocation", q.poolAlloc.toString());
 
         // Compute scaledValueIn from assets only
         UFloat memory amount;
-        UFloat memory R;
         for (uint256 i; i < payTokensLength; i++) {
             address payToken = payTokens[i];
             if (payToken == address(this)) continue;
             AssetState storage assetIn = _assetState[payToken];
             amount = payAmounts[i];
-            emit log("Compute scaledValueIn");
-            // emit log_named_string("assetIn.balance.plus(amount)", assetIn.balance.plus(amount).toString());
-            // emit log_named_string("assetIn.scale.times(amount)", assetIn.scale.times(amount).toString());
-            // emit log_named_string(
-            //     "amount.divide(assetIn.balance.plus(amount))",
-            //     amount.divide(assetIn.balance.plus(amount)).toString()
-            // );
-            R = amount.divide(assetIn.balance);
-            emit log_named_string("R", R.toString());
-            emit log_named_string("1+R", (ONE_FLOAT.plus(R)).toString());
-            emit log_named_string("R/(1+R)", R.divide(ONE_FLOAT.plus(R)).toString());
             q.scaledValueIn = q.scaledValueIn.plus(
-                assetIn.scale.times(R.divide(ONE_FLOAT.plus(R)))
-            );
-            emit log_named_string(
-                "Scaled value in",
-                q.scaledValueIn.toString()
+                assetIn.scale.scaledAssetValueIn(assetIn.balance, amount)
             );
         }
-
-        emit log_named_string("Scaled value in", q.scaledValueIn.toString());
 
         // Compute poolOut
         q.lastPoolBalance = _poolState.balance;
@@ -516,6 +493,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256[] memory allocations // 18 decimals
     )
         public
+        view
         returns (
             uint256[] memory receiveAmounts, // Token decimals
             uint256 feeAmount // Token decimals
@@ -598,7 +576,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             }
         }
 
-        emit log("Get quote");
         QuoteState memory q = _quoteMultiswap(
             sender,
             payTokens,
@@ -607,51 +584,8 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             allocations.toUFloatArray()
         );
 
-        emit log("------------------");
-        emit log("Quoted pay amounts");
-        for (uint256 i; i < q.payTokens.length; i++) {
-            if (q.payTokens[i] == address(this)) {
-                emit log_named_string(
-                    symbol(),
-                    amounts[i].toUFloat().toString()
-                );
-                emit log_named_string(symbol(), q.payAmounts[i].toString());
-            } else {
-                emit log_named_string(
-                    _assetState[q.payTokens[i]].symbol,
-                    amounts[i]
-                        .toUFloat(_assetState[q.payTokens[i]].decimals)
-                        .toString()
-                );
-                emit log_named_string(
-                    _assetState[q.payTokens[i]].symbol,
-                    q.payAmounts[i].toString()
-                );
-            }
-        }
-
-        emit log("----------------------");
-        emit log("Quoted receive amounts");
-        for (uint256 i; i < q.receiveTokens.length; i++) {
-            if (q.receiveTokens[i] == address(this)) {
-                emit log_named_string(symbol(), q.receiveAmounts[i].toString());
-            } else {
-                emit log_named_string(
-                    _assetState[q.receiveTokens[i]].symbol,
-                    q.receiveAmounts[i].toString()
-                );
-            }
-        }
-        if (q.receiveTokens[0] == address(this)) {
-            emit log_named_string(symbol(), q.receiveAmounts[0].toString());
-        } else {
-            emit log_named_string(
-                _assetState[q.receiveTokens[0]].symbol,
-                q.receiveAmounts[0].toString()
-            );
-        }
-
         receiveAmounts = new uint256[](q.receiveAmounts.length);
+
         // Check receiveAmounts
         // emit log("Check receive amounts");
         {
@@ -674,30 +608,14 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                 }
             }
         }
-        if (q.receiveTokens[0] == address(this)) {
-            emit log_named_string(symbol(), q.receiveAmounts[0].toString());
-        } else {
-            emit log_named_string(
-                _assetState[q.receiveTokens[0]].symbol,
-                q.receiveAmounts[0].toString()
-            );
-        }
-        emit log("----------------------");
 
         // Transfer tokens to the pool
-        emit log("Transfer tokens to the pool");
         for (uint256 i; i < payTokens.length; i++) {
             address payToken = payTokens[i];
             _payTokenToPool(sender, payToken, amounts[i]); // Token decimals
-            if (payToken != address(this)) {
-                emit log("Update pay asset balance");
-                _updateAssetBalance(payToken, q.payAmounts[i], ZERO_FLOAT);
-                emit log("Pay asset balance updated");
-            }
         }
 
         // Transfer tokens to the receiving address
-        emit log("Transfer tokens to the receiving address");
         for (uint256 i; i < receiveTokens.length; i++) {
             address receiveToken = receiveTokens[i];
             _payTokensFromPool(
@@ -706,33 +624,26 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                 receiveAmounts[i] // Token decimals
             );
             if (receiveToken != address(this)) {
-                emit log("Update receive asset balance");
                 _updateAssetBalance(
                     receiveToken,
                     ZERO_FLOAT,
                     q.receiveAmounts[i]
                 ); // Canonical
-                emit log("Receive asset balance updated");
             }
         }
 
         // Distribute fee
-        emit log("Distribute fee");
-        emit log_named_uint("Final shares", q.finalShares.toUInt());
-        emit log_named_uint("Total supply", totalSupply());
         if (q.finalShares.toUInt() > totalSupply()) {
             _allocateShares(
                 _protocolFeeRecipient,
                 q.finalShares.toUInt() - totalSupply()
             ); // Token deciamls
         }
-        emit log("Shares allocated");
         _totalTokens = q.finalTokens;
         _tokensPerShare = q.finalTokensPerShare;
         feeAmount = q.feeAmount.toUInt(); // 18 decimals
 
         // Update pool balance
-        emit log("Update pool balance");
         _updatePoolBalance();
     }
 
@@ -827,7 +738,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         address payToken,
         address receiveToken,
         UFloat memory payAmount
-    ) public returns (QuoteState memory) {
+    ) public view returns (QuoteState memory) {
         address[] memory payTokens = new address[](1);
         UFloat[] memory amounts = new UFloat[](1);
         address[] memory receiveTokens = new address[](1);
@@ -854,6 +765,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256 payAmount // Token decimals
     )
         public
+        view
         returns (
             uint256 receiveAmount, // Token decimals
             uint256 feeAmount // Token decimals
@@ -896,9 +808,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         if (payAmount == 0) revert ZeroAmount();
         if (
             payAmount * 3 >
-            _assetState[payToken].balance.toUInt(
-                _assetState[payToken].decimals
-            )
+            _assetState[payToken].balance.toUInt(_assetState[payToken].decimals)
         ) revert TooLarge(payAmount);
 
         {
@@ -940,7 +850,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     function _quoteStake(
         address payToken,
         UFloat memory payAmount
-    ) public returns (QuoteState memory) {
+    ) public view returns (QuoteState memory) {
         address[] memory payTokens = new address[](1);
         UFloat[] memory amounts = new UFloat[](1);
         address[] memory receiveTokens = new address[](1);
@@ -964,7 +874,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     function quoteStake(
         address payToken,
         uint256 payAmount
-    ) public returns (uint256 receiveAmount, uint256 feeAmount) {
+    ) public view returns (uint256 receiveAmount, uint256 feeAmount) {
         address[] memory payTokens = new address[](1);
         UFloat[] memory amounts = new UFloat[](1);
         address[] memory receiveTokens = new address[](1);
@@ -983,10 +893,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             allocations
         );
 
-        emit log_named_string("receiveAmount", q.receiveAmounts[0].toString());
         receiveAmount = q.receiveAmounts[0].toUInt(); // Token decimals
-        emit log_named_string("receiveAmount", receiveAmount.toString());
-        emit log_named_string("receiveAmount", receiveAmount.toString());
         feeAmount = q.feeAmount.toUInt(); // Token decimals
     }
 
@@ -1008,9 +915,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         if (payAmount == 0) revert ZeroAmount();
         if (
             payAmount * 3 >
-            _assetState[payToken].balance.toUInt(
-                _assetState[payToken].decimals
-            )
+            _assetState[payToken].balance.toUInt(_assetState[payToken].decimals)
         ) revert TooLarge(payAmount);
 
         {
@@ -1044,7 +949,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     function _quoteUnstake(
         address receiveToken,
         UFloat memory payAmount // Token decimals
-    ) public returns (QuoteState memory) {
+    ) public view returns (QuoteState memory) {
         address[] memory payTokens = new address[](1);
         UFloat[] memory amounts = new UFloat[](1);
         address[] memory receiveTokens = new address[](1);
@@ -1068,7 +973,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     function quoteUnstake(
         address receiveToken,
         uint256 payAmount // Token decimals
-    ) public returns (uint256 receiveAmount, uint256 feeAmount) {
+    ) public view returns (uint256 receiveAmount, uint256 feeAmount) {
         address[] memory payTokens = new address[](1);
         UFloat[] memory amounts = new UFloat[](1);
         address[] memory receiveTokens = new address[](1);
@@ -1149,8 +1054,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     function _quoteAddLiquidity(
         address token,
         UFloat memory amount
-    ) public returns (QuoteState memory q) {
-        emit log("Quote add liquidity");
+    ) public view returns (QuoteState memory q) {
         AssetState storage assetIn;
         q.payTokens = _assetAddresses;
         q.payAmounts = new UFloat[](_assetAddresses.length);
@@ -1162,7 +1066,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         q.initialTokensPerShare = _poolState.tokensPerShare;
 
         UFloat memory R;
-        emit log("Compute R");
         if (token == address(this)) {
             R = amount.times(q.initialTokensPerShare).divide(q.initialTokens);
             q.receiveAmounts[0] = amount;
@@ -1173,7 +1076,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             q.receiveAmounts[0] = R.times(q.initialShares);
         }
 
-        emit log("Compute pay amounts");
         for (uint256 i; i < _assetAddresses.length; i++) {
             assetIn = _assetState[_assetAddresses[i]];
             if (assetIn.token == token) {
@@ -1193,6 +1095,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256 amount // Token decimals
     )
         public
+        view
         returns (
             uint256[] memory payAmounts, // Token decimals
             uint256 receiveAmount
@@ -1249,9 +1152,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             _payTokenToPool(sender, _assetAddresses[i], payAmount);
             _updateAssetBalance(
                 _assetAddresses[i],
-                payAmount.toUFloat(
-                    _assetState[_assetAddresses[i]].decimals
-                ),
+                payAmount.toUFloat(_assetState[_assetAddresses[i]].decimals),
                 ZERO_FLOAT
             );
         }
@@ -1264,7 +1165,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
 
     function _quoteRemoveLiquidity(
         UFloat memory amount
-    ) public returns (QuoteState memory) {
+    ) public view returns (QuoteState memory) {
         uint256 n = _assetAddresses.length;
         address[] memory payTokens = new address[](1);
         UFloat[] memory amounts = new UFloat[](1);
@@ -1305,7 +1206,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
 
     function quoteRemoveLiquidity(
         uint256 amount
-    ) public returns (uint256[] memory receiveAmounts, uint256 feeAmount) {
+    ) public view returns (uint256[] memory receiveAmounts, uint256 feeAmount) {
         QuoteState memory q = _quoteRemoveLiquidity(amount.toUFloat());
         for (uint256 i; i < _assetAddresses.length; i++) {
             receiveAmounts[i] = q.receiveAmounts[i].toUInt(

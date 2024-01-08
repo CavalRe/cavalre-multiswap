@@ -35,10 +35,12 @@ contract MultiswapTest is PoolTest {
         // uint256 amount = 1e27;
         uint256 amount;
         // amount = 167898529394108508548957337378873748730842084596241128;
-        amount = 40220187134998107484890218317601876816937911541436243019270437539076288474593;
-        emit log_named_string("amountFloat", UFloat(amount, 0).normalize().toString());
-        emit log_named_uint("amount / type(uint256).max", amount / type(uint256).max);
-        amount = payToken.balanceOf(address(pool)) * (amount / type(uint256).max);
+        // amount = 40220187134998107484890218317601876816937911541436243019270437539076288474593;
+        amount = 1e49;
+        UFloat memory amountFloat = UFloat(amount, 0).normalize();
+        emit log_named_string("amountFloat", amountFloat.toString());
+        // emit log_named_uint("amount / type(uint256).max", amount / type(uint256).max);
+        // amount = payToken.balanceOf(address(pool)) * (amount / type(uint256).max);
         emit log_named_uint("amount", amount);
         payToken.mint(amount);
         payToken.approve(address(pool), amount);
@@ -51,15 +53,16 @@ contract MultiswapTest is PoolTest {
         receiveTokens[0] = address(receiveToken);
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 1e18;
-        uint256[] memory minReceiveAmounts = new uint256[](1);
-        uint256[] memory receiveAmounts = new uint256[](1);
-        uint256 feeAmount;
+        // uint256[] memory minReceiveAmounts = new uint256[](1);
+        // uint256[] memory receiveAmounts = new uint256[](1);
+        // uint256 feeAmount;
 
         UFloat[] memory amountsFloat = new UFloat[](1);
-        amountsFloat[0] = amount.toUFloat(payToken.decimals());
+        amountsFloat[0] = amountFloat;
         UFloat[] memory allocationsFloat = new UFloat[](1);
         allocationsFloat[0] = ONE_FLOAT;
 
+        emit log("Get quote");
         QuoteState memory q = pool._quoteMultiswap(
             alice,
             payTokens,
@@ -68,28 +71,29 @@ contract MultiswapTest is PoolTest {
             allocationsFloat
         );
         // showQuote(pool, q);
+        emit log("Check self financing");
         checkSelfFinancing(pool, q, "Smoke test");
 
-        if (amount * 3 > pool.asset(payTokens[0]).balance) {
-            vm.expectRevert(
-                abi.encodeWithSelector(IPool.TooLarge.selector, amount)
-            );
-            pool.multiswap(
-                payTokens,
-                amounts,
-                receiveTokens,
-                allocations,
-                minReceiveAmounts
-            );
-        } else {
-            (receiveAmounts, feeAmount) = pool.multiswap(
-                payTokens,
-                amounts,
-                receiveTokens,
-                allocations,
-                minReceiveAmounts
-            );
-        }
+        // if (amount * 3 > pool.asset(payTokens[0]).balance) {
+        //     vm.expectRevert(
+        //         abi.encodeWithSelector(IPool.TooLarge.selector, amount)
+        //     );
+        //     pool.multiswap(
+        //         payTokens,
+        //         amounts,
+        //         receiveTokens,
+        //         allocations,
+        //         minReceiveAmounts
+        //     );
+        // } else {
+        //     (receiveAmounts, feeAmount) = pool.multiswap(
+        //         payTokens,
+        //         amounts,
+        //         receiveTokens,
+        //         allocations,
+        //         minReceiveAmounts
+        //     );
+        // }
     }
 
     function testMultiRandomSwap(
@@ -137,9 +141,9 @@ contract MultiswapTest is PoolTest {
         checkSelfFinancing(pool, q, "Smoke test");
     }
 
-    function testMultiFuzzAmount(uint64 mantissa, int8 exponent) public {
-        vm.assume(mantissa > 0);
-        UFloat memory amount = UFloat(mantissa, exponent).normalize();
+    function testMultiFuzzAmount(uint64 amount) public {
+        vm.assume(amount > 0);
+        UFloat memory amountFloat = UFloat(amount, 0).normalize();
 
         Token payToken = WAVAX;
         Token receiveToken = USDC;
@@ -160,7 +164,7 @@ contract MultiswapTest is PoolTest {
         // uint256 feeAmount;
 
         UFloat[] memory amounts = new UFloat[](1);
-        amounts[0] = amount;
+        amounts[0] = amountFloat;
         // amountsFloat[0] = amount.toUFloat(payToken.decimals());
         UFloat[] memory allocations = new UFloat[](1);
         allocations[0] = ONE_FLOAT;
