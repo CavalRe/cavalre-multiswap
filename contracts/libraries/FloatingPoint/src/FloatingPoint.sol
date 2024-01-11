@@ -250,6 +250,14 @@ library FloatingPoint {
         UFloat memory a,
         UFloat memory b
     ) internal pure returns (UFloat memory, UFloat memory) {
+        if (a.mantissa == 0 && b.mantissa == 0) {
+            return (UFloat(0, 0), UFloat(0, 0));
+        } else if (a.mantissa == 0) {
+            return (UFloat(0, b.exponent), UFloat(b.mantissa, b.exponent));
+        } else if (b.mantissa == 0) {
+            return (UFloat(a.mantissa, a.exponent), UFloat(0, a.exponent));
+        }
+
         int256 delta = a.exponent - b.exponent;
         if (delta >= 0) {
             if (delta > int256(SIGNIFICANT_DIGITS)) {

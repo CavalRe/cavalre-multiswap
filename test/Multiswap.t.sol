@@ -174,7 +174,7 @@ contract MultiswapTest is PoolTest {
         checkSelfFinancing(pool, q, "Smoke test");
     }
 
-    function testMultiFuzzAmount(uint64 amount) public {
+    function testMultiFuzzAmount(uint256 amount) public {
         vm.assume(amount > 0);
         UFloat memory amountFloat = UFloat(amount, 0).normalize();
 
