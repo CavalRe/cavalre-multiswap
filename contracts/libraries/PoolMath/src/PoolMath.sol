@@ -9,16 +9,16 @@ library PoolMath {
     using FP for UFloat;
     using FP for Float;
 
-    function scaledAssetValueIn(
-        UFloat memory scale,
-        UFloat memory balance,
-        UFloat memory amount
-    ) internal pure returns (UFloat memory) {
-        if (amount.mantissa == 0) return UFloat(0, 0);
-        (balance, amount) = balance.align(amount);
-        if (amount.mantissa / balance.mantissa >= 10 ** FP.SIGNIFICANT_DIGITS) return scale;
+    // function scaledAssetValueIn(
+    //     UFloat memory scale,
+    //     UFloat memory balance,
+    //     UFloat memory amount
+    // ) internal pure returns (UFloat memory) {
+    //     if (amount.mantissa == 0) return UFloat(0, 0);
+    //     (balance, amount) = balance.align(amount);
+    //     if (amount.mantissa / balance.mantissa >= 10 ** FP.SIGNIFICANT_DIGITS) return scale;
 
-        UFloat memory denom = UFloat(balance.mantissa + amount.mantissa, balance.exponent).normalize();
-        return scale.times(amount).divide(denom);
-    }
+    //     UFloat memory denom = UFloat(balance.mantissa + amount.mantissa, balance.exponent).normalize();
+    //     return scale.times(amount).divide(denom);
+    // }
 }

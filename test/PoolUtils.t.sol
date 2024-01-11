@@ -107,6 +107,9 @@ contract PoolUtils is Test {
             }
             scale_ = scale(pool, payToken); // Assumes scale does not change
             finalBalance_ = balance(pool, payToken).plus(amount_);
+            // scaledValueIn_ = scaledValueIn_.plus(
+            //     scale_.times(amount_.divide(finalBalance_))
+            // );
             scaledValueIn_ = scaledValueIn_.plus(
                 scale_.times(amount_).divide(finalBalance_)
             );
@@ -138,6 +141,9 @@ contract PoolUtils is Test {
             }
             scale_ = scale(pool, receiveToken);
             finalBalance_ = balance(pool, receiveToken).minus(amount_);
+            // scaledValueOut_ = scaledValueOut_.plus(
+            //     scale_.times(amount_.divide(finalBalance_))
+            // );
             scaledValueOut_ = scaledValueOut_.plus(
                 scale_.times(amount_).divide(finalBalance_)
             );

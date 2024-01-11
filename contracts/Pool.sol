@@ -4,7 +4,7 @@
 pragma solidity 0.8.19;
 
 import {IPool, PoolState, AssetState, QuoteState, PoolStateExternal, AssetStateExternal} from "./interfaces/IPool.sol";
-import {LPToken, FixedPointMathLib, FloatingPoint, UFloat} from "./LPToken.sol";
+import {LPToken, FixedPointMathLib, FloatingPoint as FP, UFloat} from "./LPToken.sol";
 import {IWrappedNative} from "./interfaces/IWrappedNative.sol";
 import {PoolMath} from "./libraries/PoolMath/src/PoolMath.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -13,11 +13,11 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 contract Pool is IPool, LPToken, ReentrancyGuard {
     using SafeERC20 for IERC20;
-    using FloatingPoint for uint256;
-    using FloatingPoint for int256;
-    using FloatingPoint for UFloat;
-    using FloatingPoint for uint256[];
-    using PoolMath for UFloat;
+    using FP for uint256;
+    using FP for int256;
+    using FP for UFloat;
+    using FP for uint256[];
+    // using PoolMath for UFloat;
 
     uint256 private _isInitialized;
 
@@ -354,13 +354,126 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         return hasLP;
     }
 
+    // /*
+    // - shift should be unopinionated. 
+    // - If the shift is too large, it will overflow.
+    // - If the shift is too small, it will underflow.
+    //  */
+    // function shift(
+    //     UFloat memory a,
+    //     int256 i
+    // ) internal pure returns (UFloat memory) {
+    //     uint256 mantissa = a.mantissa;
+    //     if (i > 0) {
+    //         mantissa /= 10 ** FP.toUInt(i);
+    //     } else if (i < 0) {
+    //         mantissa *= 10 ** FP.toUInt(-i);
+    //     }
+    //     return UFloat(mantissa, a.exponent + i);
+    // }
+
+    // function normalize(UFloat memory a) internal pure returns (UFloat memory) {
+    //     uint256 mantissa = a.mantissa;
+    //     int256 exponent = a.exponent;
+    //     bool isLarge = mantissa > FP.NORMALIZED_MANTISSA_MAX;
+    //     bool isSmall = mantissa < FP.NORMALIZED_MANTISSA_MIN;
+    //     if (!isLarge && !isSmall) {
+    //         return UFloat(mantissa, exponent);
+    //     } else if (isLarge) {
+    //         while (mantissa > FP.NORMALIZED_MANTISSA_MAX) {
+    //             mantissa /= 10;
+    //             exponent++;
+    //         }
+    //         return UFloat(mantissa, exponent);
+    //     } else if (mantissa == 0) {
+    //         return UFloat(0, 0);
+    //     } else {
+    //         // if (isSmall) {
+    //         while (mantissa < FP.NORMALIZED_MANTISSA_MIN) {
+    //             mantissa *= 10;
+    //             exponent--;
+    //         }
+    //         return UFloat(mantissa, exponent);
+    //     }
+    // }
+
+    // function align(
+    //     UFloat memory a,
+    //     UFloat memory b
+    // ) internal pure returns (UFloat memory, UFloat memory) {
+    //     int256 delta = a.exponent - b.exponent;
+    //     if (delta >= 0) {
+    //         if (delta > int256(FP.SIGNIFICANT_DIGITS)) {
+    //             return (UFloat(a.mantissa, a.exponent), UFloat(0, a.exponent));
+    //         }
+    //         return (UFloat(a.mantissa, a.exponent), shift(b, delta));
+    //     } else {
+    //         if (-delta > int256(FP.SIGNIFICANT_DIGITS)) {
+    //             return (UFloat(0, b.exponent), UFloat(b.mantissa, b.exponent));
+    //         }
+    //         return (shift(a, -delta), UFloat(b.mantissa, b.exponent));
+    //     }
+    // }
+
+    // function plus(
+    //     UFloat memory a,
+    //     UFloat memory b
+    // ) internal pure returns (UFloat memory) {
+    //     (a, b) = align(a, b);
+    //     return normalize(UFloat(a.mantissa + b.mantissa, a.exponent));
+    // }
+
+    function scaledAssetValueIn(
+        UFloat memory scale,
+        UFloat memory balance,
+        UFloat memory amount
+    ) internal returns (UFloat memory) {
+        emit log("scaledAssetValueIn");
+        if (amount.mantissa == 0) return UFloat(0, 0);
+        // emit log("align");
+        // emit log_named_int("balance.exponent", balance.exponent);
+        // emit log_named_int("amount.exponent", amount.exponent);
+        // (balance, amount) = balance.align(amount);
+        // emit log("denom");
+        // UFloat memory denom = UFloat(
+        //     balance.mantissa + amount.mantissa,
+        //     balance.exponent
+        // ).normalize();
+        // emit log("result");
+        emit log_named_string("scale", scale.toString());
+        emit log_named_string("balance", balance.toString());
+        emit log_named_string("amount", amount.toString());
+        // UFloat memory a;
+        // UFloat memory b;
+        // (a, b) = align(balance, amount);
+        // emit log_named_string("a", a.toString());
+        // emit log_named_string("b", b.toString());
+        UFloat memory denom = FP.plus(balance, amount);
+        emit log_named_string("denom", denom.toString());
+        emit log_named_string(
+            "amount.divide(denom)",
+            amount.divide(denom).toString()
+        );
+        emit log_named_string("scale", scale.toString());
+        emit log_named_string(
+            "scale.times(amount.divide(denom))",
+            scale.times(amount.divide(denom)).toString()
+        );
+        emit log_named_string(
+            "scale.times(amount).divide(denom)",
+            scale.times(amount).divide(denom).toString()
+        );
+        return scale.times(amount).divide(denom);
+        // return scale.times(amount.divide(denom));
+    }
+
     function _quoteMultiswap(
         address sender,
         address[] memory payTokens,
         UFloat[] memory payAmounts,
         address[] memory receiveTokens,
         UFloat[] memory allocations
-    ) public view returns (QuoteState memory q) {
+    ) public returns (QuoteState memory q) {
         UFloat memory totalSupply_ = totalSupply().toUFloat();
         uint256 assetAddressesLength = _assetAddresses.length;
         uint256 payTokensLength = payTokens.length;
@@ -390,6 +503,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         q.initialTokensPerShare = _tokensPerShare;
 
         // Compute fee
+        emit log("Compute fee");
         for (uint256 i; i < receiveTokensLength; i++) {
             q.fee = q.fee.plus(
                 q.allocations[i].times(_assetState[receiveTokens[i]].fee)
@@ -399,27 +513,42 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         if (q.fee.gt(ZERO_FLOAT) && q.discount.gt(ZERO_FLOAT)) {
             q.fee = q.fee.times(ONE_FLOAT.minus(q.discount));
         }
+        emit log_named_string("fee", q.fee.toString());
         q.poolAlloc = q.fee;
         if (receiveTokens[0] == address(this)) {
             q.poolAlloc = q.poolAlloc.plus(
                 q.allocations[0].times(ONE_FLOAT.minus(q.fee))
             );
         }
+        emit log_named_string("poolAlloc", q.poolAlloc.toString());
 
         // Compute scaledValueIn from assets only
+        emit log("Compute scaledValueIn from assets only");
+        emit log_named_string(
+            "scaledValueIn (initial)",
+            q.scaledValueIn.toString()
+        );
         UFloat memory amount;
         for (uint256 i; i < payTokensLength; i++) {
             address payToken = payTokens[i];
             if (payToken == address(this)) continue;
             AssetState storage assetIn = _assetState[payToken];
             amount = payAmounts[i];
-            q.scaledValueIn = q.scaledValueIn.plus(
-                assetIn.scale.scaledAssetValueIn(assetIn.balance, amount)
+            emit log_named_string("assetIn.scale", assetIn.scale.toString());
+            emit log_named_string(
+                "assetIn.balance",
+                assetIn.balance.toString()
             );
+            q.scaledValueIn = q.scaledValueIn.plus(
+                scaledAssetValueIn(assetIn.scale, assetIn.balance, amount)
+            );
+            emit log_named_string("scaledValueIn", q.scaledValueIn.toString());
         }
 
         // Compute poolOut
+        emit log("Compute poolOut");
         q.lastPoolBalance = _poolState.balance;
+        emit log("Compute scaledPoolOut");
         q.scaledPoolOut = q.scaledValueIn.times(q.poolAlloc);
         if (payTokens[0] == address(this)) {
             amount = payAmounts[0];
@@ -449,12 +578,15 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             q.poolOut = q.lastPoolBalance.times(q.scaledPoolOut).divide(
                 _poolState.scale.minus(q.scaledPoolOut)
             );
+            emit log_named_string("poolOut", q.poolOut.toString());
             if (q.poolAlloc.gt(ZERO_FLOAT)) {
                 q.feeAmount = q.poolOut.times(q.fee).divide(q.poolAlloc);
             }
+            emit log_named_string("feeAmount", q.feeAmount.toString());
         }
 
         // Compute receiveAmounts
+        emit log("Compute receiveAmounts");
         q.finalTokens = q.initialTokens.plus(q.poolOut).minus(q.poolIn);
         q.finalTokensPerShare = q.initialTokensPerShare.times(
             ONE_FLOAT.plus(
@@ -493,7 +625,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256[] memory allocations // 18 decimals
     )
         public
-        view
         returns (
             uint256[] memory receiveAmounts, // Token decimals
             uint256 feeAmount // Token decimals
@@ -738,7 +869,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         address payToken,
         address receiveToken,
         UFloat memory payAmount
-    ) public view returns (QuoteState memory) {
+    ) public returns (QuoteState memory) {
         address[] memory payTokens = new address[](1);
         UFloat[] memory amounts = new UFloat[](1);
         address[] memory receiveTokens = new address[](1);
@@ -765,7 +896,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256 payAmount // Token decimals
     )
         public
-        view
         returns (
             uint256 receiveAmount, // Token decimals
             uint256 feeAmount // Token decimals
@@ -850,7 +980,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     function _quoteStake(
         address payToken,
         UFloat memory payAmount
-    ) public view returns (QuoteState memory) {
+    ) public returns (QuoteState memory) {
         address[] memory payTokens = new address[](1);
         UFloat[] memory amounts = new UFloat[](1);
         address[] memory receiveTokens = new address[](1);
@@ -874,7 +1004,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     function quoteStake(
         address payToken,
         uint256 payAmount
-    ) public view returns (uint256 receiveAmount, uint256 feeAmount) {
+    ) public returns (uint256 receiveAmount, uint256 feeAmount) {
         address[] memory payTokens = new address[](1);
         UFloat[] memory amounts = new UFloat[](1);
         address[] memory receiveTokens = new address[](1);
@@ -949,7 +1079,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     function _quoteUnstake(
         address receiveToken,
         UFloat memory payAmount // Token decimals
-    ) public view returns (QuoteState memory) {
+    ) public returns (QuoteState memory) {
         address[] memory payTokens = new address[](1);
         UFloat[] memory amounts = new UFloat[](1);
         address[] memory receiveTokens = new address[](1);
@@ -973,7 +1103,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     function quoteUnstake(
         address receiveToken,
         uint256 payAmount // Token decimals
-    ) public view returns (uint256 receiveAmount, uint256 feeAmount) {
+    ) public returns (uint256 receiveAmount, uint256 feeAmount) {
         address[] memory payTokens = new address[](1);
         UFloat[] memory amounts = new UFloat[](1);
         address[] memory receiveTokens = new address[](1);
@@ -1054,7 +1184,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     function _quoteAddLiquidity(
         address token,
         UFloat memory amount
-    ) public view returns (QuoteState memory q) {
+    ) public returns (QuoteState memory q) {
         AssetState storage assetIn;
         q.payTokens = _assetAddresses;
         q.payAmounts = new UFloat[](_assetAddresses.length);
@@ -1095,7 +1225,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256 amount // Token decimals
     )
         public
-        view
         returns (
             uint256[] memory payAmounts, // Token decimals
             uint256 receiveAmount
@@ -1165,7 +1294,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
 
     function _quoteRemoveLiquidity(
         UFloat memory amount
-    ) public view returns (QuoteState memory) {
+    ) public returns (QuoteState memory) {
         uint256 n = _assetAddresses.length;
         address[] memory payTokens = new address[](1);
         UFloat[] memory amounts = new UFloat[](1);
@@ -1206,7 +1335,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
 
     function quoteRemoveLiquidity(
         uint256 amount
-    ) public view returns (uint256[] memory receiveAmounts, uint256 feeAmount) {
+    ) public returns (uint256[] memory receiveAmounts, uint256 feeAmount) {
         QuoteState memory q = _quoteRemoveLiquidity(amount.toUFloat());
         for (uint256 i; i < _assetAddresses.length; i++) {
             receiveAmounts[i] = q.receiveAmounts[i].toUInt(

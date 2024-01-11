@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {console} from "forge-std/console.sol";
 import {PoolTest} from "./Pool.t.sol";
-import {Pool, FloatingPoint, UFloat, AssetState, AssetStateExternal, QuoteState, IPool} from "../contracts/Pool.sol";
+import {Pool, FP, UFloat, AssetState, AssetStateExternal, QuoteState, IPool} from "../contracts/Pool.sol";
 import {Token} from "./Token.t.sol";
 
 struct State {
@@ -13,8 +13,8 @@ struct State {
 }
 
 contract MultiswapTest is PoolTest {
-    using FloatingPoint for uint256;
-    using FloatingPoint for UFloat;
+    using FP for uint256;
+    using FP for UFloat;
 
     function setUp() public {
         uint256 startBalance = type(uint256).max / 2;
@@ -27,6 +27,29 @@ contract MultiswapTest is PoolTest {
         setUpPool("Pool", "P", 2e17);
     }
 
+    // function shift(UFloat memory a, int256 i) internal returns (UFloat memory) {
+    //     emit log_named_int("Shift", i);
+    //     if (a.mantissa == 0) return UFloat(0, 0);
+    //     if (i > 0) {
+    //         emit log("---------------------------------");
+    //         emit log_named_uint("a.mantissa", a.mantissa);
+    //         emit log_named_int("a.exponent", a.exponent);
+    //         for (int256 j; j < i; j++) {
+    //             a.mantissa /= 10;
+    //             a.exponent += 1;
+    //             emit log("---------------------------------");
+    //             emit log_named_uint("a.mantissa", a.mantissa);
+    //             emit log_named_int("a.exponent", a.exponent);
+    //             if (a.mantissa == 0) return UFloat(0, 0);
+    //         }
+    //     } else if (i < 0) {
+    //         a.mantissa *= 10 ** FP.toUInt(-i);
+    //         a.exponent += i;
+    //     }
+    //     emit log("Lessgooo!");
+    //     return a;
+    // }
+
     function testMultiSmoke() public {
         vm.startPrank(alice);
 
@@ -35,9 +58,17 @@ contract MultiswapTest is PoolTest {
         // uint256 amount = 1e27;
         uint256 amount;
         // amount = 167898529394108508548957337378873748730842084596241128;
-        // amount = 40220187134998107484890218317601876816937911541436243019270437539076288474593;
-        amount = 1e49;
-        UFloat memory amountFloat = UFloat(amount, 0).normalize();
+        amount = 40220187134998107484890218317601876816937911541436243019270437539076288474593;
+        UFloat memory amountFloat;
+        // amountFloat = UFloat(amount, 0);
+        // int256 shiftAmount_ = FP.shiftAmount(amount);
+        // emit log_named_int("shiftAmount_", shiftAmount_);
+        // amountFloat = FP.shift(amountFloat, shiftAmount_);
+        // emit log_named_string("amountFloat", amountFloat.toString());
+
+        // amount = 1e49;
+        emit log("Normalize amount");
+        amountFloat = UFloat(amount, 0).normalize();
         emit log_named_string("amountFloat", amountFloat.toString());
         // emit log_named_uint("amount / type(uint256).max", amount / type(uint256).max);
         // amount = payToken.balanceOf(address(pool)) * (amount / type(uint256).max);
@@ -47,15 +78,17 @@ contract MultiswapTest is PoolTest {
 
         address[] memory payTokens = new address[](1);
         payTokens[0] = address(payToken);
-        uint256[] memory amounts = new uint256[](1);
-        amounts[0] = amount;
+        // uint256[] memory amounts = new uint256[](1);
+        // amounts[0] = amount;
         address[] memory receiveTokens = new address[](1);
         receiveTokens[0] = address(receiveToken);
-        uint256[] memory allocations = new uint256[](1);
-        allocations[0] = 1e18;
+        // uint256[] memory allocations = new uint256[](1);
+        // allocations[0] = 1e18;
         // uint256[] memory minReceiveAmounts = new uint256[](1);
         // uint256[] memory receiveAmounts = new uint256[](1);
         // uint256 feeAmount;
+
+        amountFloat = UFloat(402201871349981074, 1000);
 
         UFloat[] memory amountsFloat = new UFloat[](1);
         amountsFloat[0] = amountFloat;
@@ -70,7 +103,7 @@ contract MultiswapTest is PoolTest {
             receiveTokens,
             allocationsFloat
         );
-        // showQuote(pool, q);
+        showQuote(pool, q);
         emit log("Check self financing");
         checkSelfFinancing(pool, q, "Smoke test");
 
@@ -177,7 +210,6 @@ contract MultiswapTest is PoolTest {
             allocations
         );
         checkSelfFinancing(pool, q, "Fuzz test");
-
 
         // if (amount * 3 > pool.asset(payTokens[0]).balance) {
         //     vm.expectRevert(

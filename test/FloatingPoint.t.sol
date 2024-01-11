@@ -149,21 +149,43 @@ contract FloatingPointTest is Test {
     }
 
     function testToString() public {
-        emit log_named_string("1.15 x 10^77", UFloat(115, 75).toString());
+        emit log_named_string("1.15 x 10^-6", FP.toString(UFloat(115, -8)));
+
+        UFloat memory bigNumber = UFloat(115, 998).normalize();
+        emit log("Write big number");
+        emit log_named_uint("bigNumber.mantissa", bigNumber.mantissa);
+        emit log_named_string("1.15 x 10^1000", FP.toString(bigNumber));
+
+        UFloat memory bigNumberPlus = bigNumber.plus(bigNumber);
+        emit log("Plus big number");
+        emit log_named_string("2.30 x 10^1000", FP.toString(bigNumberPlus));
+
+        UFloat memory reallyBigNumber = bigNumber.times(bigNumber);
+        emit log("Write really big number");
+        emit log_named_string("1.3225 x 10^2000", FP.toString(reallyBigNumber));
+
+        UFloat memory smallNumber = UFloat(115, -1002).normalize();
+        emit log("Write small number");
+        emit log_named_string("1.15 x 10^-1000", FP.toString(smallNumber));
+
+        UFloat memory reallySmallNumber = smallNumber.times(smallNumber);
+        emit log("Write really small number");
+        emit log_named_string("1.3225 x 10^-2000", FP.toString(reallySmallNumber));
 
         UFloat[] memory floats = getFloats();
+        emit log("Half integers");
         for (uint256 i = 0; i < floats.length; i++) {
-            emit log_named_string("UFloat to string", floats[i].toString());
+            emit log_named_string("UFloat to string", FP.toString(floats[i]));
         }
         int256 exponent = 19;
         UFloat memory float = ONE.divide(UFloat(9, exponent)).normalize();
         for (uint256 i = 0; i < uint256(2 * exponent); i++) {
-            emit log_named_string("UFloat to string", float.toString());
+            emit log_named_string("UFloat to string", FP.toString(float));
             float = float.times(TEN);
         }
         float = UFloat(1, exponent).divide(UFloat(9, 0)).normalize();
         for (uint256 i = 0; i < uint256(2 * exponent); i++) {
-            emit log_named_string("UFloat to string", float.toString());
+            emit log_named_string("UFloat to string", FP.toString(float));
             float = float.divide(TEN);
         }
     }
