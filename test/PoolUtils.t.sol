@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import {Pool, PoolState, AssetState, QuoteState} from "../contracts/Pool.sol";
-import {FloatingPoint, UFloat} from "../contracts/libraries/FloatingPoint/src/FloatingPoint.sol";
+import {Pool, PoolState, AssetState, QuoteState, IPool, IERC20Metadata} from "../contracts/Pool.sol";
+import {FloatingPoint as FP, UFloat} from "../contracts/libraries/FloatingPoint/src/FloatingPoint.sol";
 import {Token} from "./Token.t.sol";
 import {Test} from "forge-std/Test.sol";
 
 contract PoolUtils is Test {
-    using FloatingPoint for uint256;
-    using FloatingPoint for UFloat;
+    using FP for uint256;
+    using FP for UFloat;
 
     UFloat internal ZERO_FLOAT = UFloat(0, 0);
     UFloat internal HALF_FLOAT = UFloat(5, -1).normalize();
@@ -348,55 +348,8 @@ contract PoolUtils is Test {
     function checkSelfFinancing(
         Pool pool,
         QuoteState memory q,
-        // address[] memory payTokens,
-        // uint256[] memory payAmounts, // Token decimals
-        // address[] memory receiveTokens,
-        // uint256[] memory allocations, // 18 decimals
-        string memory // message
+        string memory
     ) public {
-        // showPool(pool, address(USDC));
-        // // emit log("Check swap");
-        // AssetState[] memory assetStates = pool.assets();
-        // uint256[] memory minReceiveAmounts = new uint256[](
-        //     receiveTokens.length
-        // );
-
-        // uint256 multiplier = pool.conversion(address(pool));
-
-        // CompareState memory c;
-        // c.initialTokens = pool.totalTokens();
-        // c.initialShares = pool.totalSupply();
-        // c.initialTokensPerShare = pool.tokensPerShare();
-        // c.initialBalances = getBalances(pool);
-        // c.initialScales = getScales(pool);
-        // // emit log("Get quote");
-        // // showPool(pool, address(USDC));
-        // QuoteState memory q = pool._quoteMultiswap(
-        //     alice,
-        //     payTokens,
-        //     payAmounts,
-        //     receiveTokens,
-        //     allocations
-        // );
-        // uint8 ndigits;
-        // uint8 decimals_;
-        // uint256 conversion;
-        // ndigits = digits(q.scaledValueIn);
-        // decimals_ = pool._info().internalDecimals;
-        // if (ndigits > 15) {
-        //     decimals_ -= ndigits - 15;
-        //     conversion = 10 ** (ndigits - 15);
-        // } else {
-        //     decimals_ -= 5;
-        //     conversion = 1e5;
-        // }
-        // assertApproxEqAbsDecimal(
-        //     q.scaledValueIn / conversion,
-        //     scaledValueIn(pool, q) / conversion,
-        //     1,
-        //     decimals_,
-        //     "scaledValueIn"
-        // );
         UFloat memory scaledValueInFloat;
         UFloat memory scaledValueOutFloat;
         (scaledValueInFloat, scaledValueOutFloat) = scaledValueIn(pool, q)
@@ -548,5 +501,294 @@ contract PoolUtils is Test {
         //         fail();
         //     }
         // }
+    }
+
+    function checkMultiwap(
+        Pool pool,
+        address[] memory payTokens,
+        UFloat[] memory payAmountsFloat,
+        address[] memory receiveTokens,
+        UFloat[] memory allocationsFloat
+    ) public {
+        QuoteState memory q = pool._quoteMultiswap(
+            msg.sender,
+            payTokens,
+            payAmountsFloat,
+            receiveTokens,
+            allocationsFloat
+        );
+        checkSelfFinancing(pool, q, "");
+
+        address token;
+        uint256[] memory payAmounts = new uint256[](payAmountsFloat.length);
+        uint256[] memory allocations = new uint256[](allocationsFloat.length);
+        for (uint256 i; i < payAmountsFloat.length; i++) {
+            payAmounts[i] = payAmountsFloat[i].toUInt(
+                pool.asset(payTokens[i]).decimals
+            );
+        }
+        for (uint256 i; i < allocationsFloat.length; i++) {
+            allocations[i] = allocationsFloat[i].toUInt();
+        }
+        uint256[] memory minReceiveAmounts = new uint256[](
+            q.receiveTokens.length
+        );
+
+        bool isTooLarge;
+        uint256 tooLargeAmount;
+        {
+            for (uint256 i; i < payTokens.length; i++) {
+                token = payTokens[i];
+                if (token == address(pool)) {
+                    if (payAmounts[i] > pool.info().balance / 3) {
+                        isTooLarge = true;
+                        tooLargeAmount = payAmounts[i];
+                        break;
+                    }
+                } else if (
+                    payAmounts[i] >
+                    IERC20Metadata(token).balanceOf(address(pool)) / 3
+                ) {
+                    isTooLarge = true;
+                    tooLargeAmount = payAmounts[i];
+                    break;
+                }
+            }
+        }
+
+        bool isZeroAmount;
+        {
+            for (uint256 i; i < receiveTokens.length; i++) {
+                token = receiveTokens[i];
+                if (
+                    q.receiveAmounts[0].toUInt(
+                        IERC20Metadata(token).decimals()
+                    ) == 0
+                ) {
+                    isZeroAmount = true;
+                    break;
+                }
+            }
+        }
+
+        uint256[] memory receiveAmounts;
+        uint256 feeAmount;
+        if (isTooLarge) {
+            vm.expectRevert(
+                abi.encodeWithSelector(IPool.TooLarge.selector, tooLargeAmount)
+            );
+            pool.multiswap(
+                payTokens,
+                payAmounts,
+                receiveTokens,
+                allocations,
+                minReceiveAmounts
+            );
+        } else if (isZeroAmount) {
+            vm.expectRevert(abi.encodeWithSelector(IPool.ZeroAmount.selector));
+            pool.multiswap(
+                payTokens,
+                payAmounts,
+                receiveTokens,
+                allocations,
+                minReceiveAmounts
+            );
+        } else {
+            (receiveAmounts, feeAmount) = pool.multiswap(
+                q.payTokens,
+                payAmounts,
+                q.receiveTokens,
+                allocations,
+                minReceiveAmounts
+            );
+
+            for (uint256 i; i < receiveAmounts.length; i++) {
+                token = receiveTokens[i];
+                if (token == address(pool)) {
+                    assertEq(
+                        receiveAmounts[i],
+                        q.receiveAmounts[i].toUInt(
+                            IERC20Metadata(token).decimals()
+                        ),
+                        "Receive amount mismatch"
+                    );
+                } else {
+                    assertEq(
+                        receiveAmounts[i],
+                        q.receiveAmounts[i].toUInt(
+                            IERC20Metadata(token).decimals()
+                        ),
+                        "Receive amount mismatch"
+                    );
+                }
+            }
+            assertEq(feeAmount, q.feeAmount.toUInt(), "Fee amount mismatch");
+        }
+    }
+
+    function checkSwap(
+        Pool pool,
+        address payToken,
+        address receiveToken,
+        UFloat memory payAmountFloat
+    ) public {
+        QuoteState memory q = pool._quoteSwap(
+            payToken,
+            receiveToken,
+            payAmountFloat
+        );
+        checkSelfFinancing(pool, q, "");
+
+        uint256 payAmount = payAmountFloat.toUInt(
+            pool.asset(payToken).decimals
+        );
+
+        bool isTooLarge;
+        uint256 tooLargeAmount;
+        if (payAmount > IERC20Metadata(payToken).balanceOf(address(pool)) / 3) {
+            isTooLarge = true;
+            tooLargeAmount = payAmount;
+        }
+
+        bool isZeroAmount;
+        if (
+            q.receiveAmounts[0].toUInt(
+                IERC20Metadata(receiveToken).decimals()
+            ) == 0
+        ) {
+            isZeroAmount = true;
+        }
+
+        uint256 receiveAmount;
+        uint256 feeAmount;
+        if (isTooLarge) {
+            vm.expectRevert(
+                abi.encodeWithSelector(IPool.TooLarge.selector, tooLargeAmount)
+            );
+            pool.swap(payToken, receiveToken, payAmount, 0);
+        } else if (isZeroAmount) {
+            vm.expectRevert(abi.encodeWithSelector(IPool.ZeroAmount.selector));
+            pool.swap(payToken, receiveToken, payAmount, 0);
+        } else {
+            (receiveAmount, feeAmount) = pool.swap(
+                payToken,
+                receiveToken,
+                payAmount,
+                0
+            );
+
+            assertEq(
+                receiveAmount,
+                q.receiveAmounts[0].toUInt(
+                    IERC20Metadata(receiveToken).decimals()
+                ),
+                "Receive amount mismatch"
+            );
+            assertEq(feeAmount, q.feeAmount.toUInt(), "Fee amount mismatch");
+        }
+    }
+
+    function checkStake(
+        Pool pool,
+        address payToken,
+        UFloat memory payAmountFloat
+    ) public {
+        QuoteState memory q = pool._quoteStake(payToken, payAmountFloat);
+        checkSelfFinancing(pool, q, "");
+
+        uint256 payAmount = payAmountFloat.toUInt(
+            pool.asset(payToken).decimals
+        );
+
+        bool isTooLarge;
+        uint256 tooLargeAmount;
+        if (payAmount > IERC20Metadata(payToken).balanceOf(address(pool)) / 3) {
+            isTooLarge = true;
+            tooLargeAmount = payAmount;
+        }
+
+        bool isZeroAmount;
+        if (q.receiveAmounts[0].toUInt() == 0) {
+            isZeroAmount = true;
+        }
+
+        uint256 receiveAmount;
+        uint256 feeAmount;
+        if (isTooLarge) {
+            vm.expectRevert(
+                abi.encodeWithSelector(IPool.TooLarge.selector, tooLargeAmount)
+            );
+            pool.stake(payToken, payAmount, 0);
+        } else if (isZeroAmount) {
+            vm.expectRevert(abi.encodeWithSelector(IPool.ZeroAmount.selector));
+            pool.stake(payToken, payAmount, 0);
+        } else {
+            (receiveAmount, feeAmount) = pool.stake(payToken, payAmount, 0);
+
+            assertEq(
+                receiveAmount,
+                q.receiveAmounts[0].toUInt(),
+                "Receive amount mismatch"
+            );
+            assertEq(feeAmount, q.feeAmount.toUInt(), "Fee amount mismatch");
+        }
+    }
+
+    function checkUnstake(
+        Pool pool,
+        address receiveToken,
+        UFloat memory payAmountFloat
+    ) public {
+        QuoteState memory q = pool._quoteUnstake(receiveToken, payAmountFloat);
+        checkSelfFinancing(pool, q, "");
+
+        uint256 payAmount = payAmountFloat.toUInt();
+
+        bool isTooLarge;
+        uint256 tooLargeAmount;
+        if (payAmount > pool.info().balance / 3) {
+            isTooLarge = true;
+            tooLargeAmount = payAmount;
+        }
+
+        bool isZeroAmount;
+        if (
+            q.receiveAmounts[0].toUInt(
+                IERC20Metadata(receiveToken).decimals()
+            ) == 0
+        ) {
+            isZeroAmount = true;
+        }
+
+        uint256 receiveAmount;
+        uint256 feeAmount;
+        if (isTooLarge) {
+            vm.expectRevert(
+                abi.encodeWithSelector(IPool.TooLarge.selector, tooLargeAmount)
+            );
+            pool.unstake(receiveToken, payAmount, 0);
+        } else if (isZeroAmount) {
+            vm.expectRevert(abi.encodeWithSelector(IPool.ZeroAmount.selector));
+            pool.unstake(receiveToken, payAmount, 0);
+        } else {
+            (receiveAmount, feeAmount) = pool.unstake(
+                receiveToken,
+                payAmount,
+                0
+            );
+
+            assertEq(
+                receiveAmount,
+                q.receiveAmounts[0].toUInt(
+                    IERC20Metadata(receiveToken).decimals()
+                ),
+                "Receive amount mismatch"
+            );
+            assertEq(feeAmount, q.feeAmount.toUInt(), "Fee amount mismatch");
+
+            if (failed) {
+                showQuote(pool, q);
+            }
+        }
     }
 }

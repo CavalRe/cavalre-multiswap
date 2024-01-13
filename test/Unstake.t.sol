@@ -1,183 +1,97 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import {Pool, IPool, FixedPointMathLib} from "../contracts/Pool.sol";
+import {Pool, IPool, FP, UFloat} from "../contracts/Pool.sol";
 import {PoolTest, Token} from "./Pool.t.sol";
 
 contract UnstakeTest is PoolTest {
-    using FixedPointMathLib for uint256;
+    using FP for uint256;
+    using FP for UFloat;
 
-    // /*
-    //  * Basic
-    //  */
-    // function testUnstakeSmoke() public {
-    //     checkLP();
+    function setUp() public {
+        uint256 startBalance = type(uint256).max / 2;
+        vm.deal(alice, startBalance);
+        vm.deal(bob, startBalance);
+        vm.deal(carol, startBalance);
 
-    //     Token receiveToken = tokens[0];
-    //     uint256 receiveBalance = receiveToken.balanceOf(alice);
-    //     uint256 poolBalance = pool.balanceOf(alice);
+        vm.startPrank(alice);
 
-    //     uint256 receiveAmount;
-    //     uint256 amountOut;
-    //     uint256 feeAmount;
+        setUpPool("Pool", "P", 2e17);
+    }
 
-    //     uint256 amount = 1e27;
-    //     receiveToken.mint(amount);
+    /*
+     * Basic
+     */
+    function testUnstakeSmoke() public {
+        vm.startPrank(alice);
 
-    //     assertEq(
-    //         receiveToken.balanceOf(alice),
-    //         receiveBalance + amount,
-    //         "Alice's receive token balance before unstake."
-    //     );
+        Token receiveToken = tokens[0];
+        uint256 receiveBalance = receiveToken.balanceOf(alice);
+        uint256 poolBalance = pool.balanceOf(alice);
 
-    //     receiveToken.approve(address(pool), amount);
+        uint256 receiveAmount;
+        uint256 amountOut;
+        uint256 feeAmount;
 
-    //     (amountOut, ) = pool.stake(address(receiveToken), amount, 0);
+        uint256 amount = receiveToken.balanceOf(address(pool)) / 10;
+        receiveToken.mint(amount);
 
-    //     assertEq(
-    //         receiveToken.balanceOf(alice),
-    //         receiveBalance,
-    //         "Alice's receive token balance after staking."
-    //     );
+        assertEq(
+            receiveToken.balanceOf(alice),
+            receiveBalance + amount,
+            "Alice's receive token balance before unstake."
+        );
 
-    //     assertEq(
-    //         pool.balanceOf(alice),
-    //         poolBalance + amountOut,
-    //         "Alice's pool balance after staking."
-    //     );
+        receiveToken.approve(address(pool), amount);
 
-    //     pool.approve(address(pool), amountOut);
+        (amountOut, ) = pool.stake(address(receiveToken), amount, 0);
 
-    //     vm.roll(block.number + 1);
+        assertEq(
+            receiveToken.balanceOf(alice),
+            receiveBalance,
+            "Alice's receive token balance after staking."
+        );
 
-    //     (receiveAmount, feeAmount) = pool.unstake(
-    //         address(receiveToken),
-    //         amountOut,
-    //         0
-    //     );
+        assertEq(
+            pool.balanceOf(alice),
+            poolBalance + amountOut,
+            "Alice's pool balance after staking."
+        );
 
-    //     assertEq(
-    //         receiveToken.balanceOf(alice),
-    //         receiveBalance + receiveAmount,
-    //         "Alice's pool balance after unstaking."
-    //     );
-    //     assertApproxEqRel(
-    //         pool.balanceOf(alice),
-    //         poolBalance,
-    //         1e12,
-    //         "Alice's pool balance after unstaking."
-    //     );
+        pool.approve(address(pool), amountOut);
 
-    //     checkSF(address(pool), address(receiveToken), amountOut, receiveAmount);
+        (receiveAmount, feeAmount) = pool.unstake(
+            address(receiveToken),
+            amountOut,
+            0
+        );
 
-    //     checkLP();
-    // }
+        assertEq(
+            receiveToken.balanceOf(alice),
+            receiveBalance + receiveAmount,
+            "Alice's pool balance after unstaking."
+        );
+        assertApproxEqRel(
+            pool.balanceOf(alice),
+            poolBalance,
+            1e12,
+            "Alice's pool balance after unstaking."
+        );
 
-    // function testUnstakeFuzz(uint256 amount, uint256 receiveIndex) public {
-    //     // vm.assume((amount > 1e17) && (amount < 1e50));
-    //     checkLP();
+        UFloat memory amountFloat = UFloat(amount, -18).normalize();
 
-    //     receiveIndex = receiveIndex % tokens.length;
-    //     Token receiveToken = tokens[receiveIndex];
-    //     uint256 assetBalance = receiveToken.balanceOf(address(pool));
-    //     uint256 receiveBalance = receiveToken.balanceOf(alice);
-    //     uint256 poolBalance = pool.balanceOf(alice);
+        setUp();
 
-    //     uint256 receiveAmount;
-    //     uint256 feeAmount;
+        checkUnstake(pool, address(receiveToken), amountFloat);
+    }
 
-    //     emit log_named_uint("Protocol fee", pool.protocolFee());
+    function testUnstakeFuzz(uint256 amount, uint256 receiveIndex) public {
+        vm.assume(amount > 0);
 
-    //     vm.assume(
-    //         (amount > 1e17) && (amount < 1e50) && (3 * amount < assetBalance)
-    //     );
-    //     emit log_named_uint(
-    //         "Alice's receive balance before minting.",
-    //         receiveToken.balanceOf(alice)
-    //     );
-    //     receiveToken.mint(amount);
-    //     emit log_named_uint(
-    //         "Alice's receive after before minting.",
-    //         receiveToken.balanceOf(alice)
-    //     );
-
-    //     assertEq(
-    //         receiveToken.balanceOf(alice),
-    //         receiveBalance + amount,
-    //         "Alice's receive token balance before unstake."
-    //     );
-
-    //     receiveToken.approve(address(pool), amount);
-
-    //     uint256 amountOut;
-    //     emit log_named_uint(
-    //         "Alice's pool balance before staking.",
-    //         pool.tokensOf(alice)
-    //     );
-    //     (amountOut, ) = pool.stake(address(receiveToken), amount, 0);
-    //     emit log_named_uint(
-    //         "Alice's pool balance after staking.",
-    //         pool.tokensOf(alice)
-    //     );
-
-    //     assertEq(
-    //         receiveToken.balanceOf(alice),
-    //         receiveBalance,
-    //         "Alice's receive token balance after staking."
-    //     );
-
-    //     assertEq(
-    //         pool.tokensOf(alice),
-    //         poolBalance + amountOut,
-    //         "Alice's pool balance after staking."
-    //     );
-
-    //     pool.approve(address(pool), amountOut);
-
-    //     vm.roll(block.number + 1);
-
-    //     if (amountOut * 3 > pool.info().balance) {
-    //         vm.expectRevert(
-    //             abi.encodeWithSelector(IPool.TooLarge.selector, amountOut)
-    //         );
-    //         pool.unstake(address(receiveToken), amountOut, 0);
-    //     } else {
-    //         (receiveAmount, feeAmount) = pool.unstake(
-    //             address(receiveToken),
-    //             amountOut,
-    //             0
-    //         );
-
-    //         assertEq(
-    //             receiveToken.balanceOf(alice),
-    //             receiveBalance + receiveAmount,
-    //             "Alice's receive token balance after unstaking."
-    //         );
-    //         emit log_named_uint(
-    //             "Alice's pool balance after unstaking.",
-    //             pool.tokensOf(alice)
-    //         );
-    //         assertApproxEqRel(
-    //             pool.tokensOf(alice),
-    //             poolBalance +
-    //                 feeAmount.fullMulDiv(
-    //                     pool.tokensOf(alice),
-    //                     pool.totalTokens()
-    //                 ),
-    //             1e10,
-    //             "Alice's pool balance after unstaking."
-    //         );
-
-    //         checkSF(
-    //             address(pool),
-    //             address(receiveToken),
-    //             amountOut,
-    //             receiveAmount
-    //         );
-
-    //         checkLP(amountOut, receiveAmount);
-    //     }
-    // }
+        receiveIndex = receiveIndex % tokens.length;
+        Token receiveToken = tokens[receiveIndex];
+        checkUnstake(pool, address(receiveToken), UFloat(amount, -18).normalize());
+    }
 
     // /*
     //  * Input Checking (Negative)

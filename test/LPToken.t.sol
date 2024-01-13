@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import {Pool, FixedPointMathLib} from "../contracts/Pool.sol";
+import {Pool} from "../contracts/Pool.sol";
 import {IUsers} from "../contracts/Users.sol";
 import {FloatingPoint as FP, UFloat} from "../contracts/libraries/FloatingPoint/src/FloatingPoint.sol";
 import "forge-std/Test.sol";
 
 contract PoolMintable is Pool {
-    using FixedPointMathLib for uint256;
     using FP for uint256;
     using FP for UFloat;
 
@@ -27,10 +26,6 @@ contract PoolMintable is Pool {
             address(1234)
         )
     {}
-
-    // function distributeFee_(uint256 amount, uint256 finalTokensPerShare) public {
-    //     super.distributeFee(amount, finalTokensPerShare);
-    // }
 
     function mint(uint256 shares) public {
         super._mint(_msgSender(), shares);
@@ -62,7 +57,6 @@ contract PoolMintable is Pool {
 }
 
 contract LPTokenTest is Test {
-    using FixedPointMathLib for uint256;
     using FP for uint256;
 
     PoolMintable private pool;

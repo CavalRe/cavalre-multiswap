@@ -149,6 +149,35 @@ contract FloatingPointTest is Test {
     }
 
     function testToString() public {
+        UFloat memory float;
+        UFloat memory intergerPartFloat;
+        UFloat memory fractionPartFloat;
+        float = UFloat(12, -1);
+        intergerPartFloat = float.integerPart();
+        fractionPartFloat = float.minus(intergerPartFloat);    
+        emit log_named_string("1.2", FP.toString(float));
+        // emit log_named_uint("1.2.mantissa", float.mantissa);
+        // emit log_named_int("1.2.exponent", float.exponent);
+        emit log_named_string("Integer part of 1.2", FP.toString(intergerPartFloat));
+        // emit log_named_uint("Integer part of 1.2.mantissa", intergerPartFloat.mantissa);
+        // emit log_named_int("Integer part of 1.2.exponent", intergerPartFloat.exponent);
+        emit log_named_string("Fraction part of 1.2", FP.toString(fractionPartFloat));
+        // emit log_named_uint("Fraction part of 1.2.mantissa", fractionPartFloat.mantissa);
+        // emit log_named_int("Fraction part of 1.2.exponent", fractionPartFloat.exponent);
+
+        // float = UFloat(12, -1).normalize();
+        // intergerPartFloat = float.integerPart().normalize();
+        // fractionPartFloat = float.minus(intergerPartFloat);    
+        // emit log_named_string("1.2", FP.toString(float));
+        // emit log_named_uint("1.2.mantissa", float.mantissa);
+        // emit log_named_int("1.2.exponent", float.exponent);
+        // emit log_named_string("Integer part of 1.2", FP.toString(intergerPartFloat));
+        // emit log_named_uint("Integer part of 1.2.mantissa", intergerPartFloat.mantissa);
+        // emit log_named_int("Integer part of 1.2.exponent", intergerPartFloat.exponent);
+        // emit log_named_string("Fraction part of 1.2", FP.toString(fractionPartFloat));
+        // emit log_named_uint("Fraction part of 1.2.mantissa", fractionPartFloat.mantissa);
+        // emit log_named_int("Fraction part of 1.2.exponent", fractionPartFloat.exponent);
+
         emit log_named_string("1.15 x 10^-6", FP.toString(UFloat(115, -8)));
 
         UFloat memory bigNumber = UFloat(115, 998).normalize();
@@ -178,7 +207,7 @@ contract FloatingPointTest is Test {
             emit log_named_string("UFloat to string", FP.toString(floats[i]));
         }
         int256 exponent = 19;
-        UFloat memory float = ONE.divide(UFloat(9, exponent)).normalize();
+        float = ONE.divide(UFloat(9, exponent)).normalize();
         for (uint256 i = 0; i < uint256(2 * exponent); i++) {
             emit log_named_string("UFloat to string", FP.toString(float));
             float = float.times(TEN);

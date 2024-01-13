@@ -398,19 +398,6 @@ contract ContractTest is Context, PoolUtils {
         emit log("");
     }
 
-    // function weight(address token_) public view returns (UFloat memory) {
-    //     if (token_ == address(pool)) return ONE_FLOAT;
-    //     AssetState memory asset_ = pool._asset(token_);
-    //     return asset_.scale.divide(pool.info().scale);
-    // }
-
-    // function price(address token_) public view returns (UFloat memory) {
-    //     if (token_ == address(pool)) return ONE_FLOAT;
-    //     AssetState memory asset_ = pool._asset(token_);
-    //     UFloat memory weight_ = weight(token_);
-    //     return weight_.times(pool._info().balance).divide(asset_.balance);
-    // }
-
     function test2_addLiquidity() public {
         vm.startPrank(alice);
 

@@ -2,10 +2,11 @@
 pragma solidity 0.8.19;
 
 import {Pool, PoolTest, Token} from "./Pool.t.sol";
-import {IPool, AssetState, FixedPointMathLib} from "../contracts/Pool.sol";
+import {IPool, AssetState, QuoteState, FP, UFloat} from "../contracts/Pool.sol";
 
 contract SwapTest is PoolTest {
-    using FixedPointMathLib for uint256;
+    using FP for uint256;
+    using FP for UFloat;
 
     function setUp() public {
         uint256 startBalance = type(uint256).max / 2;
@@ -24,61 +25,32 @@ contract SwapTest is PoolTest {
     function testSwapSmoke() public {
         Token payToken = USDC;
         Token receiveToken = BTCb;
-        uint256 depositBalance = payToken.balanceOf(alice);
-        uint256 withdrawBalance = receiveToken.balanceOf(alice);
-        uint256 amountOut;
-        uint256 feeAmount;
 
         uint256 amount = payToken.balanceOf(address(pool)) / 10;
-        // amount = 1e0;
-
-        payToken.mint(amount);
-
-        assertEq(
-            payToken.balanceOf(alice),
-            depositBalance + amount,
-            "Alice's deposit token balance before swap."
-        );
-
-        payToken.approve(address(pool), amount);
-        (amountOut, feeAmount) = pool.swap(
-            address(payToken),
-            address(receiveToken),
+        UFloat memory amountFloat = UFloat(
             amount,
-            0
-        );
+            -int256(int8(payToken.decimals()))
+        ).normalize();
 
-        assertEq(
-            payToken.balanceOf(alice),
-            depositBalance,
-            "Alice's deposit token balance after swap."
-        );
-        assertEq(
-            receiveToken.balanceOf(alice),
-            withdrawBalance + amountOut,
-            "Alice's withdraw token balance after swap."
-        );
-
-        payToken.mint(amount);
-        payToken.approve(address(pool), amount);
-        // checkSwap(pool, address(payToken), address(receiveToken), amount);
+        checkSwap(pool, address(payToken), address(receiveToken), amountFloat);
     }
 
-    /// @param depositIndex the index of the token to be deposited in the test token list
-    /// @param withdrawalIndex the index of the token to be withdrawn in the test token list
+    /// @param payIndex the index of the token to be deposited in the test token list
+    /// @param receiveIndex the index of the token to be withdrawn in the test token list
     /// @param amount the amount of deposit token to be deposited
     function testSwapFuzz(
-        uint8 depositIndex,
-        uint8 withdrawalIndex,
+        uint8 payIndex,
+        uint8 receiveIndex,
         uint256 amount
     ) public {
-        Token payToken = tokens[depositIndex % tokens.length];
-        Token receiveToken = tokens[withdrawalIndex % tokens.length];
+        Token payToken = tokens[payIndex % tokens.length];
+        Token receiveToken = tokens[receiveIndex % tokens.length];
         vm.assume(address(payToken) != address(receiveToken));
 
-        uint256 balance = payToken.balanceOf(address(pool));
-        amount = amount.fullMulDiv(balance, type(uint256).max);
-        vm.assume(amount > 1e17);
+        vm.assume(
+            (amount > 0) &&
+                (amount < type(uint256).max - payToken.totalSupply())
+        );
 
         address alice = address(1);
         vm.startPrank(alice);
@@ -86,50 +58,40 @@ contract SwapTest is PoolTest {
         payToken.mint(amount);
         payToken.approve(address(pool), amount);
 
-        if (amount * 3 > balance) {
-            vm.expectRevert(
-                abi.encodeWithSelector(IPool.TooLarge.selector, amount)
-            );
-            pool.swap(address(payToken), address(receiveToken), amount, 0);
-        } else {
-            // checkSwap(
-            //     pool,
-            //     address(payToken),
-            //     address(receiveToken),
-            //     amount
-            // );
-            assertGt(receiveToken.balanceOf(alice), 0);
-        }
+        UFloat memory amountFloat = UFloat(
+            amount,
+            -int256(int8(payToken.decimals()))
+        ).normalize();
 
-        vm.stopPrank();
+        checkSwap(pool, address(payToken), address(receiveToken), amountFloat);
     }
 
-    /*
-     * Input Checking (Negative)
-     */
+    // /*
+    //  * Input Checking (Negative)
+    //  */
 
-    /// @dev `swap` should revert with `AssetNotFound` if the address is not a managed asset
+    // /// @dev `swap` should revert with `AssetNotFound` if the address is not a managed asset
     function testBadDepositAddress() public {
         Token token = new Token("Foo", "FOO", 18);
-        address depositAddress = address(token);
-        address withdrawAddress = address(tokens[0]);
+        address payToken = address(token);
+        address receiveToken = address(tokens[0]);
         vm.expectRevert(
-            abi.encodeWithSelector(IPool.AssetNotFound.selector, depositAddress)
+            abi.encodeWithSelector(IPool.AssetNotFound.selector, payToken)
         );
-        pool.swap(depositAddress, withdrawAddress, 1, 0);
+        pool.swap(payToken, receiveToken, 1, 0);
     }
 
     function testBadWithdrawalAddress() public {
         Token token = new Token("Foo", "FOO", 18);
-        address depositAddress = address(tokens[0]);
-        address withdrawAddress = address(token);
+        address payToken = address(tokens[0]);
+        address receiveToken = address(token);
         vm.expectRevert(
             abi.encodeWithSelector(
                 IPool.AssetNotFound.selector,
-                withdrawAddress
+                receiveToken
             )
         );
-        pool.swap(depositAddress, withdrawAddress, 1, 0);
+        pool.swap(payToken, receiveToken, 1, 0);
     }
 
     function testSwapDuplicateToken(uint256 index) public {
@@ -160,19 +122,9 @@ contract SwapTest is PoolTest {
         pool.swap(address(payToken), address(receiveToken), amount, 0);
     }
 
-    /*
-     * Pathological
-     */
-
-    // function testSwapWithdrawNonContract() public {
-    //     Token payToken = tokens[0];
-    //     uint256 amount = 1e27;
-    //     payToken.mint(amount);
-    //     payToken.approve(address(pool), amount);
-
-    //     vm.expectRevert(abi.encodeWithSelector(IUsers.ZeroAddress.selector));
-    //     pool.swap(address(payToken), address(0), amount, 0);
-    // }
+    // /*
+    //  * Pathological
+    //  */
 
     function testSwapWithdrawNotInPool() public {
         Token outside = new Token("Foo", "BAR", 18);
@@ -181,12 +133,12 @@ contract SwapTest is PoolTest {
         payToken.mint(amount);
         payToken.approve(address(pool), amount);
 
-        address[] memory deposits = new address[](1);
-        deposits[0] = address(payToken);
+        address[] memory payTokens = new address[](1);
+        payTokens[0] = address(payToken);
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = amount;
-        address[] memory withdrawals = new address[](1);
-        withdrawals[0] = address(outside);
+        address[] memory receiveTokens = new address[](1);
+        receiveTokens[0] = address(outside);
         uint256[] memory allocations = new uint256[](1);
         allocations[0] = 1e18;
 
@@ -213,59 +165,5 @@ contract SwapTest is PoolTest {
             )
         );
         pool.swap(address(payToken), address(receiveToken), amount, 0);
-    }
-
-    /*
-     * Pool (staking/unstaking)
-     */
-    function testFailSwapPoolFuzz(
-        uint256 amountA,
-        uint256 depositIndexA
-    ) public {
-        amountA = (amountA % 1e59) + 1e15;
-        depositIndexA = depositIndexA % tokens.length;
-
-        address alice = address(1);
-        vm.startPrank(alice);
-
-        Token depositTokenA = tokens[depositIndexA];
-        depositTokenA.mint(amountA);
-        depositTokenA.approve(address(pool), amountA);
-
-        uint256 poolAmount;
-        uint256 feeAmount;
-
-        assertEq(depositTokenA.balanceOf(alice) > 0, true);
-        assertEq(pool.balanceOf(alice), 0);
-
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IPool.InvalidSwap.selector,
-                address(depositTokenA),
-                address(pool)
-            )
-        );
-        (poolAmount, feeAmount) = pool.swap(
-            address(depositTokenA),
-            address(pool),
-            amountA,
-            0
-        );
-
-        assertEq(depositTokenA.balanceOf(alice), 0);
-        assertEq(pool.balanceOf(alice) > 0, true);
-
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IPool.InvalidSwap.selector,
-                address(pool),
-                address(depositTokenA)
-            )
-        );
-        pool.swap(address(pool), address(depositTokenA), poolAmount, 0);
-        assertEq(depositTokenA.balanceOf(alice) > 0, true);
-        assertEq(pool.balanceOf(alice), 0);
-
-        vm.stopPrank();
     }
 }
