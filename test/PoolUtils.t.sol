@@ -89,71 +89,122 @@ contract PoolUtils is Test {
         return pool._asset(token).fee;
     }
 
+    // function scaledValueIn(
+    //     Pool pool,
+    //     QuoteState memory q
+    // ) public returns (UFloat memory) {
+    //     UFloat memory scale_;
+    //     UFloat memory amount_;
+    //     UFloat memory poolIn_;
+    //     UFloat memory finalBalance_;
+    //     UFloat memory scaledValueIn_;
+    //     for (uint256 i; i < q.payTokens.length; i++) {
+    //         address payToken = q.payTokens[i];
+    //         amount_ = q.payAmounts[i];
+    //         if (payToken == address(pool)) {
+    //             poolIn_ = amount_.times(q.initialTokensPerShare);
+    //             continue;
+    //         }
+    //         scale_ = scale(pool, payToken); // Assumes scale does not change
+    //         finalBalance_ = balance(pool, payToken).plus(amount_);
+    //         // scaledValueIn_ = scaledValueIn_.plus(
+    //         //     scale_.times(amount_.divide(finalBalance_))
+    //         // );
+    //         scaledValueIn_ = scaledValueIn_.plus(
+    //             scale_.times(amount_).divide(finalBalance_)
+    //         );
+    //     }
+    //     if (poolIn_.mantissa > 0) {
+    //         scaledValueIn_ = scaledValueIn_.plus(
+    //             scale(pool, address(pool)).times(poolIn_).divide(q.finalTokens)
+    //         );
+    //     }
+    //     emit log_named_string("Scaled value in", scaledValueIn_.toString());
+    //     emit log_named_string("q.scaledValueIn", q.scaledValueIn.toString());
+    //     return scaledValueIn_;
+    // }
+
     function scaledValueIn(
         Pool pool,
         QuoteState memory q
-    ) public view returns (UFloat memory) {
-        UFloat memory scale_;
-        UFloat memory amount_;
-        UFloat memory poolIn_;
-        UFloat memory finalBalance_;
+    ) public returns (UFloat memory) {
+        UFloat memory amountIn;
+        UFloat memory finalBalance;
         UFloat memory scaledValueIn_;
         for (uint256 i; i < q.payTokens.length; i++) {
             address payToken = q.payTokens[i];
-            amount_ = q.payAmounts[i];
             if (payToken == address(pool)) {
-                poolIn_ = amount_.times(q.initialTokensPerShare);
-                continue;
+                amountIn = q.poolIn;
+                finalBalance = q.finalTokens;
+            } else {
+                amountIn = q.payAmounts[i];
+                finalBalance = balance(pool, payToken).plus(amountIn);
             }
-            scale_ = scale(pool, payToken); // Assumes scale does not change
-            finalBalance_ = balance(pool, payToken).plus(amount_);
-            // scaledValueIn_ = scaledValueIn_.plus(
-            //     scale_.times(amount_.divide(finalBalance_))
-            // );
             scaledValueIn_ = scaledValueIn_.plus(
-                scale_.times(amount_).divide(finalBalance_)
+                scale(pool, payToken).times(amountIn).divide(finalBalance)
             );
         }
-        if (poolIn_.mantissa > 0) {
-            scaledValueIn_ = scaledValueIn_.plus(
-                scale(pool, address(pool)).times(poolIn_).divide(q.finalTokens)
-            );
-        }
+        emit log_named_string("Scaled value in", scaledValueIn_.toString());
+        emit log_named_string("q.scaledValueIn", q.scaledValueIn.toString());
         return scaledValueIn_;
     }
+
+    // function scaledValueOut(
+    //     Pool pool,
+    //     QuoteState memory q
+    // ) public returns (UFloat memory) {
+    //     UFloat memory scale_;
+    //     UFloat memory amount_;
+    //     UFloat memory finalBalance_;
+    //     UFloat memory poolScale_;
+    //     UFloat memory poolAmount_;
+    //     UFloat memory scaledValueOut_;
+    //     for (uint256 i; i < q.receiveTokens.length; i++) {
+    //         address receiveToken = q.receiveTokens[i];
+    //         amount_ = q.receiveAmounts[i];
+    //         if (receiveToken == address(pool)) {
+    //             poolAmount_ = amount_.times(q.finalTokensPerShare);
+    //             continue;
+    //         }
+    //         scale_ = scale(pool, receiveToken);
+    //         finalBalance_ = balance(pool, receiveToken).minus(amount_);
+    //         // scaledValueOut_ = scaledValueOut_.plus(
+    //         //     scale_.times(amount_.divide(finalBalance_))
+    //         // );
+    //         scaledValueOut_ = scaledValueOut_.plus(
+    //             scale_.times(amount_).divide(finalBalance_)
+    //         );
+    //     }
+    //     poolScale_ = scale(pool, address(pool));
+    //     scaledValueOut_ = scaledValueOut_.plus(
+    //         poolScale_.times(
+    //             q.feeAmount.plus(poolAmount_).divide(q.finalTokens)
+    //         )
+    //     );
+    //     emit log_named_string("Scaled value out", scaledValueOut_.toString());
+    //     return scaledValueOut_;
+    // }
 
     function scaledValueOut(
         Pool pool,
         QuoteState memory q
-    ) public view returns (UFloat memory) {
-        UFloat memory scale_;
-        UFloat memory amount_;
-        UFloat memory finalBalance_;
-        UFloat memory poolScale_;
-        UFloat memory poolAmount_;
+    ) public returns (UFloat memory) {
+        UFloat memory amountOut;
+        UFloat memory finalBalance;
         UFloat memory scaledValueOut_;
         for (uint256 i; i < q.receiveTokens.length; i++) {
             address receiveToken = q.receiveTokens[i];
-            amount_ = q.receiveAmounts[i];
-            if (receiveToken == address(pool)) {
-                poolAmount_ = amount_.times(q.finalTokensPerShare);
-                continue;
-            }
-            scale_ = scale(pool, receiveToken);
-            finalBalance_ = balance(pool, receiveToken).minus(amount_);
-            // scaledValueOut_ = scaledValueOut_.plus(
-            //     scale_.times(amount_.divide(finalBalance_))
-            // );
+            if (receiveToken == address(pool)) continue;
+            amountOut = q.receiveAmounts[i];
+            finalBalance = balance(pool, receiveToken).minus(amountOut);
             scaledValueOut_ = scaledValueOut_.plus(
-                scale_.times(amount_).divide(finalBalance_)
+                scale(pool, receiveToken).times(amountOut).divide(finalBalance)
             );
         }
-        poolScale_ = scale(pool, address(pool));
         scaledValueOut_ = scaledValueOut_.plus(
-            poolScale_.times(
-                q.feeAmount.plus(poolAmount_).divide(q.finalTokens)
-            )
+            scale(pool, address(pool)).times(q.poolOut).divide(q.finalTokens)
         );
+        emit log_named_string("Scaled value out", scaledValueOut_.toString());
         return scaledValueOut_;
     }
 
@@ -360,6 +411,10 @@ contract PoolUtils is Test {
             100,
             "Scaled value"
         );
+        if (failed) {
+            emit log("Self-financing check failed");
+            showQuote(pool, q);
+        }
 
         // // emit log("Execute swap");
         // (receiveAmounts, feeAmount) = pool.multiswap(

@@ -86,65 +86,67 @@ contract UnstakeTest is PoolTest {
     }
 
     function testUnstakeFuzz(uint256 amount, uint256 receiveIndex) public {
-        vm.assume(amount > 0);
+        vm.assume(amount > 0 && amount <= ((pool.totalSupply() * 9) / 10));
+
+        vm.startPrank(alice);
 
         receiveIndex = receiveIndex % tokens.length;
         Token receiveToken = tokens[receiveIndex];
         checkUnstake(pool, address(receiveToken), UFloat(amount, -18).normalize());
     }
 
-    // /*
-    //  * Input Checking (Negative)
-    //  */
+    /*
+     * Input Checking (Negative)
+     */
 
-    // /// @dev `unstake` should revert with `AssetNotFound` if the address is not a managed asset
-    // function testBadDepositAddress() public {
-    //     Token token = new Token("Foo", "FOO", 18);
-    //     address withdrawalAddress = address(token);
-    //     vm.expectRevert(
-    //         abi.encodeWithSelector(
-    //             IPool.AssetNotFound.selector,
-    //             withdrawalAddress
-    //         )
-    //     );
-    //     pool.unstake(withdrawalAddress, 0, 0);
-    // }
+    /// @dev `unstake` should revert with `AssetNotFound` if the address is not a managed asset
+    function testBadDepositAddress() public {
+        Token token = new Token("Foo", "FOO", 18);
+        address withdrawalAddress = address(token);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IPool.AssetNotFound.selector,
+                withdrawalAddress
+            )
+        );
+        pool.unstake(withdrawalAddress, 0, 0);
+    }
 
-    // function testUnstakeZeroAmount(uint256 receiveIndex) public {
-    //     receiveIndex = receiveIndex % tokens.length;
-    //     Token receiveToken = tokens[receiveIndex];
-    //     uint256 receiveBalance = receiveToken.balanceOf(alice);
-    //     uint256 poolBalance = pool.balanceOf(alice);
+    function testUnstakeZeroAmount(uint256 receiveIndex) public {
+        receiveIndex = receiveIndex % tokens.length;
+        Token receiveToken = tokens[receiveIndex];
+        uint256 receiveBalance = receiveToken.balanceOf(alice);
+        uint256 poolBalance = pool.balanceOf(alice);
 
-    //     vm.expectRevert(abi.encodeWithSelector(IPool.ZeroAmount.selector));
-    //     pool.unstake(address(receiveToken), 0, 0);
-    //     assertEq(pool.balanceOf(alice), poolBalance);
-    //     assertEq(receiveToken.balanceOf(alice), receiveBalance);
-    // }
+        vm.expectRevert(abi.encodeWithSelector(IPool.ZeroAmount.selector));
+        pool.unstake(address(receiveToken), 0, 0);
+        assertEq(pool.balanceOf(alice), poolBalance);
+        assertEq(receiveToken.balanceOf(alice), receiveBalance);
+    }
 
-    // // TODO check no balance for other functions
-    // // TODO is `_burn` as secure as `safeTransfer` ?
-    // function testUnstakeNoBalance() public {
-    //     Token receiveToken = tokens[0];
-    //     uint256 amount = pool.balanceOf(address(alice)) * 2;
+    // TODO check no balance for other functions
+    // TODO is `_burn` as secure as `safeTransfer` ?
+    function testUnstakeNoBalance() public {
+        Token receiveToken = tokens[0];
+        uint256 amount = pool.balanceOf(address(alice)) * 2;
 
-    //     if (3 * amount > pool.info().balance) {
-    //         vm.expectRevert(
-    //             abi.encodeWithSelector(IPool.TooLarge.selector, amount)
-    //         );
-    //         pool.unstake(address(receiveToken), amount, 0);
-    //     } else {
-    //         vm.expectRevert("ERC20: burn amount exceeds balance");
-    //         pool.unstake(address(receiveToken), amount, 0);
-    //     }
-    // }
+        if (3 * amount > pool.info().balance) {
+            vm.expectRevert(
+                abi.encodeWithSelector(IPool.TooLarge.selector, amount)
+            );
+            pool.unstake(address(receiveToken), amount, 0);
+        } else {
+            vm.expectRevert("ERC20: burn amount exceeds balance");
+            pool.unstake(address(receiveToken), amount, 0);
+        }
+    }
 
-    // /*
-    //  * Pathological
-    //  */
-    // function testFailUnstakeBadToken(uint256 amount) public {
-    //     amount = (amount % 1e59) + 1e15;
+    /*
+     * Pathological
+     */
+    function testFailUnstakeBadToken(uint256 amount) public {
+        amount = (amount % 1e59) + 1e15;
 
-    //     pool.stake(address(0), amount, 0);
-    // }
+        pool.stake(address(0), amount, 0);
+    }
 }
