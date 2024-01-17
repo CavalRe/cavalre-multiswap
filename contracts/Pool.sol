@@ -20,7 +20,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     uint256 private _isInitialized;
 
     uint256 private _txCount;
-    // uint256 internal _multiplier = 1e9;
 
     PoolState private _poolState;
     mapping(address => AssetState) private _assetState;
@@ -275,14 +274,20 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         return _assetAddresses;
     }
 
-    function assetDecimals(
+    function tokenDecimals(
         address[] memory addresses
     ) public view returns (uint8[] memory) {
-        uint8[] memory assetDecimals_ = new uint8[](addresses.length);
+        uint8[] memory tokenDecimals_ = new uint8[](addresses.length);
         for (uint256 i; i < addresses.length; i++) {
-            assetDecimals_[i] = _assetState[addresses[i]].decimals;
+            if (addresses[i] == address(this)) {
+                tokenDecimals_[i] = 18;
+            } else if (_assetState[addresses[i]].decimals == 0) {
+                revert AssetNotFound(addresses[i]);
+            } else {
+                tokenDecimals_[i] = _assetState[addresses[i]].decimals;
+            }
         }
-        return assetDecimals_;
+        return tokenDecimals_;
     }
 
     function assetDecimals() public view returns (uint8[] memory) {
@@ -422,7 +427,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             AssetState storage assetIn = _assetState[payToken];
             amount = payAmounts[i];
             q.scaledValueIn = q.scaledValueIn.plus(
-                scaledAssetValueIn(assetIn.scale, assetIn.balance, amount)
+                assetIn.scale.times(amount).divide(assetIn.balance.plus(amount))
             );
         }
 
@@ -433,11 +438,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             amount = payAmounts[0];
             q.payAmounts[0] = amount;
             q.poolIn = amount.times(q.initialTokensPerShare); // Convert shares to tokens
-            // q.poolOut = q.poolAlloc.fullMulDiv(
-            //     q.scaledValueIn.mulUp(q.lastPoolBalance - q.poolIn, ONE) +
-            //         _poolState.scale.mulUp(q.poolIn, ONE),
-            //     _poolState.scale - q.scaledPoolOut
-            // );
             q.poolOut = (
                 q.scaledPoolOut.times(q.lastPoolBalance.minus(q.poolIn)).plus(
                     q.poolAlloc.times(_poolState.scale).times(q.poolIn)
@@ -471,11 +471,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
 
         // Compute receiveAmounts
         q.finalTokens = q.initialTokens.plus(q.poolOut).minus(q.poolIn);
-        // q.finalTokensPerShare = q.initialTokensPerShare.plus(
-        //     q.feeAmount.times(ONE_FLOAT.minus(_protocolFee)).divide(
-        //         q.initialTokens.minus(q.poolIn)
-        //     )
-        // );
         q.finalShares = q.finalTokens.divide(q.finalTokensPerShare);
 
         address receiveToken;
@@ -515,7 +510,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         QuoteState memory q = _quoteMultiswap(
             _msgSender(),
             payTokens,
-            amounts.toUFloatArray(assetDecimals(payTokens)),
+            amounts.toUFloatArray(tokenDecimals(payTokens)),
             receiveTokens,
             allocations.toUFloatArray()
         );
@@ -578,21 +573,10 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             return _disable(sender);
         }
 
-        UFloat[] memory amountsFloat = new UFloat[](amounts.length);
-        for (uint256 i; i < payTokens.length; i++) {
-            if (payTokens[i] == address(this)) {
-                amountsFloat[i] = amounts[i].toUFloat(); // Convert to token decimals
-            } else {
-                amountsFloat[i] = amounts[i].toUFloat(
-                    _assetState[payTokens[i]].decimals
-                ); // Convert to token decimals
-            }
-        }
-
         QuoteState memory q = _quoteMultiswap(
             sender,
             payTokens,
-            amountsFloat,
+            amounts.toUFloatArray(tokenDecimals(payTokens)),
             receiveTokens,
             allocations.toUFloatArray()
         );
@@ -609,8 +593,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                         _assetState[receiveTokens[i]].decimals
                     ); // Convert to token decimals
                 }
-                // receiveAmounts[i] = q.receiveAmounts[i].toUInt(
-                //     _assetState[receiveTokens[i]].decimals
                 if (receiveAmounts[i] == 0) revert ZeroAmount();
                 if (receiveAmounts[i] < minReceiveAmounts[i]) {
                     revert InsufficientReceiveAmount(
@@ -640,7 +622,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                     receiveToken,
                     ZERO_FLOAT,
                     q.receiveAmounts[i]
-                ); // Canonical
+                );
             }
         }
 
@@ -777,6 +759,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         uint256 payAmount // Token decimals
     )
         public
+        view
         returns (
             uint256 receiveAmount, // Token decimals
             uint256 feeAmount // Token decimals
@@ -1202,12 +1185,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
                 allocation = _assetState[_assetAddresses[i]].scale.divide(
                     _poolState.scale
                 );
-                // allocation =
-                //     _assetState[_assetAddresses[i]].scale.divUp(
-                //         _poolState.scale,
-                //         ONE
-                //     ) /
-                //     conversion(_assetAddresses[i]); // Convert to token decimals
                 allocations[i] = allocation;
                 totalAllocation = totalAllocation.plus(allocation);
             }
