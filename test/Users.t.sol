@@ -5,8 +5,6 @@ import "../contracts/Users.sol";
 import "./Pool.t.sol";
 
 contract UsersTest is PoolTest {
-    Pool private pool;
-    Token[] private tokens;
 
     function setUp() public {
         emit log("Setting up UsersTest");
@@ -20,7 +18,7 @@ contract UsersTest is PoolTest {
 
         vm.startPrank(alice);
 
-        (pool, tokens) = setUpPool("Pool", "P", 2e17, 1e16);
+        setUpPool("Pool", "P", 2e17);
 
         assertEq(pool.owner(), alice, "Owner of pool.");
     }

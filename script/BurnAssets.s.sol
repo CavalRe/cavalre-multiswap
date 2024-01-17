@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-import {Pool, FixedPointMathLib} from "../contracts/Pool.sol";
+import {Pool} from "../contracts/Pool.sol";
 import {Token} from "../test/Token.t.sol";
 import "forge-std/Script.sol";
 import "forge-std/Test.sol";
 
 contract BurnAssetsScript is Script, Test {
-    using FixedPointMathLib for uint256;
 
     uint256 private deployerPrivateKey = vm.envUint("PRIVATE_KEY");
     address private deployer = vm.addr(deployerPrivateKey);

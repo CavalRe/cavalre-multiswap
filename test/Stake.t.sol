@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import {Pool, IPool, FixedPointMathLib} from "../contracts/Pool.sol";
-import {PoolTest, Token, AssetState} from "./Pool.t.sol";
+import {Pool, IPool, FP, UFloat, AssetState, QuoteState} from "../contracts/Pool.sol";
+import {PoolTest, Token} from "./Pool.t.sol";
 
 contract StakeTest is PoolTest {
-    using FixedPointMathLib for uint256;
-
-    Pool pool;
-    Token[] tokens;
+    using FP for uint256;
+    using FP for UFloat;
 
     function setUp() public {
         uint256 startBalance = type(uint256).max / 2;
@@ -18,39 +16,18 @@ contract StakeTest is PoolTest {
 
         vm.startPrank(alice);
 
-        (pool, tokens) = setUpPool("Pool", "P", 2e17, 1e16);
-
-        // for (uint256 i; i < NTOKENS; i++) {
-        //     allMaxs[i] = type(uint256).max;
-        // }
-
-        // oneAsset[0] = address(USDC);
-        // oneConversion[0] = conversions[1];
-        // anotherAsset[0] = address(BTCb);
-        // anotherConversion[0] = conversions[9];
-        // onePool[0] = address(pool);
-        // oneAmount[0] = 1e24;
-        // oneAllocation[0] = 1e18;
-        // oneMax[0] = type(uint256).max;
+        setUpPool("Pool", "P", 2e17);
     }
 
     function testStakeSmoke() public {
-        uint256 payIndex = 8520 % tokens.length;
-        Token payToken = tokens[payIndex];
-        // Token payToken = tokens[0];
+        vm.startPrank(alice);
+
+        Token payToken = tokens[0];
 
         uint256 balance = payToken.balanceOf(address(pool));
         uint256 payBalance = payToken.balanceOf(alice);
-        uint256 poolBalance = pool.balanceOf(alice);
 
-        uint256 amountOut;
-
-        uint256 amount = 38593710624525879730480819364414810941157096808048686924515883081335702552592;
-        amount = amount.fullMulDiv(balance, type(uint256).max);
-        emit log(payToken.symbol());
-        emit log_named_uint("balance", balance);
-        emit log_named_uint("amount", amount);
-        // uint256 amount = payToken.balanceOf(address(pool)) / 10;
+        uint amount = balance / 10;
         payToken.mint(amount);
 
         assertEq(
@@ -61,59 +38,29 @@ contract StakeTest is PoolTest {
 
         payToken.approve(address(pool), amount);
 
-        (amountOut, ) = pool.stake(address(payToken), amount, 0);
+        UFloat memory amountFloat = UFloat(
+            amount,
+            -int256(int8(payToken.decimals()))
+        ).normalize();
 
-        assertEq(
-            payToken.balanceOf(alice),
-            payBalance,
-            "Pay token balance after stake."
-        );
-
-        assertEq(
-            pool.balanceOf(alice),
-            poolBalance + amountOut,
-            "Pool balance after stake."
-        );
-
-        // checkSF(address(payToken), address(pool), amount, amountOut);
-        payToken.mint(amount);
-        payToken.approve(address(pool), amount);
-        // checkStake(pool, address(payToken), amount);
+        checkStake(pool, address(payToken), amountFloat);
     }
 
-    function testStakeFuzz(uint256 amount, uint8 payIndex) public {
-        vm.startPrank(alice);
+    function testStakeFuzzAmount(uint256 amount, uint8 payIndex) public {
+        vm.assume(amount > 0);
 
         Token payToken = tokens[uint256(payIndex) % tokens.length];
-        uint256 assetBalanceBefore = payToken.balanceOf(alice);
-        uint256 poolBalanceBefore = pool.balanceOf(alice);
-        emit log_named_uint("Alice's payToken balance before stake", payToken.balanceOf(alice));
-
-        uint256 balance = payToken.balanceOf(address(pool));
-        amount = amount.fullMulDiv(balance, type(uint256).max);
-        vm.assume(amount > 0);
+        vm.assume(amount < type(uint256).max - payToken.totalSupply());
 
         payToken.mint(amount);
         payToken.approve(address(pool), amount);
-        if (amount * 3 > balance) {
-            vm.expectRevert(
-                abi.encodeWithSelector(IPool.TooLarge.selector, amount)
-            );
-            pool.stake(address(payToken), amount, 0);
-        } else {
-            // checkStake(pool, address(payToken), amount);
 
-            assertGt(
-                pool.balanceOf(alice),
-                poolBalanceBefore,
-                "Alice's pool balance did not increase."
-            );
-            assertEq(
-                payToken.balanceOf(alice),
-                assetBalanceBefore,
-                "Alice's final deposit token balance is not zero."
-            );
-        }
+        UFloat memory amountFloat = UFloat(
+            amount,
+            -int256(int8(payToken.decimals()))
+        ).normalize();
+
+        checkStake(pool, address(payToken), amountFloat);
     }
 
     /*
@@ -143,8 +90,9 @@ contract StakeTest is PoolTest {
 
     function testStakeNoAllowance() public {
         Token payToken = tokens[0];
-        uint256 amount = 1e27;
+        uint256 amount = pool.asset(address(payToken)).balance / 10;
         payToken.mint(amount);
+        payToken.approve(address(pool), 0);
 
         vm.expectRevert("ERC20: insufficient allowance");
         pool.stake(address(payToken), amount, 0);

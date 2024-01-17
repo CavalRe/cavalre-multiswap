@@ -6,10 +6,12 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "forge-std/Test.sol";
 
 import {Token} from "./Token.t.sol";
-import {Pool, FixedPointMathLib, PoolState, AssetState, IPool} from "../contracts/Pool.sol";
+import {Pool, FP, UFloat, PoolState, AssetState, IPool} from "../contracts/Pool.sol";
+import {PoolUtils} from "./PoolUtils.t.sol";
 
-contract ContractTest is Context, Test {
-    using FixedPointMathLib for uint256;
+contract ContractTest is Context, PoolUtils {
+    using FP for uint256;
+    using FP for UFloat;
 
     uint256 private constant NTOKENS = 10;
 
@@ -93,7 +95,6 @@ contract ContractTest is Context, Test {
             protocolFee,
             multisigAddress,
             tokensPerShare,
-            tau,
             address(1234)
         );
 
@@ -134,9 +135,9 @@ contract ContractTest is Context, Test {
         emit log_named_string("name", _asset.name);
         // emit log_named_string("symbol", _asset.symbol);
         // emit log_named_uint("balanceOf", _asset.token.balanceOf(address(pool)));
-        emit log_named_uint("balance", _asset.balance);
-        emit log_named_uint("scale", _asset.scale);
-        emit log_named_uint("fee", _asset.fee);
+        emit log_named_string("balance", _asset.balance.toString());
+        emit log_named_string("scale", _asset.scale.toString());
+        emit log_named_string("fee", _asset.fee.toString());
         emit log("-------");
     }
 
@@ -144,22 +145,22 @@ contract ContractTest is Context, Test {
         PoolState memory pool_;
         emit log("Pool Info");
         emit log("=========");
-        pool_ = _pool.info();
+        pool_ = _pool._info();
         // emit log("Name:",poolName);
         // emit log("Symbol:",poolSymbol);
         // emit log_named_uint("Decimals", poolDecimals);
         // emit log_named_uint("totalSupply", pool.totalSupply());
-        emit log_named_uint("balance", pool_.balance);
-        emit log_named_uint("scale", pool_.scale);
+        emit log_named_string("balance", pool_.balance.toString());
+        emit log_named_string("scale", pool_.scale.toString());
         emit log("");
         emit log("Assets:");
         emit log("-------");
         for (uint256 i; i < NTOKENS; i++) {
-            showAsset(pool.asset(addresses[i]));
+            showAsset(pool._asset(addresses[i]));
         }
     }
 
-    function test1_Multiswap() public {
+    function testGasMultiswap() public {
         pool.multiswap(
             oneAsset,
             oneAmount,
@@ -169,27 +170,27 @@ contract ContractTest is Context, Test {
         );
     }
 
-    function test1_Swap() public {
+    function testGasSwap() public {
         pool.swap(oneAsset[0], anotherAsset[0], oneAmount[0], oneMin[0]);
     }
 
-    function test1_Multistake() public {
+    function testGasMultistake() public {
         pool.multiswap(oneAsset, oneAmount, onePool, oneAllocation, oneMin);
     }
 
-    function test1_Stake() public {
+    function testGasStake() public {
         pool.stake(oneAsset[0], oneAmount[0], oneMin[0]);
     }
 
-    function test1_Multiunstake() public {
+    function testGasMultiunstake() public {
         pool.multiswap(oneAsset, oneAmount, onePool, oneAllocation, oneMin);
     }
 
-    function test1_Unstake() public {
+    function testGasUnstake() public {
         pool.unstake(oneAsset[0], oneAmount[0], oneMin[0]);
     }
 
-    function test1_RemoveLiquidity() public {
+    function testGasRemoveLiquidity() public {
         pool.removeLiquidity(oneAmount[0], allMins);
     }
 
@@ -397,43 +398,28 @@ contract ContractTest is Context, Test {
         emit log("");
     }
 
-    function weight(address token_) public view returns (uint256) {
-        if (token_ == address(pool)) return 1e18;
-        AssetState memory asset_ = pool.asset(token_);
-        return asset_.scale.divRayUp(pool.info().scale);
-    }
-
-    function price(address token_) public view returns (uint256) {
-        if (token_ == address(pool)) return 1e18;
-        AssetState memory asset_ = pool.asset(token_);
-        uint256 weight_ = weight(token_);
-        return weight_.fullMulDiv(pool.info().balance, asset_.balance);
-    }
-
     function test2_addLiquidity() public {
-        uint256[] memory preTradePrices = new uint256[](addresses.length);
-        uint256[] memory postTradePrices = new uint256[](addresses.length);
+        vm.startPrank(alice);
+
+        UFloat[] memory preTradePrices = new UFloat[](addresses.length);
+        UFloat[] memory postTradePrices = new UFloat[](addresses.length);
         for (uint256 i; i < addresses.length; i++) {
-            preTradePrices[i] = price(addresses[i]);
+            preTradePrices[i] = price(pool, addresses[i], address(pool));
         }
-        emit log("=============");
-        emit log("Initial state");
-        emit log("=============");
-        emit log("");
-        showPool(pool);
-        emit log("");
+        // emit log("=============");
+        // emit log("Initial state");
+        // emit log("=============");
+        // emit log("");
+        // showPool(pool);
+        // emit log("");
         uint256[] memory payAmounts;
         (payAmounts,) = pool.addLiquidity(address(pool), 1e18, allMaxs);
         emit log("======================");
         for (uint256 i; i < addresses.length; i++) {
-            postTradePrices[i] = price(addresses[i]);
+            postTradePrices[i] = price(pool, addresses[i], address(pool));
             emit log_named_uint("Pay Amount", payAmounts[i]);
-            emit log_named_uint(
-                "Conversion",
-                pool.asset(addresses[i]).conversion
-            );
-            emit log_named_uint("Pre-Trade Price", preTradePrices[i]);
-            emit log_named_uint("Post-Trade Price", postTradePrices[i]);
+            emit log_named_uint("Pre-Trade Price", preTradePrices[i].toUInt(tokens[i].decimals()));
+            emit log_named_uint("Post-Trade Price", postTradePrices[i].toUInt(tokens[i].decimals()));
             emit log("");
         }
         emit log("======================");
