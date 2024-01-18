@@ -12,10 +12,10 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 contract Pool is IPool, LPToken, ReentrancyGuard {
     using SafeERC20 for IERC20;
-    // using FP for uint256;
-    // using FP for int256;
-    // using FP for UFloat;
-    // using FP for uint256[];
+    using FP for uint256;
+    using FP for int256;
+    using FP for UFloat;
+    using FP for uint256[];
 
     uint256 private _isInitialized;
 
