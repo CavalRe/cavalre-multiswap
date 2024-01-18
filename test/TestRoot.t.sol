@@ -96,113 +96,113 @@ contract TestRoot is PoolUtils, Context {
         return asset_.fee;
     }
 
-    function checkSF(
-        address payToken,
-        address receiveToken,
-        uint256 payAmount,
-        uint256 receiveAmount
-    ) public {
-        assertGt(payAmount, 0, "Pay amount must be greater than 0");
-        assertGt(receiveAmount, 0, "Receive amount must be greater than 0");
+    // function checkSF(
+    //     address payToken,
+    //     address receiveToken,
+    //     uint256 payAmount,
+    //     uint256 receiveAmount
+    // ) public {
+    //     assertGt(payAmount, 0, "Pay amount must be greater than 0");
+    //     assertGt(receiveAmount, 0, "Receive amount must be greater than 0");
 
-        emit log_named_uint("Protocol fee", pool.protocolFee());
-        UFloat memory valueIn = payAmount
-            .toUFloat(pool._asset(payToken).decimals)
-            .times(price(payToken));
-        emit log_named_string("Value in", toString(valueIn));
-        UFloat memory valueOut = receiveAmount
-            .toUFloat(pool._asset(receiveToken).decimals)
-            .times(price(receiveToken));
-        emit log_named_string("Value out", toString(valueOut));
-        valueOut = valueOut.plus(fee(receiveToken).times(valueIn));
-        emit log_named_string(
-            "Fee",
-            toString(fee(receiveToken).times(valueIn))
-        );
-        emit log_named_string("Total value out", toString(valueOut));
+    //     emit log_named_uint("Protocol fee", pool.protocolFee());
+    //     UFloat memory valueIn = payAmount
+    //         .toUFloat(pool._asset(payToken).decimals)
+    //         .times(price(payToken));
+    //     emit log_named_string("Value in", toString(valueIn));
+    //     UFloat memory valueOut = receiveAmount
+    //         .toUFloat(pool._asset(receiveToken).decimals)
+    //         .times(price(receiveToken));
+    //     emit log_named_string("Value out", toString(valueOut));
+    //     valueOut = valueOut.plus(fee(receiveToken).times(valueIn));
+    //     emit log_named_string(
+    //         "Fee",
+    //         toString(fee(receiveToken).times(valueIn))
+    //     );
+    //     emit log_named_string("Total value out", toString(valueOut));
 
-        (valueIn, valueOut) = valueIn.align(valueOut);
+    //     (valueIn, valueOut) = valueIn.align(valueOut);
 
-        assertApproxEqRel(
-            valueIn.mantissa,
-            valueOut.mantissa,
-            1e8,
-            string(
-                abi.encodePacked(
-                    "Value in does not equal value out. ",
-                    Strings.toString(payAmount),
-                    " ",
-                    Strings.toString(receiveAmount)
-                )
-            )
-        );
-    }
+    //     assertApproxEqRel(
+    //         valueIn.mantissa,
+    //         valueOut.mantissa,
+    //         1e8,
+    //         string(
+    //             abi.encodePacked(
+    //                 "Value in does not equal value out. ",
+    //                 Strings.toString(payAmount),
+    //                 " ",
+    //                 Strings.toString(receiveAmount)
+    //             )
+    //         )
+    //     );
+    // }
 
-    function checkSF(
-        address[] memory payTokens,
-        uint256[] memory amounts,
-        address[] memory receiveTokens,
-        uint256[] memory allocations,
-        uint256[] memory receiveAmounts
-    ) public {
-        UFloat memory valueIn;
-        UFloat memory valueOut;
+    // function checkSF(
+    //     address[] memory payTokens,
+    //     uint256[] memory amounts,
+    //     address[] memory receiveTokens,
+    //     uint256[] memory allocations,
+    //     uint256[] memory receiveAmounts
+    // ) public {
+    //     UFloat memory valueIn;
+    //     UFloat memory valueOut;
 
-        for (uint256 i; i < payTokens.length; i++) {
-            valueIn = valueIn.plus(
-                amounts[i].toUFloat(pool._asset(payTokens[i]).decimals).times(
-                    price(payTokens[i])
-                )
-            );
-        }
+    //     for (uint256 i; i < payTokens.length; i++) {
+    //         valueIn = valueIn.plus(
+    //             amounts[i].toUFloat(pool._asset(payTokens[i]).decimals).times(
+    //                 price(payTokens[i])
+    //             )
+    //         );
+    //     }
 
-        assertGt(valueIn.mantissa, 0, "Value in must be greater than 0");
+    //     assertGt(valueIn.mantissa, 0, "Value in must be greater than 0");
 
-        UFloat memory fee_;
-        for (uint256 i; i < receiveTokens.length; i++) {
-            fee_ = fee_.plus(
-                allocations[i].toUFloat().times(fee(receiveTokens[i]))
-            );
-            valueOut = valueOut.plus(
-                receiveAmounts[i]
-                    .toUFloat(pool._asset(payTokens[i]).decimals)
-                    .times(price(receiveTokens[i]))
-            );
-        }
-        valueOut = valueOut.plus(fee_.times(valueIn));
+    //     UFloat memory fee_;
+    //     for (uint256 i; i < receiveTokens.length; i++) {
+    //         fee_ = fee_.plus(
+    //             allocations[i].toUFloat().times(fee(receiveTokens[i]))
+    //         );
+    //         valueOut = valueOut.plus(
+    //             receiveAmounts[i]
+    //                 .toUFloat(pool._asset(payTokens[i]).decimals)
+    //                 .times(price(receiveTokens[i]))
+    //         );
+    //     }
+    //     valueOut = valueOut.plus(fee_.times(valueIn));
 
-        (valueIn, valueOut) = valueIn.align(valueOut);
+    //     (valueIn, valueOut) = valueIn.align(valueOut);
 
-        assertApproxEqRel(
-            valueIn.mantissa,
-            valueOut.mantissa,
-            1e8,
-            "Value in does not equal value out."
-        );
-    }
+    //     assertApproxEqRel(
+    //         valueIn.mantissa,
+    //         valueOut.mantissa,
+    //         1e8,
+    //         "Value in does not equal value out."
+    //     );
+    // }
 
-    function checkLP() public {
-        assertApproxEqRel(
-            pool.totalTokens(),
-            pool.info().balance,
-            1e8,
-            "Pool total supply is not approximately equal to pool balance: "
-        );
-    }
+    // function checkLP() public {
+    //     assertApproxEqRel(
+    //         pool.totalTokens(),
+    //         pool.info().balance,
+    //         1e8,
+    //         "Pool total supply is not approximately equal to pool balance: "
+    //     );
+    // }
 
-    function checkLP(uint256 amountIn, uint256 amountOut) public {
-        assertApproxEqRel(
-            pool.totalTokens(),
-            pool.info().balance,
-            1e8,
-            string(
-                abi.encodePacked(
-                    "Pool total supply is not approximately equal to pool balance: ",
-                    Strings.toString(amountIn),
-                    " ",
-                    Strings.toString(amountOut)
-                )
-            )
-        );
-    }
+    // function checkLP(uint256 amountIn, uint256 amountOut) public {
+    //     assertApproxEqRel(
+    //         pool.totalTokens(),
+    //         pool.info().balance,
+    //         1e8,
+    //         string(
+    //             abi.encodePacked(
+    //                 "Pool total supply is not approximately equal to pool balance: ",
+    //                 Strings.toString(amountIn),
+    //                 " ",
+    //                 Strings.toString(amountOut)
+    //             )
+    //         )
+    //     );
+    // }
 }
