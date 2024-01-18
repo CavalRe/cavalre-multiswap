@@ -7,7 +7,7 @@ import "./Token.t.sol";
 
 contract InitTest is Test {
     uint256 private _protocolFee = 5e17;
-    address private _multisigAddress = vm.envAddress("MULTISIG_ADDRESS");
+    address private _multisigAddress = vm.envAddress("FEE_RECIPIENT");
     uint256 private _tokensPerShare = 1e18;
     address private _wrappedNative = address(1234);
 

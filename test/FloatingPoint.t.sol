@@ -3,10 +3,9 @@ pragma solidity 0.8.19;
 
 // import {Pool, FixedPointMathLib} from "../contracts/Pool.sol";
 import {FloatingPoint as FP, UFloat} from "../contracts/libraries/FloatingPoint/src/FloatingPoint.sol";
+import {PoolUtils} from "./PoolUtils.t.sol";
 
-import {Test} from "forge-std/Test.sol";
-
-contract FloatingPointTest is Test {
+contract FloatingPointTest is PoolUtils {
     using FP for uint256;
     using FP for int256;
     using FP for UFloat;
@@ -154,67 +153,73 @@ contract FloatingPointTest is Test {
         UFloat memory fractionPartFloat;
         float = UFloat(12, -1);
         intergerPartFloat = float.integerPart();
-        fractionPartFloat = float.minus(intergerPartFloat);    
-        emit log_named_string("1.2", FP.toString(float));
+        fractionPartFloat = float.minus(intergerPartFloat);
+        emit log_named_string("1.2", toString(float));
         // emit log_named_uint("1.2.mantissa", float.mantissa);
         // emit log_named_int("1.2.exponent", float.exponent);
-        emit log_named_string("Integer part of 1.2", FP.toString(intergerPartFloat));
+        emit log_named_string(
+            "Integer part of 1.2",
+            toString(intergerPartFloat)
+        );
         // emit log_named_uint("Integer part of 1.2.mantissa", intergerPartFloat.mantissa);
         // emit log_named_int("Integer part of 1.2.exponent", intergerPartFloat.exponent);
-        emit log_named_string("Fraction part of 1.2", FP.toString(fractionPartFloat));
+        emit log_named_string(
+            "Fraction part of 1.2",
+            toString(fractionPartFloat)
+        );
         // emit log_named_uint("Fraction part of 1.2.mantissa", fractionPartFloat.mantissa);
         // emit log_named_int("Fraction part of 1.2.exponent", fractionPartFloat.exponent);
 
         // float = UFloat(12, -1).normalize();
         // intergerPartFloat = float.integerPart().normalize();
-        // fractionPartFloat = float.minus(intergerPartFloat);    
-        // emit log_named_string("1.2", FP.toString(float));
+        // fractionPartFloat = float.minus(intergerPartFloat);
+        // emit log_named_string("1.2", toString(float));
         // emit log_named_uint("1.2.mantissa", float.mantissa);
         // emit log_named_int("1.2.exponent", float.exponent);
-        // emit log_named_string("Integer part of 1.2", FP.toString(intergerPartFloat));
+        // emit log_named_string("Integer part of 1.2", toString(intergerPartFloat));
         // emit log_named_uint("Integer part of 1.2.mantissa", intergerPartFloat.mantissa);
         // emit log_named_int("Integer part of 1.2.exponent", intergerPartFloat.exponent);
-        // emit log_named_string("Fraction part of 1.2", FP.toString(fractionPartFloat));
+        // emit log_named_string("Fraction part of 1.2", toString(fractionPartFloat));
         // emit log_named_uint("Fraction part of 1.2.mantissa", fractionPartFloat.mantissa);
         // emit log_named_int("Fraction part of 1.2.exponent", fractionPartFloat.exponent);
 
-        emit log_named_string("1.15 x 10^-6", FP.toString(UFloat(115, -8)));
+        emit log_named_string("1.15 x 10^-6", toString(UFloat(115, -8)));
 
         UFloat memory bigNumber = UFloat(115, 998).normalize();
         emit log("Write big number");
         emit log_named_uint("bigNumber.mantissa", bigNumber.mantissa);
-        emit log_named_string("1.15 x 10^1000", FP.toString(bigNumber));
+        emit log_named_string("1.15 x 10^1000", toString(bigNumber));
 
         UFloat memory bigNumberPlus = bigNumber.plus(bigNumber);
         emit log("Plus big number");
-        emit log_named_string("2.30 x 10^1000", FP.toString(bigNumberPlus));
+        emit log_named_string("2.30 x 10^1000", toString(bigNumberPlus));
 
         UFloat memory reallyBigNumber = bigNumber.times(bigNumber);
         emit log("Write really big number");
-        emit log_named_string("1.3225 x 10^2000", FP.toString(reallyBigNumber));
+        emit log_named_string("1.3225 x 10^2000", toString(reallyBigNumber));
 
         UFloat memory smallNumber = UFloat(115, -1002).normalize();
         emit log("Write small number");
-        emit log_named_string("1.15 x 10^-1000", FP.toString(smallNumber));
+        emit log_named_string("1.15 x 10^-1000", toString(smallNumber));
 
         UFloat memory reallySmallNumber = smallNumber.times(smallNumber);
         emit log("Write really small number");
-        emit log_named_string("1.3225 x 10^-2000", FP.toString(reallySmallNumber));
+        emit log_named_string("1.3225 x 10^-2000", toString(reallySmallNumber));
 
         UFloat[] memory floats = getFloats();
         emit log("Half integers");
         for (uint256 i = 0; i < floats.length; i++) {
-            emit log_named_string("UFloat to string", FP.toString(floats[i]));
+            emit log_named_string("UFloat to string", toString(floats[i]));
         }
         int256 exponent = 19;
         float = ONE.divide(UFloat(9, exponent)).normalize();
         for (uint256 i = 0; i < uint256(2 * exponent); i++) {
-            emit log_named_string("UFloat to string", FP.toString(float));
+            emit log_named_string("UFloat to string", toString(float));
             float = float.times(TEN);
         }
         float = UFloat(1, exponent).divide(UFloat(9, 0)).normalize();
         for (uint256 i = 0; i < uint256(2 * exponent); i++) {
-            emit log_named_string("UFloat to string", FP.toString(float));
+            emit log_named_string("UFloat to string", toString(float));
             float = float.divide(TEN);
         }
     }
@@ -249,21 +254,21 @@ contract FloatingPointTest is Test {
         ONE.divide(TWO);
     }
 
-    function testGasMulDiv() public view {
-        ONE.mulDiv(TWO, THREE);
-    }
+    // function testGasMulDiv() public view {
+    //     ONE.mulDiv(TWO, THREE);
+    // }
 
-    function testGasMulDivFull() public view {
-        ONE.times(TWO).divide(THREE);
-    }
+    // function testGasMulDivFull() public view {
+    //     ONE.times(TWO).divide(THREE);
+    // }
 
-    function testGasMulDivAdd() public view {
-        ONE.mulDivAdd(TWO, THREE);
-    }
+    // function testGasMulDivAdd() public view {
+    //     ONE.mulDivAdd(TWO, THREE);
+    // }
 
-    function testGasMulDivAddFull() public view {
-        ONE.times(THREE).divide(TWO.plus(THREE));
-    }
+    // function testGasMulDivAddFull() public view {
+    //     ONE.times(THREE).divide(TWO.plus(THREE));
+    // }
 
     // function testMSB() public view {
     //     assertEq(FP.msb(0), 0, "0");
@@ -301,12 +306,12 @@ contract FloatingPointTest is Test {
 
     function testNormalize() public {
         assertEq(
-            ONE_unnormalized.normalize().mantissa.msb(),
+            msb(ONE_unnormalized.normalize().mantissa),
             FP.SIGNIFICANT_DIGITS,
             "mantissa (from unnormalized)"
         );
         assertEq(
-            ONE.mantissa.msb(),
+            msb(ONE.mantissa),
             FP.SIGNIFICANT_DIGITS,
             "mantissa (from normalized)"
         );
@@ -327,7 +332,7 @@ contract FloatingPointTest is Test {
     function testONE() public {
         a = UFloat(1, 0);
         a = FP.normalize(a);
-        assertEq(FP.msb(a.mantissa), 18, "msb");
+        assertEq(msb(a.mantissa), 18, "msb");
         if (failed) {
             emit log_named_uint("ONE.mantissa", a.mantissa);
             emit log_named_int("ONE.exponent", a.exponent);
@@ -1101,41 +1106,41 @@ contract FloatingPointTest is Test {
         assertEq(TEN.divide(TEN), ONE, "10/10!=1");
     }
 
-    function testMulDiv() public {
-        UFloat[] memory floats = getFloats();
-        for (uint256 i; i < floats.length; i++) {
-            for (uint256 j; j < floats.length; j++) {
-                for (uint256 k = 1; k < floats.length; k++) {
-                    a = floats[i];
-                    b = floats[j];
-                    c = floats[k];
-                    assertEq(
-                        FP.mulDiv(a, b, c),
-                        a.times(b).divide(c),
-                        "muDiv(a,b,c)!=(a*b)/c"
-                    );
-                }
-            }
-        }
-    }
+    // function testMulDiv() public {
+    //     UFloat[] memory floats = getFloats();
+    //     for (uint256 i; i < floats.length; i++) {
+    //         for (uint256 j; j < floats.length; j++) {
+    //             for (uint256 k = 1; k < floats.length; k++) {
+    //                 a = floats[i];
+    //                 b = floats[j];
+    //                 c = floats[k];
+    //                 assertEq(
+    //                     FP.mulDiv(a, b, c),
+    //                     a.times(b).divide(c),
+    //                     "muDiv(a,b,c)!=(a*b)/c"
+    //                 );
+    //             }
+    //         }
+    //     }
+    // }
 
-    function testMulDivAdd() public {
-        UFloat[] memory floats = getFloats();
-        for (uint256 i; i < floats.length; i++) {
-            for (uint256 j; j < floats.length; j++) {
-                for (uint256 k = 1; k < floats.length; k++) {
-                    a = floats[i];
-                    b = floats[j];
-                    c = floats[k];
-                    assertEq(
-                        FP.mulDivAdd(a, b, c),
-                        a.times(c).divide(b.plus(c)),
-                        "muDivAdd(a,b,c)!=(a*b)/(c+b)"
-                    );
-                }
-            }
-        }
-    }
+    // function testMulDivAdd() public {
+    //     UFloat[] memory floats = getFloats();
+    //     for (uint256 i; i < floats.length; i++) {
+    //         for (uint256 j; j < floats.length; j++) {
+    //             for (uint256 k = 1; k < floats.length; k++) {
+    //                 a = floats[i];
+    //                 b = floats[j];
+    //                 c = floats[k];
+    //                 assertEq(
+    //                     FP.mulDivAdd(a, b, c),
+    //                     a.times(c).divide(b.plus(c)),
+    //                     "muDivAdd(a,b,c)!=(a*b)/(c+b)"
+    //                 );
+    //             }
+    //         }
+    //     }
+    // }
 
     // function testEncode() public {
     //     uint256 x = FP.encode(1, 1);
@@ -1152,7 +1157,7 @@ contract FloatingPointTest is Test {
     // }
 
     // uint256 private protocolFee = 5e17;
-    // address private multisigAddress = vm.envAddress("MULTISIG_ADDRESS");
+    // address private feeRecipient = vm.envAddress("FEE_RECIPIENT");
     // uint256 private tokensPerShare = 1e18;
     // uint256 private tau = 1e16;
 
@@ -1163,7 +1168,7 @@ contract FloatingPointTest is Test {
     //         "Pool",
     //         "P",
     //         protocolFee,
-    //         multisigAddress,
+    //         feeRecipient,
     //         tokensPerShare,
     //         tau
     //     );

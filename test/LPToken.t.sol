@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import {Pool} from "../contracts/Pool.sol";
 import {IUsers} from "../contracts/Users.sol";
 import {FloatingPoint as FP, UFloat} from "../contracts/libraries/FloatingPoint/src/FloatingPoint.sol";
-import "forge-std/Test.sol";
+import {PoolUtils} from "./PoolUtils.t.sol";
 
 contract PoolMintable is Pool {
     using FP for uint256;
@@ -56,7 +56,7 @@ contract PoolMintable is Pool {
     }
 }
 
-contract LPTokenTest is Test {
+contract LPTokenTest is PoolUtils {
     using FP for uint256;
 
     PoolMintable private pool;
@@ -66,7 +66,7 @@ contract LPTokenTest is Test {
     address carol = address(3);
 
     uint256 private protocolFee = 5e17;
-    address private multisigAddress = vm.envAddress("MULTISIG_ADDRESS");
+    address private feeRecipient = vm.envAddress("FEE_RECIPIENT");
     uint256 private tokensPerShare = 3e18;
 
     function setUp() public {
@@ -75,13 +75,13 @@ contract LPTokenTest is Test {
             "Pool",
             "P",
             protocolFee,
-            multisigAddress,
+            feeRecipient,
             tokensPerShare
         );
     }
 
     function tolerance(uint256 amount) public pure returns (uint256) {
-        uint256 digits = amount.msb();
+        uint256 digits = msb(amount);
         if (digits >= 18) {
             return 10 ** (digits - 16);
         } else {

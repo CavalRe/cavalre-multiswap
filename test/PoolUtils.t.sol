@@ -8,6 +8,7 @@ import {Test} from "forge-std/Test.sol";
 
 contract PoolUtils is Test {
     using FP for uint256;
+    using FP for int256;
     using FP for UFloat;
 
     UFloat internal ZERO_FLOAT = UFloat(0, 0);
@@ -24,6 +25,220 @@ contract PoolUtils is Test {
     Token internal WETHe = new Token("Bridged WETH", "WETH.e", 18);
     Token internal WBTCe = new Token("Bridged WBTC", "WBTC.e", 8);
     Token internal BTCb = new Token("Bridged BTC", "BTC.b", 8);
+
+    // Most significant bit
+    function msb(uint256 value) internal pure returns (uint256) {
+        if (value == 0) {
+            return 0;
+        }
+        return toStringBytes(value).length;
+    }
+
+    function shiftStringBytesLeft(
+        bytes memory strBytes,
+        uint256 numChars
+    ) public pure returns (bytes memory) {
+        bytes memory result = new bytes(strBytes.length + numChars);
+
+        for (uint256 i = 0; i < result.length; i++) {
+            if (i < strBytes.length) {
+                result[i] = strBytes[i];
+            } else {
+                result[i] = "0";
+            }
+        }
+
+        return result;
+    }
+
+    function shiftStringLeft(
+        string memory str,
+        uint256 numChars
+    ) public pure returns (string memory) {
+        return string(shiftStringBytesLeft(bytes(str), numChars));
+    }
+
+    function shiftStringBytesRight(
+        bytes memory strBytes,
+        uint256 numChars
+    ) public pure returns (bytes memory result, bytes memory remainder) {
+        uint256 resultChars;
+        uint256 remainderChars;
+        uint256 excessChars;
+        if (numChars > strBytes.length) {
+            resultChars = 0;
+            excessChars = numChars - strBytes.length;
+            result = new bytes(1);
+        } else {
+            resultChars = strBytes.length - numChars;
+            result = new bytes(resultChars);
+        }
+        remainderChars = numChars;
+        remainder = new bytes(remainderChars);
+
+        for (uint256 i = 0; i < strBytes.length; i++) {
+            if (i < resultChars) {
+                result[i] = strBytes[i];
+            } else {
+                remainder[remainderChars - 1 + resultChars - i] = strBytes[
+                    strBytes.length - 1 + resultChars - i
+                ];
+            }
+        }
+
+        return (result, remainder);
+    }
+
+    function shiftStringRight(
+        string memory str,
+        uint256 numChars
+    ) public pure returns (string memory result, string memory remainder) {
+        bytes memory strBytes = bytes(str);
+        bytes memory resultBytes;
+        bytes memory remainderBytes;
+        (resultBytes, remainderBytes) = shiftStringBytesRight(
+            strBytes,
+            numChars
+        );
+        result = string(resultBytes);
+        remainder = string(remainderBytes);
+    }
+
+    function toStringBytes(uint256 value) public pure returns (bytes memory) {
+        // Handle the special case of zero.
+        if (value == 0) {
+            return bytes("0");
+        }
+
+        // Determine the length of the decimal number.
+        // uint256 temp = value;
+        uint256 digits_ = digits(value);
+        // while (temp != 0) {
+        //     digits_++;
+        //     temp /= 10;
+        // }
+
+        // Create a temporary byte array to fill with the digits of the number.
+        bytes memory buffer = new bytes(digits_);
+        while (value != 0) {
+            digits_ -= 1;
+            buffer[digits_] = bytes1(uint8(48 + (value % 10)));
+            value /= 10;
+        }
+
+        // Convert the byte array to a string and return it.
+        return buffer;
+    }
+
+    function toStringBytes(
+        UFloat memory value
+    ) public pure returns (bytes memory, bytes memory) {
+        // Handle the special case of zero.
+        if (value.mantissa == 0) {
+            return (bytes("0"), bytes("0"));
+        }
+
+        UFloat memory integerPartFloat = value.integerPart();
+
+        bytes memory integerPartBytes;
+        if (integerPartFloat.mantissa == 0) {
+            integerPartBytes = bytes("0");
+        } else {
+            bytes memory integerPartMantissaBytes = toStringBytes(
+                integerPartFloat.mantissa
+            );
+
+            integerPartBytes = new bytes(
+                integerPartMantissaBytes.length +
+                    integerPartFloat.exponent.toUInt()
+            );
+
+            for (uint256 i = 0; i < integerPartBytes.length; i++) {
+                if (i < integerPartMantissaBytes.length) {
+                    integerPartBytes[i] = integerPartMantissaBytes[i];
+                } else {
+                    integerPartBytes[i] = bytes1("0");
+                }
+            }
+        }
+
+        UFloat memory fractionalPartFloat;
+        if (integerPartFloat.mantissa == 0) {
+            fractionalPartFloat = value;
+        } else {
+            fractionalPartFloat = value.minus(integerPartFloat);
+        }
+
+        bytes memory fractionalPartBytes;
+        if (fractionalPartFloat.mantissa == 0) {
+            fractionalPartBytes = bytes("0");
+        } else {
+            bytes memory fractionalPartMantissaBytes = toStringBytes(
+                fractionalPartFloat.mantissa
+            );
+
+            fractionalPartBytes = new bytes(
+                (-fractionalPartFloat.exponent).toUInt()
+            );
+
+            for (uint256 i = 0; i < fractionalPartBytes.length; i++) {
+                if (i < fractionalPartMantissaBytes.length) {
+                    fractionalPartBytes[
+                        fractionalPartBytes.length - 1 - i
+                    ] = fractionalPartMantissaBytes[
+                        fractionalPartMantissaBytes.length - 1 - i
+                    ];
+                } else {
+                    fractionalPartBytes[
+                        fractionalPartBytes.length - 1 - i
+                    ] = bytes1("0");
+                }
+            }
+        }
+
+        return (integerPartBytes, fractionalPartBytes);
+    }
+
+    function toString(uint256 value) public pure returns (string memory) {
+        return string(toStringBytes(value));
+    }
+
+    function trimStringBytesRight(
+        bytes memory strBytes
+    ) public pure returns (bytes memory) {
+        uint256 i = strBytes.length - 1;
+        while (i > 0 && strBytes[i] == "0") {
+            i--;
+        }
+        bytes memory result = new bytes(i + 1);
+        for (uint256 j = 0; j < i + 1; j++) {
+            result[j] = strBytes[j];
+        }
+        return result;
+    }
+
+    function trimStringRight(
+        string memory str
+    ) public pure returns (string memory) {
+        return string(trimStringBytesRight(bytes(str)));
+    }
+
+    function toString(
+        UFloat memory number
+    ) public pure returns (string memory) {
+        bytes memory integerPartBytes;
+        bytes memory fractionalPartBytes;
+
+        (integerPartBytes, fractionalPartBytes) = toStringBytes(number);
+        return
+            string(
+                abi.encodePacked(
+                    string(integerPartBytes),
+                    ".",
+                    string(trimStringBytesRight(fractionalPartBytes))
+                )
+            );
+    }
 
     function digits(uint256 number_) public pure returns (uint8) {
         if (number_ == 0) {
@@ -144,8 +359,8 @@ contract PoolUtils is Test {
                 scale(pool, payToken).times(amountIn).divide(finalBalance)
             );
         }
-        emit log_named_string("Scaled value in", scaledValueIn_.toString());
-        emit log_named_string("q.scaledValueIn", q.scaledValueIn.toString());
+        emit log_named_string("Scaled value in", toString(scaledValueIn_));
+        emit log_named_string("q.scaledValueIn", toString(q.scaledValueIn));
         return scaledValueIn_;
     }
 
@@ -204,7 +419,7 @@ contract PoolUtils is Test {
         scaledValueOut_ = scaledValueOut_.plus(
             scale(pool, address(pool)).times(q.poolOut).divide(q.finalTokens)
         );
-        emit log_named_string("Scaled value out", scaledValueOut_.toString());
+        emit log_named_string("Scaled value out", toString(scaledValueOut_));
         return scaledValueOut_;
     }
 
@@ -213,14 +428,14 @@ contract PoolUtils is Test {
         emit log("-------");
         emit log_named_string("name", asset.name);
         UFloat memory price_ = price(pool, token, numeraire);
-        emit log_named_string("price", price_.toString());
-        emit log_named_string("balance", asset.balance.toString());
+        emit log_named_string("price", toString(price_));
+        emit log_named_string("balance", toString(asset.balance));
         emit log_named_string(
             "marketcap",
-            price_.times(asset.balance).toString()
+            toString(price_.times(asset.balance))
         );
-        emit log_named_string("scale", asset.scale.toString());
-        emit log_named_string("fee", asset.fee.toString());
+        emit log_named_string("scale", toString(asset.scale));
+        emit log_named_string("fee", toString(asset.fee));
     }
 
     function showPool(Pool _pool, address numeraire) internal {
@@ -233,13 +448,13 @@ contract PoolUtils is Test {
         // emit log("Symbol:",poolSymbol);
         // emit log_named_uint("Decimals", poolDecimals);
         // emit log_named_uint("totalSupply", pool.totalSupply());
-        emit log_named_string("balance", pool_.balance.toString());
+        emit log_named_string("balance", toString(pool_.balance));
         emit log_named_decimal_uint(
             "shares (18 decimals)",
             _pool.totalSupply(),
             18
         );
-        emit log_named_string("scale", pool_.scale.toString());
+        emit log_named_string("scale", toString(pool_.scale));
         emit log("");
         emit log("Assets:");
         for (uint256 i; i < assetStates_.length; i++) {
@@ -274,12 +489,12 @@ contract PoolUtils is Test {
             if (q.payTokens[i] == address(pool)) {
                 emit log_named_string(
                     "LP Tokens",
-                    q.payAmounts[i].times(q.initialTokensPerShare).toString()
+                    toString(q.payAmounts[i].times(q.initialTokensPerShare))
                 );
             } else {
                 emit log_named_string(
                     pool.asset(q.payTokens[i]).symbol,
-                    q.payAmounts[i].toString()
+                    toString(q.payAmounts[i])
                 );
             }
         }
@@ -291,12 +506,12 @@ contract PoolUtils is Test {
             if (q.receiveTokens[i] == address(pool)) {
                 emit log_named_string(
                     pool.symbol(),
-                    q.receiveAmounts[i].times(q.finalTokensPerShare).toString()
+                    toString(q.receiveAmounts[i].times(q.finalTokensPerShare))
                 );
             } else {
                 emit log_named_string(
                     pool.asset(q.receiveTokens[i]).symbol,
-                    q.receiveAmounts[i].toString()
+                    toString(q.receiveAmounts[i])
                 );
             }
         }
@@ -304,35 +519,35 @@ contract PoolUtils is Test {
         emit log("-----------");
         emit log("Fee Amount:");
         emit log("-----------");
-        emit log_named_string("Fee amount", q.feeAmount.toString());
+        emit log_named_string("Fee amount", toString(q.feeAmount));
         emit log("");
         emit log("--------------");
         emit log("Miscellaneous:");
         emit log("--------------");
-        emit log_named_string("Initial tokens", q.initialTokens.toString());
-        emit log_named_string("Initial shares", q.initialShares.toString());
+        emit log_named_string("Initial tokens", toString(q.initialTokens));
+        emit log_named_string("Initial shares", toString(q.initialShares));
         emit log_named_string(
             "Initial tokens per share",
-            q.initialTokensPerShare.toString()
+            toString(q.initialTokensPerShare)
         );
-        emit log_named_string("Final tokens", q.finalTokens.toString());
-        emit log_named_string("Final shares", q.finalShares.toString());
+        emit log_named_string("Final tokens", toString(q.finalTokens));
+        emit log_named_string("Final shares", toString(q.finalShares));
         emit log_named_string(
             "Final tokens per share",
-            q.finalTokensPerShare.toString()
+            toString(q.finalTokensPerShare)
         );
-        emit log_named_string("Fee", q.fee.toString());
-        emit log_named_string("Discount", q.discount.toString());
-        emit log_named_string("Pool allocation", q.poolAlloc.toString());
+        emit log_named_string("Fee", toString(q.fee));
+        emit log_named_string("Discount", toString(q.discount));
+        emit log_named_string("Pool allocation", toString(q.poolAlloc));
         emit log_named_string(
             "Last pool balance",
-            q.lastPoolBalance.toString()
+            toString(q.lastPoolBalance)
         );
-        emit log_named_string("Scaled pool out", q.scaledPoolOut.toString());
-        emit log_named_string("Shares in", q.sharesIn.toString());
-        emit log_named_string("Pool in", q.poolIn.toString());
-        emit log_named_string("Pool out", q.poolOut.toString());
-        emit log_named_string("Scaled value in", q.scaledValueIn.toString());
+        emit log_named_string("Scaled pool out", toString(q.scaledPoolOut));
+        emit log_named_string("Shares in", toString(q.sharesIn));
+        emit log_named_string("Pool in", toString(q.poolIn));
+        emit log_named_string("Pool out", toString(q.poolOut));
+        emit log_named_string("Scaled value in", toString(q.scaledValueIn));
         emit log("");
     }
 

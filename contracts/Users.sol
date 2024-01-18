@@ -7,9 +7,7 @@ import {IUsers} from "./interfaces/IUsers.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {FloatingPoint, UFloat} from "./libraries/FloatingPoint/src/FloatingPoint.sol";
 
-import {Test} from "forge-std/Test.sol";
-
-contract Users is IUsers, Ownable2Step, Test {
+contract Users is IUsers, Ownable2Step {
     using FloatingPoint for uint256;
     using FloatingPoint for UFloat;
     uint256 internal constant ONE = 10 ** 18;
@@ -34,7 +32,6 @@ contract Users is IUsers, Ownable2Step, Test {
     ) public onlyOwner {
         if (_isBlocked[user_]) revert UserNotAllowed(user_);
         if (user_ == address(0)) revert ZeroAddress();
-        emit log_named_uint("discount", discount_);
         if (discount_ > ONE) revert InvalidDiscount(discount_);
         _discount[user_] = discount_.toUFloat();
     }

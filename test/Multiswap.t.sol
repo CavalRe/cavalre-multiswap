@@ -562,29 +562,23 @@ contract MultiswapTest is PoolTest {
                 amountB,
                 -int256(int8(tokens[1].decimals()))
             ).normalize();
-            emit log_named_string(
-                "payAmountFloatA",
-                amountsFloat[0].toString()
-            );
-            emit log_named_string(
-                "payAmountFloatB",
-                amountsFloat[1].toString()
-            );
+            emit log_named_string("payAmountFloatA", toString(amountsFloat[0]));
+            emit log_named_string("payAmountFloatB", toString(amountsFloat[1]));
             emit log_named_string(
                 "balanceFloatA",
-                pool
-                    .asset(payTokens[0])
-                    .balance
-                    .toUFloat(tokens[0].decimals())
-                    .toString()
+                toString(
+                    pool.asset(payTokens[0]).balance.toUFloat(
+                        tokens[0].decimals()
+                    )
+                )
             );
             emit log_named_string(
                 "balanceFloatB",
-                pool
-                    .asset(payTokens[1])
-                    .balance
-                    .toUFloat(tokens[1].decimals())
-                    .toString()
+                toString(
+                    pool.asset(payTokens[1]).balance.toUFloat(
+                        tokens[1].decimals()
+                    )
+                )
             );
             UFloat[] memory allocationsFloat = new UFloat[](1);
             allocationsFloat[0] = ONE_FLOAT;
@@ -740,14 +734,14 @@ contract MultiswapTest is PoolTest {
                 amount,
                 -int256(int8(payToken.decimals()))
             ).normalize();
-            emit log_named_string("payAmountFloat", amountFloat.toString());
+            emit log_named_string("payAmountFloat", toString(amountFloat));
             emit log_named_string(
                 "balanceFloat",
-                pool
-                    .asset(address(payToken))
-                    .balance
-                    .toUFloat(payToken.decimals())
-                    .toString()
+                toString(
+                    pool.asset(address(payToken)).balance.toUFloat(
+                        payToken.decimals()
+                    )
+                )
             );
 
             q = pool._quoteSwap(
@@ -842,29 +836,23 @@ contract MultiswapTest is PoolTest {
                 amountB,
                 -int256(int8(tokens[1].decimals()))
             ).normalize();
-            emit log_named_string(
-                "payAmountFloatA",
-                amountsFloat[0].toString()
-            );
-            emit log_named_string(
-                "payAmountFloatB",
-                amountsFloat[1].toString()
-            );
+            emit log_named_string("payAmountFloatA", toString(amountsFloat[0]));
+            emit log_named_string("payAmountFloatB", toString(amountsFloat[1]));
             emit log_named_string(
                 "balanceFloatA",
-                pool
-                    .asset(payTokens[0])
-                    .balance
-                    .toUFloat(tokens[0].decimals())
-                    .toString()
+                toString(
+                    pool.asset(payTokens[0]).balance.toUFloat(
+                        tokens[0].decimals()
+                    )
+                )
             );
             emit log_named_string(
                 "balanceFloatB",
-                pool
-                    .asset(payTokens[1])
-                    .balance
-                    .toUFloat(tokens[1].decimals())
-                    .toString()
+                toString(
+                    pool.asset(payTokens[1]).balance.toUFloat(
+                        tokens[1].decimals()
+                    )
+                )
             );
             UFloat[] memory allocationsFloat = new UFloat[](1);
             allocationsFloat[0] = ONE_FLOAT;

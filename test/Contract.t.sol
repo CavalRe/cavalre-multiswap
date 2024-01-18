@@ -23,7 +23,7 @@ contract ContractTest is Context, PoolUtils {
     Token private token;
 
     uint256 private protocolFee = 5e17;
-    address private multisigAddress = vm.envAddress("MULTISIG_ADDRESS");
+    address private feeRecipient = vm.envAddress("FEE_RECIPIENT");
     uint256 private tokensPerShare = 1e18;
     uint256 private tau = 1e16;
 
@@ -93,7 +93,7 @@ contract ContractTest is Context, PoolUtils {
             "Pool",
             "P",
             protocolFee,
-            multisigAddress,
+            feeRecipient,
             tokensPerShare,
             address(1234)
         );
@@ -135,9 +135,9 @@ contract ContractTest is Context, PoolUtils {
         emit log_named_string("name", _asset.name);
         // emit log_named_string("symbol", _asset.symbol);
         // emit log_named_uint("balanceOf", _asset.token.balanceOf(address(pool)));
-        emit log_named_string("balance", _asset.balance.toString());
-        emit log_named_string("scale", _asset.scale.toString());
-        emit log_named_string("fee", _asset.fee.toString());
+        emit log_named_string("balance", toString(_asset.balance));
+        emit log_named_string("scale", toString(_asset.scale));
+        emit log_named_string("fee", toString(_asset.fee));
         emit log("-------");
     }
 
@@ -150,8 +150,8 @@ contract ContractTest is Context, PoolUtils {
         // emit log("Symbol:",poolSymbol);
         // emit log_named_uint("Decimals", poolDecimals);
         // emit log_named_uint("totalSupply", pool.totalSupply());
-        emit log_named_string("balance", pool_.balance.toString());
-        emit log_named_string("scale", pool_.scale.toString());
+        emit log_named_string("balance", toString(pool_.balance));
+        emit log_named_string("scale", toString(pool_.scale));
         emit log("");
         emit log("Assets:");
         emit log("-------");

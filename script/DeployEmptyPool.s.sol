@@ -9,18 +9,17 @@ contract DeployEmptyPoolScript is Script, Test {
     Pool private pool;
     uint256 private protocolFee = 5e17;
     uint256 private tokensPerShare = 1e18;
-    uint256 private tau = 1e16;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address multisigAddress = vm.envAddress("MULTISIG_ADDRESS");
+        address feeRecipient = vm.envAddress("FEE_RECIPIENT");
 
         vm.startBroadcast(deployerPrivateKey);
         pool = new Pool(
-            "Multiswap",
-            unicode"β",
+            "Multiswap Beta 1.1",
+            unicode"β1.1",
             protocolFee,
-            multisigAddress,
+            feeRecipient,
             tokensPerShare,
             vm.envAddress("WRAPPED_NATIVE_TOKEN")
         );
@@ -29,6 +28,6 @@ contract DeployEmptyPoolScript is Script, Test {
         emit log_named_address("pool owner", address(pool.owner()));
         emit log_named_address("sender", msg.sender);
 
-        pool.transferOwnership(multisigAddress);
+        // pool.transferOwnership(feeRecipient);
     }
 }

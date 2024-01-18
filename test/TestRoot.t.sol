@@ -4,11 +4,11 @@ pragma solidity 0.8.19;
 import {Pool, AssetState} from "../contracts/Pool.sol";
 import {FloatingPoint, UFloat} from "./Pool.t.sol";
 import {Token} from "./Token.t.sol";
+import {PoolUtils} from "./PoolUtils.t.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
-import "forge-std/Test.sol";
 
-contract TestRoot is Test, Context {
+contract TestRoot is PoolUtils, Context {
     using FloatingPoint for uint256;
     using FloatingPoint for UFloat;
     using Strings for uint256;
@@ -16,10 +16,6 @@ contract TestRoot is Test, Context {
     uint256 internal constant ONE = 1e18;
     uint256 internal constant NTOKENS = 100;
     uint256 internal constant TO_INTERNAL = 1e9;
-
-    UFloat internal ZERO_FLOAT = UFloat(0, 0);
-    UFloat internal HALF_FLOAT = UFloat(5, -1).normalize();
-    UFloat internal ONE_FLOAT = UFloat(1, 0).normalize();
 
     Token[] internal tokens;
     address[] internal addresses;
@@ -29,7 +25,7 @@ contract TestRoot is Test, Context {
     address carol = address(3);
 
     uint256 private protocolFee = 5e17;
-    address private multisigAddress = vm.envAddress("MULTISIG_ADDRESS");
+    address private feeRecipient = vm.envAddress("FEE_RECIPIENT");
     uint256 private tokensPerShare = 1e18;
     uint256 private tau = 1e16;
 
@@ -65,7 +61,7 @@ contract TestRoot is Test, Context {
             "Pool",
             "P",
             protocolFee, // 18 decimals
-            multisigAddress,
+            feeRecipient,
             tokensPerShare, // 18 decimals
             addresses[0]
         );
@@ -113,17 +109,17 @@ contract TestRoot is Test, Context {
         UFloat memory valueIn = payAmount
             .toUFloat(pool._asset(payToken).decimals)
             .times(price(payToken));
-        emit log_named_string("Value in", valueIn.toString());
+        emit log_named_string("Value in", toString(valueIn));
         UFloat memory valueOut = receiveAmount
             .toUFloat(pool._asset(receiveToken).decimals)
             .times(price(receiveToken));
-        emit log_named_string("Value out", valueOut.toString());
+        emit log_named_string("Value out", toString(valueOut));
         valueOut = valueOut.plus(fee(receiveToken).times(valueIn));
         emit log_named_string(
             "Fee",
-            fee(receiveToken).times(valueIn).toString()
+            toString(fee(receiveToken).times(valueIn))
         );
-        emit log_named_string("Total value out", valueOut.toString());
+        emit log_named_string("Total value out", toString(valueOut));
 
         (valueIn, valueOut) = valueIn.align(valueOut);
 
@@ -154,9 +150,9 @@ contract TestRoot is Test, Context {
 
         for (uint256 i; i < payTokens.length; i++) {
             valueIn = valueIn.plus(
-                amounts[i]
-                    .toUFloat(pool._asset(payTokens[i]).decimals)
-                    .times(price(payTokens[i]))
+                amounts[i].toUFloat(pool._asset(payTokens[i]).decimals).times(
+                    price(payTokens[i])
+                )
             );
         }
 
@@ -164,9 +160,13 @@ contract TestRoot is Test, Context {
 
         UFloat memory fee_;
         for (uint256 i; i < receiveTokens.length; i++) {
-            fee_ = fee_.plus(allocations[i].toUFloat().times(fee(receiveTokens[i])));
+            fee_ = fee_.plus(
+                allocations[i].toUFloat().times(fee(receiveTokens[i]))
+            );
             valueOut = valueOut.plus(
-                receiveAmounts[i].toUFloat(pool._asset(payTokens[i]).decimals).times(price(receiveTokens[i]))
+                receiveAmounts[i]
+                    .toUFloat(pool._asset(payTokens[i]).decimals)
+                    .times(price(receiveTokens[i]))
             );
         }
         valueOut = valueOut.plus(fee_.times(valueIn));

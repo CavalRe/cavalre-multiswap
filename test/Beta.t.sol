@@ -420,10 +420,10 @@ contract BetaTest is PoolTest {
             address(0),
             amount
         );
-        emit log_named_string("Pay amount", amount.toUFloat(USDC.decimals()).toString());
-        emit log_named_string("Pay amount", amount.toUFloat(USDC.decimals()).toString());
-        emit log_named_string("amountQuote", amountQuote.toUFloat().toString());
-        emit log_named_string("feeQuote", feeQuote.toUFloat().toString());
+        emit log_named_string("Pay amount", toString(amount.toUFloat(USDC.decimals())));
+        emit log_named_string("Pay amount", toString(amount.toUFloat(USDC.decimals())));
+        emit log_named_string("amountQuote", toString(amountQuote.toUFloat()));
+        emit log_named_string("feeQuote", toString(feeQuote.toUFloat()));
 
         emit log("Execute swap");
         (amountOut, feeAmount) = pool.swap(
@@ -432,8 +432,8 @@ contract BetaTest is PoolTest {
             amount,
             oneMin[0]
         );
-        emit log_named_string("amountOut", amountOut.toUFloat().toString());
-        emit log_named_string("feeAmount", feeAmount.toUFloat().toString());
+        emit log_named_string("amountOut", toString(amountOut.toUFloat()));
+        emit log_named_string("feeAmount", toString(feeAmount.toUFloat()));
 
         assertEq(amountQuote, amountOut, "amountOut");
         assertEq(feeQuote, feeAmount, "feeAmount");

@@ -12,10 +12,10 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 contract Pool is IPool, LPToken, ReentrancyGuard {
     using SafeERC20 for IERC20;
-    using FP for uint256;
-    using FP for int256;
-    using FP for UFloat;
-    using FP for uint256[];
+    // using FP for uint256;
+    // using FP for int256;
+    // using FP for UFloat;
+    // using FP for uint256[];
 
     uint256 private _isInitialized;
 
@@ -409,7 +409,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             );
         }
         q.discount = _discount[sender];
-        if (q.fee.gt(ZERO_FLOAT) && q.discount.gt(ZERO_FLOAT)) {
+        if (q.fee.mantissa > 0 && q.discount.mantissa > 0) {
             q.fee = q.fee.times(ONE_FLOAT.minus(q.discount));
         }
         q.poolAlloc = q.fee;

@@ -24,6 +24,10 @@ module.exports = {
       url: "https://api.avax.network/ext/bc/C/rpc",
       accounts: [process.env.PRIVATE_KEY]
     },
+    fuji: {
+      url: "https://api.avax-test.network/ext/bc/C/rpc",
+      accounts: [process.env.PRIVATE_KEY]
+    },
     base: {
       url: 'https://mainnet.base.org',
       // chainId: 8453,

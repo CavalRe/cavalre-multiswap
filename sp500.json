@@ -1,0 +1,5082 @@
+{
+  "pool": {
+    "address": "0x3e1E08f87393c55DFbe44B5c68570085f2Ab1717",
+    "name": "Pool",
+    "symbol": "P",
+    "decimals": 18,
+    "balance": 32491386066999528483973441548449,
+    "scale": 32452207593794298663019010357638
+  },
+  "assets": [
+    {
+      "address": "0xEe124D8CE59B35C3C1b106EC8cab369c75E24Ae2",
+      "balance": 354308530844418552635733253,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Agilent Technologies Inc.",
+      "scale": 34592369965086736704844349775,
+      "symbol": "A"
+    },
+    {
+      "address": "0x8036474056D83D7dE23b7F7d91A53eAedE02788e",
+      "balance": 98366672007176961811433762,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "American Airlines Group Inc.",
+      "scale": 9335716510299763182000041392,
+      "symbol": "AAL"
+    },
+    {
+      "address": "0xb9Dfa5300c9518bcba5B50A2A524AE1ad2d7C622",
+      "balance": 19135468458525000835530008,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Advance Auto Parts Inc.",
+      "scale": 11513580482282550792466203677,
+      "symbol": "AAP"
+    },
+    {
+      "address": "0xbe9f8cc5fbADe6ab0E4a0b674BC8550760326436",
+      "balance": 16712854541345758944847389490,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Apple Inc.",
+      "scale": 2259425955561217538269344250203,
+      "symbol": "AAPL"
+    },
+    {
+      "address": "0x6E77E9f39071E56A7a6C205355928A8046A6EDE6",
+      "balance": 2125482745116279901784636176,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "AbbVie Inc.",
+      "scale": 264085312387239191984554738210,
+      "symbol": "ABBV"
+    },
+    {
+      "address": "0x81B8AFbEd293A203B4988001AddC18C2d83B5ec1",
+      "balance": 274596511010535813797154405,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "AmerisourceBergen Corporation",
+      "scale": 21067941264055026341344590165,
+      "symbol": "ABC"
+    },
+    {
+      "address": "0x89B1952378f4D4784a7E16131B5dc5e7A819541E",
+      "balance": 43993817373579460179142169,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "ABIOMED Inc.",
+      "scale": 11848252408466757916193136973,
+      "symbol": "ABMD"
+    },
+    {
+      "address": "0x5152c2e3c102e818cef621AE884B9e1C49Afd874",
+      "balance": 1762527585661224789055617488,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Abbott Laboratories",
+      "scale": 187226811057504056600905137650,
+      "symbol": "ABT"
+    },
+    {
+      "address": "0xc66D2aefF0238A022030c6Ef1D6ac0C4BdC8C34D",
+      "balance": 553347669031442537619983660,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Accenture Plc Class A",
+      "scale": 170021471686565818866946395858,
+      "symbol": "ACN"
+    },
+    {
+      "address": "0x5284bd33ed85aAaAAB9634ff4b56ccd9335649c1",
+      "balance": 516029484735576011820814151,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Adobe Incorporated",
+      "scale": 177147798425787736022419947996,
+      "symbol": "ADBE"
+    },
+    {
+      "address": "0x86533098F0Ad521B5a735CCcfc3d4b92e978cb5C",
+      "balance": 536989096232200568330153530,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Analog Devices Inc.",
+      "scale": 81277183530611505136231643960,
+      "symbol": "ADI"
+    },
+    {
+      "address": "0x940Bf5e511d953141aCDc6C5242FE937150AB8A8",
+      "balance": 672471683591897193046227061,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Archer-Daniels-Midland Company",
+      "scale": 40788977215094493086947132796,
+      "symbol": "ADM"
+    },
+    {
+      "address": "0xA2aEF979fca1088e133026BAa811195dDF6d4CbA",
+      "balance": 287334151210446245821361958,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Automatic Data Processing Inc.",
+      "scale": 88439411933472789553754178640,
+      "symbol": "ADP"
+    },
+    {
+      "address": "0x3fd7905fFe99B9CBE585372Dee215C3cdB7c87fA",
+      "balance": 268917953554392734565511479,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Autodesk Inc.",
+      "scale": 38716426628394225207797838301,
+      "symbol": "ADSK"
+    },
+    {
+      "address": "0x5a8e1f3Ccc287fa0f1e683CB581F9B4d91ef1c09",
+      "balance": 315560831889410018988080848,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Ameren Corporation",
+      "scale": 22098239523675829537344279675,
+      "symbol": "AEE"
+    },
+    {
+      "address": "0x06606eC9F9Ae7d53087E5A6bF4D82618631ff692",
+      "balance": 511913681267968386327339120,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "American Electric Power Company Inc.",
+      "scale": 47910037860389732031613672661,
+      "symbol": "AEP"
+    },
+    {
+      "address": "0x53Be99AF2Ad497EcA2bF0780921C5502bDb9B8c6",
+      "balance": 770606409738862926740226223,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "AES Corporation",
+      "scale": 13415627460159261137073259773,
+      "symbol": "AES"
+    },
+    {
+      "address": "0xb7D63f42093ae0Ff2e7e797511b16f7E0c0A701e",
+      "balance": 769178835005395933465979759,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Aflac Incorporated",
+      "scale": 32387356568864951974705403135,
+      "symbol": "AFL"
+    },
+    {
+      "address": "0x38F3f3257fd3574A60377Bd5deA1C547b3608D1f",
+      "balance": 823216583156040381853541634,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "American International Group Inc.",
+      "scale": 39489070624580767435390617734,
+      "symbol": "AIG"
+    },
+    {
+      "address": "0xC61bf270777c315DF290A7B92CCdEDF141217bdD",
+      "balance": 55334980654465396103962732,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Assurant Inc.",
+      "scale": 9312426301858345534603896037,
+      "symbol": "AIZ"
+    },
+    {
+      "address": "0xe7752851Ba0B3cBca6F611f874D40AC3bad8cC36",
+      "balance": 261886956712420214598820966,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Arthur J. Gallagher & Co.",
+      "scale": 33622871187595287579785401177,
+      "symbol": "AJG"
+    },
+    {
+      "address": "0x17BdB1aD3B2fD3851De82350fa22F99f04dD00B8",
+      "balance": 219319058954824825784659278,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Akamai Technologies Inc.",
+      "scale": 14251153260038045175174215341,
+      "symbol": "AKAM"
+    },
+    {
+      "address": "0xCAdb5398C410159BEb78E5e7E936A2471EeFCB2F",
+      "balance": 49956581794344010568279571,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Albemarle Corporation",
+      "scale": 23672949701482205655989431720,
+      "symbol": "ALB"
+    },
+    {
+      "address": "0x647418fAd371d8AeDEbb64a69f7aeBB4747E74B1",
+      "balance": 129336113446196464292538170,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Align Technology Inc.",
+      "scale": 18534259278810986545018542590,
+      "symbol": "ALGN"
+    },
+    {
+      "address": "0x71Af6E8825f8Cf10d9e4F69BB94B2348B23Cd184",
+      "balance": 180097475331606152085549248,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Alaska Air Group Inc.",
+      "scale": 5155850221130668393847914450,
+      "symbol": "ALK"
+    },
+    {
+      "address": "0xFF716ceAB8007688B836A77b4756F87bA8a674E5",
+      "balance": 388356728514572652949836088,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Allstate Corporation",
+      "scale": 32908650480550485427347050164,
+      "symbol": "ALL"
+    },
+    {
+      "address": "0x801444ab8C0dc7426885Df4B7169B31B30085094",
+      "balance": 144788416391640220027316439,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Allegion Public Limited Company",
+      "scale": 8520454200061608359779972683,
+      "symbol": "ALLE"
+    },
+    {
+      "address": "0x9A0745a3f6Ac53288099bd1980A03854a33AD8B3",
+      "balance": 832804017148998840410632306,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Applied Materials Inc.",
+      "scale": 82422634980215851001159589368,
+      "symbol": "AMAT"
+    },
+    {
+      "address": "0xbd50846E6569C8fda4d8aa197111Db098CCC06DE",
+      "balance": 1471612409815786982493490256,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Amcor PLC",
+      "scale": 18586460821290184213017506510,
+      "symbol": "AMCR"
+    },
+    {
+      "address": "0x8a12c48eAA925f1a878A85FD6fe7048619D89689",
+      "balance": 1655447323014169113141132383,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Advanced Micro Devices Inc.",
+      "scale": 131845285900903387893615038681,
+      "symbol": "AMD"
+    },
+    {
+      "address": "0x2452A9333924A9AcC7CaD2EAb50FF2ff4264AB23",
+      "balance": 232910860125533554008531102,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "AMETEK Inc.",
+      "scale": 25043388592361874466445991469,
+      "symbol": "AME"
+    },
+    {
+      "address": "0x8486C17Db32Eb3b19b8E61292eb2D566863f421B",
+      "balance": 644872481645234968242522323,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Amgen Inc.",
+      "scale": 130147286341136354765031757477,
+      "symbol": "AMGN"
+    },
+    {
+      "address": "0x4e984A87A9BC6fbe9335D9A2d66411df9d35aB92",
+      "balance": 167292991996022718244751305,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Ameriprise Financial Inc.",
+      "scale": 25544208805024099636517922721,
+      "symbol": "AMP"
+    },
+    {
+      "address": "0x267747F91662C3fdf6Ff414442C71d3fC135B7ac",
+      "balance": 397328211549242754830168607,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "American Tower Corporation",
+      "scale": 115724290019630450757245169832,
+      "symbol": "AMT"
+    },
+    {
+      "address": "0xa432C5c9fF252096D21F019688720696d810Eb9b",
+      "balance": 7908475517133679993493722643,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Amazon.com Inc.",
+      "scale": 994554433194955433460599939008,
+      "symbol": "AMZN"
+    },
+    {
+      "address": "0xd833d7Db2C9fb4f0f28372159670008A5Ab130FB",
+      "balance": 214208300897119548745037403,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Arista Networks Inc.",
+      "scale": 22438221001059102880451254962,
+      "symbol": "ANET"
+    },
+    {
+      "address": "0x387fBE4bc48cc3149C833c5A724561aAcf63D1BC",
+      "balance": 142660774022082785010828595,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "ANSYS Inc.",
+      "scale": 20488365720024977917214989171,
+      "symbol": "ANSS"
+    },
+    {
+      "address": "0xDa3fD66F56472b148A453bD70e5aB8b24f95e926",
+      "balance": 265569478543513656419314409,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Aon Plc Class A",
+      "scale": 56673102301713272876343580685,
+      "symbol": "AON"
+    },
+    {
+      "address": "0xE3bDE58824b101c41C8D708b4C9aD5732939E70a",
+      "balance": 127556183348747486922068227,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "A. O. Smith Corporation",
+      "scale": 7335733561522378608023166464,
+      "symbol": "AOS"
+    },
+    {
+      "address": "0x6E564Dc0Ac693Fc7515500C1D35CCe8B27234C5b",
+      "balance": 323071167556275469594758379,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "APA Corp.",
+      "scale": 11084577961713700740044533073,
+      "symbol": "APA"
+    },
+    {
+      "address": "0x0aa56B7E0ed2f3a97b3726899d024B500Bd521Be",
+      "balance": 215497626692382439421259071,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Air Products and Chemicals Inc.",
+      "scale": 49538623620356149370388445649,
+      "symbol": "APD"
+    },
+    {
+      "address": "0x23DD55e1A9981031E1437DCB2154464458b51Ea5",
+      "balance": 572571528484447000687218456,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Amphenol Corporation Class A",
+      "scale": 38734414009742040408126397157,
+      "symbol": "APH"
+    },
+    {
+      "address": "0x3ad0D31311A72c3c4742DA0cBeC666761017A9aA",
+      "balance": 312016177555685436227203049,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Aptiv PLC",
+      "scale": 24390132001989007568949485041,
+      "symbol": "APTV"
+    },
+    {
+      "address": "0x93384c34AeC6bB608dEB91478E8a8C0fB26d8E1A",
+      "balance": 143636858757733070401605420,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Alexandria Real Estate Equities Inc.",
+      "scale": 21051311962639293862014571033,
+      "symbol": "ARE"
+    },
+    {
+      "address": "0x9897DaC692eE4fFe07a7a9fC434E188179272058",
+      "balance": 51767440676571087442604964,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Atmos Energy Corporation",
+      "scale": 15542948954499531785764892874,
+      "symbol": "ATO"
+    },
+    {
+      "address": "0xec611D3C1A7c2F225dcBEa5A62159E2Bd06525d4",
+      "balance": 759030642373784100513719380,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Activision Blizzard Inc.",
+      "scale": 59766000241078626215899486280,
+      "symbol": "ATVI"
+    },
+    {
+      "address": "0x85Fc45fFD0B849605cD61194E7eE836ba65c0512",
+      "balance": 135610585872443656517419122,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "AvalonBay Communities Inc.",
+      "scale": 26506459200072127556343482581,
+      "symbol": "AVB"
+    },
+    {
+      "address": "0x15B077d7f13179d1130a727289A814B98498fF34",
+      "balance": 452251507266706905226998078,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Broadcom Inc.",
+      "scale": 200326421936070191105948573917,
+      "symbol": "AVGO"
+    },
+    {
+      "address": "0xca14581Ee08B3D8f1c07303E799946269F08f492",
+      "balance": 139253779932271006705351807,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Avery Dennison Corporation",
+      "scale": 13603977540036067728993294648,
+      "symbol": "AVY"
+    },
+    {
+      "address": "0xcF2720eccb7dD1b1545fB231331f1A2d07db9Cf2",
+      "balance": 238125675818171627788936342,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "American Water Works Company Inc.",
+      "scale": 26143571700042181828372211064,
+      "symbol": "AWK"
+    },
+    {
+      "address": "0xd9408289625646A84373bc036A0911541D5d3a6A",
+      "balance": 648509470298184854423689622,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "American Express Company",
+      "scale": 86746448220799701815145576309,
+      "symbol": "AXP"
+    },
+    {
+      "address": "0xDF90660eAC2deAcFbdF75Bb33128435400657ba3",
+      "balance": 19540968732750521443442443,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "AutoZone Inc.",
+      "scale": 43462075921522267249478556558,
+      "symbol": "AZO"
+    },
+    {
+      "address": "0x5dfE5CEd580E42039046Afd2b2d9bacd97D27b54",
+      "balance": 583380910209880069833304002,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Boeing Company",
+      "scale": 82081685641316790119930166696,
+      "symbol": "BA"
+    },
+    {
+      "address": "0xe34d6782bC6d9C8b535C1a7902530d5407d2afda",
+      "balance": 6841939468595177070520788786,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Bank of America Corp",
+      "scale": 228523760473310672120309757285,
+      "symbol": "BAC"
+    },
+    {
+      "address": "0xE9887BD71A5664Ef738D257474C3b599d4063800",
+      "balance": 310762456662878818959782029,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Ball Corporation",
+      "scale": 21747168960175337121181040218,
+      "symbol": "BALL"
+    },
+    {
+      "address": "0x0E0800703a66088C5E21cdA6Fb94E098d0206B03",
+      "balance": 615698863946293710954113382,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Baxter International Inc.",
+      "scale": 32379231062938053706289045887,
+      "symbol": "BAX"
+    },
+    {
+      "address": "0xd8b183187e868857734F8ab2fda59FcD6C219460",
+      "balance": 226099286236718312861844705,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Bath & Body Works Inc.",
+      "scale": 6810185582492763281687138155,
+      "symbol": "BBWI"
+    },
+    {
+      "address": "0x189b4fd0C69fd7dce4A4c471a3Ef61DD40d960cd",
+      "balance": 255291142981465705201742500,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Best Buy Co. Inc.",
+      "scale": 14836385940817318534294798258,
+      "symbol": "BBY"
+    },
+    {
+      "address": "0xf34694C235A0A3c1ba19dE71C799bb4d0D1b4BFc",
+      "balance": 292741271401661573422252415,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Becton Dickinson and Company",
+      "scale": 66483031937285971978887932445,
+      "symbol": "BDX"
+    },
+    {
+      "address": "0x1F1B022293c5d6d650e38167d73042A779751FB7",
+      "balance": 273822388670781065462434818,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Franklin Resources Inc.",
+      "scale": 6684041161501329218934537565,
+      "symbol": "BEN"
+    },
+    {
+      "address": "0xbc7d4dB0d4174AdceC649F06230c5a062F71291D",
+      "balance": 178357732063439930800999416,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Brown-Forman Corporation Class B",
+      "scale": 12734779260520936560069199000,
+      "symbol": "BF.B"
+    },
+    {
+      "address": "0x2F4C350A4fe61f85e195889d92404dd88fF64D91",
+      "balance": 200753750638467303832114867,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Biogen Inc.",
+      "scale": 31298071440033361532696167886,
+      "symbol": "BIIB"
+    },
+    {
+      "address": "0x1F856e28b5Ba53dc3dC631e2F61C06fa01b056e3",
+      "balance": 20708996508171784721418790,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Bio-Rad Laboratories Inc. Class A",
+      "scale": 10149302580062491828215278582,
+      "symbol": "BIO"
+    },
+    {
+      "address": "0x91Be9e1f24Cc08Ea8f83b07914e6b8b2b809906d",
+      "balance": 723470848325659371312764822,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Bank of New York Mellon Corp",
+      "scale": 31529329990793674340628687235,
+      "symbol": "BK"
+    },
+    {
+      "address": "0x5402E18b55FeD7e62e2a3aca0046199Bb30Fce59",
+      "balance": 38398756745367770324282349,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Booking Holdings Inc.",
+      "scale": 70573447622209464669621179957,
+      "symbol": "BKNG"
+    },
+    {
+      "address": "0x684737315F0Ae2037C0162Cf62f58534171Dc5cf",
+      "balance": 899448779807089509448553602,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Baker Hughes Company Class A",
+      "scale": 25382451120232192910490551446,
+      "symbol": "BKR"
+    },
+    {
+      "address": "0xB4D3f995fF4c9F81682c2328785ae7cd36Fd998b",
+      "balance": 134881677554474166067515919,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "BlackRock Inc.",
+      "scale": 84749047809841498344422624434,
+      "symbol": "BLK"
+    },
+    {
+      "address": "0xc1F74080fbfe77867f0f156f02D1aC1945128379",
+      "balance": 79707992389746421514115596,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Broadridge Financial Solutions Inc.",
+      "scale": 16948873248681610253578485884,
+      "symbol": "BR"
+    },
+    {
+      "address": "0x4d0C32CF5EDAE65e887Ec58603244A9c734eee9B",
+      "balance": 1758383402616817138149243800,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Berkshire Hathaway Inc. Class B",
+      "scale": 499380271809430561995616883305,
+      "symbol": "BRK.B"
+    },
+    {
+      "address": "0x5f948262950f63233D024a1C2bBdd365AfBeA98F",
+      "balance": 217739790087463331006078433,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Brown & Brown Inc.",
+      "scale": 13633604895378912536668993921,
+      "symbol": "BRO"
+    },
+    {
+      "address": "0x2f28177FC26649C2c033c2B79280860b5D858945",
+      "balance": 1407901163281065799462486595,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Boston Scientific Corporation",
+      "scale": 53091960300196718934200537513,
+      "symbol": "BSX"
+    },
+    {
+      "address": "0xDd9Ba9F2fFF1af59659f98fD0A367b538dF43125",
+      "balance": 228450933072162312231311174,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "BorgWarner Inc.",
+      "scale": 8164866960856927837687768689,
+      "symbol": "BWA"
+    },
+    {
+      "address": "0x1e943Beb07418654364dDea896296a0CAf2b4b2B",
+      "balance": 50692111541971087241540956,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Boston Properties Inc.",
+      "scale": 12354819559004458028912758459,
+      "symbol": "BXP"
+    },
+    {
+      "address": "0x89f2d9dC7e746b3bE6170ee67ed1D869d5b2E30B",
+      "balance": 1862852164401138589448641200,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Citigroup Inc.",
+      "scale": 97148302272266487274150551360,
+      "symbol": "C"
+    },
+    {
+      "address": "0xa5edE8029215Fa77847714986e104994aD4D7D14",
+      "balance": 476242864111120183907312947,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Conagra Brands Inc.",
+      "scale": 15930330360195888879816092687,
+      "symbol": "CAG"
+    },
+    {
+      "address": "0x9d64337753B184375bCce7f4CB13B5d54d3b4854",
+      "balance": 514939518288959027314905381,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Caterpillar Inc.",
+      "scale": 92457407460494711040972685095,
+      "symbol": "CAT"
+    },
+    {
+      "address": "0xfF2FAEfEE25C7b130BDFa443Afe431052F28C4B6",
+      "balance": 473013314893607309607927057,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Chubb Limited",
+      "scale": 76704900720042106392690392073,
+      "symbol": "CB"
+    },
+    {
+      "address": "0x07F198aD843e4A533fF1828C2fE645F4a50fd444",
+      "balance": 102665753829684665850261021,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Cboe Global Markets Inc",
+      "scale": 12510880980264170315334149739,
+      "symbol": "CBOE"
+    },
+    {
+      "address": "0xF26f81a60e4FfA687a41D32AEC6fa9F00F04CE21",
+      "balance": 260466044559197358916370872,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Cardinal Health Inc.",
+      "scale": 15255745464974440802641083629,
+      "symbol": "CAH"
+    },
+    {
+      "address": "0xCb3a26778ca66c70516C88f68776f7c31C7c7Aba",
+      "balance": 2144712338983188415309978763,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Bristol-Myers Squibb Company",
+      "scale": 156864296400491016811584690022,
+      "symbol": "BMY"
+    },
+    {
+      "address": "0x3FdD40aD10623Ee461362c57C0D15608f3959CC0",
+      "balance": 273989321318912824540869229,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Cardinal Health Inc.",
+      "scale": 15255731940117681087175459130,
+      "symbol": "CAH"
+    },
+    {
+      "address": "0xe2b48220571e1C2CBF15AA7c4A61a8b6853FDE41",
+      "balance": 815377933423180829666992788,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Carrier Global Corp.",
+      "scale": 30307568041199576819170333007,
+      "symbol": "CARR"
+    },
+    {
+      "address": "0x6E4cCA0BF88D9ecbe0490860E348D0f30d47aef4",
+      "balance": 181508222535164853892619765,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "CBRE Group Inc. Class A",
+      "scale": 25431627708921996669161602033,
+      "symbol": "CBRE"
+    },
+    {
+      "address": "0x9a2F7bb5A00D7af169bD9DD27f4a4C865c3e28c7",
+      "balance": 424185854935750403865152399,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Crown Castle International Corp",
+      "scale": 73608979200045064249596134847,
+      "symbol": "CCI"
+    },
+    {
+      "address": "0x2b1d0FAd293E095bbd926a22D1328bC166a4D1A3",
+      "balance": 766858726691913640514873005,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Carnival Corporation",
+      "scale": 7646775912763889031784504363,
+      "symbol": "CCL"
+    },
+    {
+      "address": "0x25D6756c94C6b6391757C000936850a3E89BcA57",
+      "balance": 189312723301974130809355603,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Ceridian HCM Holding Inc.",
+      "scale": 6604091400599698025869190645,
+      "symbol": "CDAY"
+    },
+    {
+      "address": "0x6d20b3BAfdc9F0a5135fC9112b8177E2276243E5",
+      "balance": 323456017432243856191047770,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Cadence Design Systems Inc.",
+      "scale": 42600740521562353830366845352,
+      "symbol": "CDNS"
+    },
+    {
+      "address": "0x5B5fa3F1D3ffB36F9781c729B29510eb4a9f6c9a",
+      "balance": 128618442880694557599524813,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "CDW Corp.",
+      "scale": 21543595740039119305442400475,
+      "symbol": "CDW"
+    },
+    {
+      "address": "0xe3747709C918129F31D72af09B3f7709c81a3C3b",
+      "balance": 102637082153298454523582836,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Celanese Corporation",
+      "scale": 11868867181264846701545476417,
+      "symbol": "CE"
+    },
+    {
+      "address": "0xBa1Be91e5F156Fc9532057494991e210969F7d7d",
+      "balance": 200562838606107156572884430,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "CF Industries Holdings Inc.",
+      "scale": 17430835981075393892843427115,
+      "symbol": "CF"
+    },
+    {
+      "address": "0xbA12c2C687f19b5c574a08F34C29A25c2f87a0eA",
+      "balance": 485425812378289569507903985,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Citizens Financial Group Inc.",
+      "scale": 18319976700173621710430492096,
+      "symbol": "CFG"
+    },
+    {
+      "address": "0xa7217E448b14a65dD956081c907EE71526289067",
+      "balance": 242439825359403093353253754,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Church & Dwight Co. Inc.",
+      "scale": 22811169720069640596906646746,
+      "symbol": "CHD"
+    },
+    {
+      "address": "0x63809C798DBcC56f411073040823A01aFC30bC0E",
+      "balance": 127934139058711094467367109,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "C.H. Robinson Worldwide Inc.",
+      "scale": 12898347600274941288905532632,
+      "symbol": "CHRW"
+    },
+    {
+      "address": "0x39245D31f54D866373E172c4edddAA09153D75c9",
+      "balance": 40277690775294063153591,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Embecta Corporation",
+      "scale": 1290532208685944545711033,
+      "symbol": "EMBC"
+    },
+    {
+      "address": "0x47ECE17457971F564bc07A796d88F6732D592236",
+      "balance": 7312242462209055044062327362,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Microsoft Corporation",
+      "scale": 1899939292779372591105180796229,
+      "symbol": "MSFT"
+    },
+    {
+      "address": "0x0A88aA666A519a24003319fD6709a7c8531b5C1e",
+      "balance": 5718493625215147387571502244,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Alphabet Inc. Class A",
+      "scale": 655285759239616650431378044156,
+      "symbol": "GOOGL"
+    },
+    {
+      "address": "0xF3C50dca535f3551e85882C5887837F7523A033D",
+      "balance": 5250820034408149127555014766,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Alphabet Inc. Class C",
+      "scale": 605682464324916279802639674022,
+      "symbol": "GOOG"
+    },
+    {
+      "address": "0x545980CD217EE6eE2eBC95A96c8E65AA50Be65eB",
+      "balance": 816412921549348427444752268,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Tesla Inc",
+      "scale": 605059983433409780572843583564,
+      "symbol": "TSLA"
+    },
+    {
+      "address": "0x2f7A4E9cca9D4C8a4cBA39290e2907C2C33AaF60",
+      "balance": 913402779036397926286053171,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "UnitedHealth Group Incorporated",
+      "scale": 487299765902853129910042261322,
+      "symbol": "UNH"
+    },
+    {
+      "address": "0x76503E30BBA01e460744D8686701EbE1046A1A6e",
+      "balance": 2660324158862640908685380623,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Johnson & Johnson",
+      "scale": 458081740370881490727820417664,
+      "symbol": "JNJ"
+    },
+    {
+      "address": "0xD91E435B5D9d9162A3BF3a2c8D41CFCdF33d108C",
+      "balance": 2349957219213361452822365336,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "NVIDIA Corporation",
+      "scale": 402829461814064076925748858500,
+      "symbol": "NVDA"
+    },
+    {
+      "address": "0x2DC0674a83672434999B822F424774289fE089F5",
+      "balance": 2213533373265746362556065667,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Meta Platforms Inc. Class A",
+      "scale": 383221000806807910359471578534,
+      "symbol": "META"
+    },
+    {
+      "address": "0x95D98d3d637a32bb9BC0BCDb581B8ffFDf60730E",
+      "balance": 4104119043542063459953106722,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Exxon Mobil Corporation",
+      "scale": 362393884083679561860540046894,
+      "symbol": "XOM"
+    },
+    {
+      "address": "0x16753f30F3D315Ec423fD236d59aa2C4601cD935",
+      "balance": 1607188370901925528868830350,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Visa Inc. Class A",
+      "scale": 340723821303872574304471131170,
+      "symbol": "V"
+    },
+    {
+      "address": "0x7d290742cCCA609E8E744EE8dd910485bbF74B8D",
+      "balance": 2853919812874479744093286131,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "JPMorgan Chase & Co.",
+      "scale": 328051642478748647155489342568,
+      "symbol": "JPM"
+    },
+    {
+      "address": "0x6cEee1Ae67E172B358a48e9837aB63E38b6c2ed0",
+      "balance": 1005851072026690104244870403,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Home Depot Inc.",
+      "scale": 302569812241548111023895755131,
+      "symbol": "HD"
+    },
+    {
+      "address": "0x2A375B181cBBB790377cd0bc6910E7D957ab9E41",
+      "balance": 2379167042326521262954138989,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Procter & Gamble Company",
+      "scale": 343552719848986009864705736581,
+      "symbol": "PG"
+    },
+    {
+      "address": "0xb6af58De0AAae358Dd9e5A88Cc50a62B75C5a63a",
+      "balance": 835783600200811684956022201,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Mastercard Incorporated Class A",
+      "scale": 284484057662334376853716502771,
+      "symbol": "MA"
+    },
+    {
+      "address": "0x251e38f4ef63Bc6e699279493ad2595E71f67a64",
+      "balance": 1892901297116000326535022975,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Chevron Corporation",
+      "scale": 274016651762264845347673464978,
+      "symbol": "CVX"
+    },
+    {
+      "address": "0x38132F88FA13d434A25E4a110f7cf7Ddc9144a03",
+      "balance": 777254824096296784247438586,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Eli Lilly and Company",
+      "scale": 253543565217543587974327546772,
+      "symbol": "LLY"
+    },
+    {
+      "address": "0xebE43f8E957A7f252ABF65c14583032F12711629",
+      "balance": 3836623787512072415706153204,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Coca-Cola Company",
+      "scale": 240327340464618531829951949992,
+      "symbol": "KO"
+    },
+    {
+      "address": "0x560358b5B2262A7C98CCFd6B9F5fB9164a3F3f57",
+      "balance": 5543853570175876008887031406,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Pfizer Inc.",
+      "scale": 284510512505729633061687010242,
+      "symbol": "PFE"
+    },
+    {
+      "address": "0xc08D9dC1Bc87B1a226Bf14fA77208D926B982Fd4",
+      "balance": 2506488570574001317628948695,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Merck & Co. Inc.",
+      "scale": 233313323758951305998682371051,
+      "symbol": "MRK"
+    },
+    {
+      "address": "0x9677a43A3B4fc3A306a38DF04Bee1fBC1608Bd9f",
+      "balance": 439821341162309888794631002,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Costco Wholesale Corporation",
+      "scale": 228641439240641837690111205369,
+      "symbol": "COST"
+    },
+    {
+      "address": "0x928445003452ebE2dA77A9509139e4495c1dC6d0",
+      "balance": 4181930545061067759963650938,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Verizon Communications Inc.",
+      "scale": 210978962111250957848631650332,
+      "symbol": "VZ"
+    },
+    {
+      "address": "0x096E792e511861C95119EcF57FE16Dfb3d2407C0",
+      "balance": 379404598328233882725460894,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Thermo Fisher Scientific Inc.",
+      "scale": 203690976300070750826117274539,
+      "symbol": "TMO"
+    },
+    {
+      "address": "0x730FfC734F1194a11886A944cEAaeFd75e2F1a00",
+      "balance": 726116687619845789449063150,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "McDonald's Corporation",
+      "scale": 186517913704826732352210550938,
+      "symbol": "MCD"
+    },
+    {
+      "address": "0x5193C3f8f9a874728b6DbF6eB2bb9763cD3d35d5",
+      "balance": 4405912068165296507716867704,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Comcast Corporation Class A",
+      "scale": 181083057181768682740749896214,
+      "symbol": "CMCSA"
+    },
+    {
+      "address": "0xBd6c8D62278FB9f0941C8d9A89E78F90d9e4b506",
+      "balance": 1391695215058318198127142070,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Walmart Inc.",
+      "scale": 180628162981862772115801872859,
+      "symbol": "WMT"
+    },
+    {
+      "address": "0xA6d98e8B6f05595d22a7E1ab92DeAd7B2c773b81",
+      "balance": 4011289942614869411888605793,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Cisco Systems Inc.",
+      "scale": 176817698160850385130588111395,
+      "symbol": "CSCO"
+    },
+    {
+      "address": "0xbFb4eF4E7Fe3087D489F253eC13a888eEE877e25",
+      "balance": 1710900811059143691085208619,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Walt Disney Company",
+      "scale": 174169633216674649237548290801,
+      "symbol": "DIS"
+    },
+    {
+      "address": "0x596C7ea2218196f9c24d26A2445ec4b6a6C2c83e",
+      "balance": 957773908397135130591505725,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Salesforce Inc.",
+      "scale": 166662265800160602864869408495,
+      "symbol": "CRM"
+    },
+    {
+      "address": "0xc5847247c858F9e0bc6d010B6Da8cc4678f9ac5B",
+      "balance": 1366895573653636972645618410,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "PepsiCo Inc.",
+      "scale": 232454485021386107100923195191,
+      "symbol": "PEP"
+    },
+    {
+      "address": "0x21c8Eec4e9D5dd95B67BCccA606fb4A2B358E509",
+      "balance": 957773796419170509578286062,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Salesforce Inc.",
+      "scale": 166662265800272580829490421714,
+      "symbol": "CRM"
+    },
+    {
+      "address": "0xF984076E8292099e448c7fa27cB8e5d8aa31ea31",
+      "balance": 624228631110523153608829613,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Danaher Corporation",
+      "scale": 159740131080094889476846391170,
+      "symbol": "DHR"
+    },
+    {
+      "address": "0x31a9ce04A668664f1e48FB48B039D076f3631E91",
+      "balance": 1071770579194266008632556447,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Qualcomm Incorporated",
+      "scale": 158557728783020027533991367443,
+      "symbol": "QCOM"
+    },
+    {
+      "address": "0xFC4c0Da36Bf121099811fA19467d8728FA64F38d",
+      "balance": 3943928962902547238438423414,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Intel Corporation",
+      "scale": 158151550203281972452761561576,
+      "symbol": "INTC"
+    },
+    {
+      "address": "0x8f09736610aB1E9D2b00cD971a0849f6787B74B2",
+      "balance": 3642975823083213834892628590,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Wells Fargo & Company",
+      "scale": 155992254540751391022308377053,
+      "symbol": "WFC"
+    },
+    {
+      "address": "0xbaB15C6816c86F99D8F33F7C741c3a368C68d197",
+      "balance": 1918526724960738308419002122,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "NextEra Energy Inc.",
+      "scale": 152139203880436039261691580997,
+      "symbol": "NEE"
+    },
+    {
+      "address": "0x3d5a9bD480d5E569BF103c81e68712f68c207603",
+      "balance": 892321944135066668280786884,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Texas Instruments Incorporated",
+      "scale": 146947602840291864933331719213,
+      "symbol": "TXN"
+    },
+    {
+      "address": "0x681f54B1232FC060cd8FA959Ac4F6e7350b9b873",
+      "balance": 7073705636387505412278203390,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "AT&T Inc.",
+      "scale": 146850171602197367861198663661,
+      "symbol": "T"
+    },
+    {
+      "address": "0x4cbf91186AfAF31947992f0E36C8e0AC69084242",
+      "balance": 487693902576912877474358272,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Linde plc",
+      "scale": 139358289969278123765532988951,
+      "symbol": "LIN"
+    },
+    {
+      "address": "0x2704611227451eF066ee8BDBCb45E01F5308dc96",
+      "balance": 1516274921275923871879883850,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Philip Morris International Inc.",
+      "scale": 138633040200263724076128120116,
+      "symbol": "PM"
+    },
+    {
+      "address": "0x79aD990c520859871784Fb30c4766E2Dd8c2a61C",
+      "balance": 1421037883400389232508204831,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Raytheon Technologies Corporation",
+      "scale": 133577584800252599610767491795,
+      "symbol": "RTX"
+    },
+    {
+      "address": "0xDC9DbF97B4206f76329fc775235A21210C2F9AB5",
+      "balance": 1209537675555596822370918347,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "NIKE Inc. Class B",
+      "scale": 132202579928613520656105200278,
+      "symbol": "NKE"
+    },
+    {
+      "address": "0x72D9Ef6773576740A7442aAEFeD7C24e240E6d9f",
+      "balance": 711185734425646680792265705,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "United Parcel Service Inc. Class B",
+      "scale": 132145474620286574353319207735,
+      "symbol": "UPS"
+    },
+    {
+      "address": "0x364527c181BDFB820b61643165F084de77a17768",
+      "balance": 608172005500071863427361821,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Union Pacific Corporation",
+      "scale": 131912542980161499928136572639,
+      "symbol": "UNP"
+    },
+    {
+      "address": "0xeEa85F2d107cCC5A23f5c442d6653153da8B0F67",
+      "balance": 944354747156326055764327611,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "International Business Machines Corporation",
+      "scale": 124135465260478843673944235674,
+      "symbol": "IBM"
+    },
+    {
+      "address": "0x370f37461056b25E6C5EB91Eae000DCF0F3febd6",
+      "balance": 1274947230974828584690537408,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "CVS Health Corporation",
+      "scale": 123402150000458025171415309462,
+      "symbol": "CVS"
+    },
+    {
+      "address": "0xE0BAae8890585E953F70F9762e11D8de03c530c3",
+      "balance": 648958923819754031569705081,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Lowe's Companies Inc.",
+      "scale": 122724648000137180245968430294,
+      "symbol": "LOW"
+    },
+    {
+      "address": "0x61F2418849eF7574a82b4323f532Be97D165260a",
+      "balance": 335379826581758895012005901,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "S&P Global Inc.",
+      "scale": 119774933348486606896854073448,
+      "symbol": "SPGI"
+    },
+    {
+      "address": "0x448eB01c1b781543cbfDc1572c315c69bF9889A7",
+      "balance": 1295602579648498360974755048,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Medtronic Plc",
+      "scale": 117653706840402351501639025245,
+      "symbol": "MDT"
+    },
+    {
+      "address": "0x07aa75B0DF7FDA86c2FB73eD3E29ccADC7a9DEfe",
+      "balance": 653958678093610371837988175,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Honeywell International Inc.",
+      "scale": 116273861100245906389628162012,
+      "symbol": "HON"
+    },
+    {
+      "address": "0xE2141F10EdC8fd7e3BE02aD201C2dDC2FC897984",
+      "balance": 232119356515261757217537561,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Elevance Health Inc.",
+      "scale": 116057383080052484738242782462,
+      "symbol": "ELV"
+    },
+    {
+      "address": "0x94503275Cc38E019d6850c081ADdAA4fDB0109C0",
+      "balance": 1345024631899369693526872353,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Morgan Stanley",
+      "scale": 110265063601320100630306473127,
+      "symbol": "MS"
+    },
+    {
+      "address": "0x5106729E0fA8ECDB6c78FbB31Bbf6FB158Fa2340",
+      "balance": 1525739824171613203601712594,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Oracle Corporation",
+      "scale": 110234737320484828386796398288,
+      "symbol": "ORCL"
+    },
+    {
+      "address": "0x3Cf4CAacf5d3207ae7517a1ABFEDfC76FB495F9a",
+      "balance": 1238215194825703341933587984,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "ConocoPhillips",
+      "scale": 109941153120292174296658066412,
+      "symbol": "COP"
+    },
+    {
+      "address": "0xa5ce65C5d60a461137F418Ce2cDa4392F657Ee59",
+      "balance": 270644172915229931471611455,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Intuit Inc.",
+      "scale": 109559493660064084770068528388,
+      "symbol": "INTU"
+    },
+    {
+      "address": "0x78446e24DD11Eb5c93bCa4ABA47c0bE79B15b2ee",
+      "balance": 324583801657026418984976100,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Goldman Sachs Group Inc.",
+      "scale": 103380030180280342973581015023,
+      "symbol": "GS"
+    },
+    {
+      "address": "0xD22Da7256500Bb9c8003634eD79FDc55aDA56287",
+      "balance": 1457156166171227178167429480,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Charles Schwab Corp",
+      "scale": 92281902183192828772821832570,
+      "symbol": "SCHW"
+    },
+    {
+      "address": "0xb6116Cf0F192BD0A520D992b1F06B7D2BaD95402",
+      "balance": 1113934661393785707301258128,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Starbucks Corporation",
+      "scale": 91967025067018606214292698742,
+      "symbol": "SBUX"
+    },
+    {
+      "address": "0x41c0D7A63845b13Dc4c48bA05AD39eAe949291a2",
+      "balance": 234263979150954011043088466,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Lockheed Martin Corporation",
+      "scale": 91644082440094849045988956912,
+      "symbol": "LMT"
+    },
+    {
+      "address": "0x0c6da9866B878F31Bcd3e0E1e13F4470879AB559",
+      "balance": 702582330393762351608569590,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Prologis Inc.",
+      "scale": 87900077340015606237648391430,
+      "symbol": "PLD"
+    },
+    {
+      "address": "0x1C6F8068d1f1F68142f0daBe042354b41048120E",
+      "balance": 1103285106971203784234074841,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "PayPal Holdings Inc.",
+      "scale": 86067273120025028796215765925,
+      "symbol": "PYPL"
+    },
+    {
+      "address": "0x2fe3882E6ca8858D7eA60d08Aff9bc6eDC4D25F7",
+      "balance": 195373505415145380588586156,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "ServiceNow Inc.",
+      "scale": 85475910660004584854619411414,
+      "symbol": "NOW"
+    },
+    {
+      "address": "0x9CB8d5b3Fe8cfbC594483353119b6A5256eC2C24",
+      "balance": 309800958695288060300496160,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Cigna Corporation",
+      "scale": 85071345180007304711939699503,
+      "symbol": "CI"
+    },
+    {
+      "address": "0xe49b5FE5bB6FBDC0c45F3126f2A8bFB6bA613d10",
+      "balance": 389380944778230352672288509,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Netflix Inc.",
+      "scale": 84456754080325221769647327711,
+      "symbol": "NFLX"
+    },
+    {
+      "address": "0x24a8ca7f7458597869f335F0f2c5734228388805",
+      "balance": 267238564259605683058854007,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Deere & Company",
+      "scale": 83268867240409740394316941147,
+      "symbol": "DE"
+    },
+    {
+      "address": "0xd63f794A8562919E3fCB0c242058E76a38bDF14b",
+      "balance": 1349118615415953614780773953,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Mondelez International Inc. Class A",
+      "scale": 83051743980032584046385219226,
+      "symbol": "MDLZ"
+    },
+    {
+      "address": "0x3d962B91aa28D182272E2F145cEbEA479DD6F132",
+      "balance": 806865447043912587160484339,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Duke Energy Corporation",
+      "scale": 81101587866910915461512510285,
+      "symbol": "DUK"
+    },
+    {
+      "address": "0xc3c1FA0D50a23E384bC863d42028DCE56cCb7D03",
+      "balance": 454622011718369556668772318,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Zoetis Inc. Class A",
+      "scale": 80831795760011281630443331227,
+      "symbol": "ZTS"
+    },
+    {
+      "address": "0xDa0cC6e3Cba502168FD4b0dEf76BC9e93cf16E8f",
+      "balance": 575588032415008418247729061,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "T-Mobile US Inc.",
+      "scale": 79160624160014584991581752271,
+      "symbol": "TMUS"
+    },
+    {
+      "address": "0x39A3D48e79b39DDA8f9d24fFcc004627091672A9",
+      "balance": 1784251962395123315032656364,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Altria Group Inc",
+      "scale": 76794206460046604876684967344,
+      "symbol": "MO"
+    },
+    {
+      "address": "0xaB82174068ADd0bbbeDaDfF31bFBa1436dc655F5",
+      "balance": 1222287401659025900858597319,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Gilead Sciences Inc.",
+      "scale": 76124124721049340974099141403,
+      "symbol": "GILD"
+    },
+    {
+      "address": "0xC98931D6879bc0f04151Ec826027C3Ee92A45a72",
+      "balance": 1055162965902557854351687129,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Southern Company",
+      "scale": 75707944920039097442145648313,
+      "symbol": "SO"
+    },
+    {
+      "address": "0x5E784dDdd9fACA934a28D577dF04440F2dc991B6",
+      "balance": 486868253913661976014875595,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Marsh & McLennan Companies Inc.",
+      "scale": 74627167920013086338023985124,
+      "symbol": "MMC"
+    },
+    {
+      "address": "0x661d1fb39E5e41d8536b37c870706389889Ba332",
+      "balance": 344122545534917975045430677,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Intuitive Surgical Inc.",
+      "scale": 73976120760451465082024954569,
+      "symbol": "ISRG"
+    },
+    {
+      "address": "0xB71710b9f49E6EA646894A4A1848d29a2a3Befb7",
+      "balance": 555802599989864429894056784,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "3M Company",
+      "scale": 73366046340781010135570105943,
+      "symbol": "MMM"
+    },
+    {
+      "address": "0x48f7B08359749318B2331613CA0717642AF861c0",
+      "balance": 252420064073639895215298961,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Vertex Pharmaceuticals Incorporated",
+      "scale": 73100852700006926360104784701,
+      "symbol": "VRTX"
+    },
+    {
+      "address": "0x86D81007C65cAfeD43c50767DCC42A120eC2Dac0",
+      "balance": 240814653832144657591517472,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "CME Group Inc. Class A",
+      "scale": 71787935920352215738535340747,
+      "symbol": "CME"
+    },
+    {
+      "address": "0x16053b2315Ef8Ee3BB6E1C5ba0071C37a608F0a6",
+      "balance": 1132980642982858924289854785,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "TJX Companies Inc",
+      "scale": 70981239300032017141075710145,
+      "symbol": "TJX"
+    },
+    {
+      "address": "0x7F3575823a0b2FA130A04c93060ed3aa4c79E61B",
+      "balance": 1043966809980935535565524443,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "General Electric Company",
+      "scale": 69757864260030019064464434475,
+      "symbol": "GE"
+    },
+    {
+      "address": "0xB9aC8d205b58bD80a75b75217aa715e42F6FC250",
+      "balance": 448751203605092292063300792,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Target Corporation",
+      "scale": 69009063240670394907707936699,
+      "symbol": "TGT"
+    },
+    {
+      "address": "0x5a546D2BD5aF7ca3fd753b1fDAd9d3c9011a1B91",
+      "balance": 1071055009049132673161190343,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Micron Technology Inc.",
+      "scale": 67240783020867950867326838810,
+      "symbol": "MU"
+    },
+    {
+      "address": "0x7a8d39CB02A1B718652be01b895605570fa5f06A",
+      "balance": 143621230614521766811893839,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Northrop Grumman Corp.",
+      "scale": 65690916540004385478233188106,
+      "symbol": "NOC"
+    },
+    {
+      "address": "0x1785aB78F91CD69ba16bbfce3B8Bc3322acc32ee",
+      "balance": 833061157127771393353170941,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Colgate-Palmolive Company",
+      "scale": 64587233520025872228606646829,
+      "symbol": "CL"
+    },
+    {
+      "address": "0xC13DADAcDc64B9ed039cD5523ba4e72365cE0DEb",
+      "balance": 575658836084013175330815508,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Progressive Corporation",
+      "scale": 64450765260017915986824669184,
+      "symbol": "PGR"
+    },
+    {
+      "address": "0xbA191a3567C03CDD447e8FC987BA9861208c1eFd",
+      "balance": 397237642533412780239338546,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "PNC Financial Services Group Inc.",
+      "scale": 63915538680012466587219760662,
+      "symbol": "PNC"
+    },
+    {
+      "address": "0x393C352aBB89a144B91e242048c5E3AaeaBfcA08",
+      "balance": 106268227633818521286834284,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Regeneron Pharmaceuticals Inc.",
+      "scale": 63324176220003366181478713166,
+      "symbol": "REGN"
+    },
+    {
+      "address": "0x737f069F0F613c43e2F3D7b180987eD31Da72cD5",
+      "balance": 320937394833381234217937679,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Stryker Corporation",
+      "scale": 63320950020010166618765782062,
+      "symbol": "SYK"
+    },
+    {
+      "address": "0xC461cAb05dEe089540d4e5dB45D9DD06F475de52",
+      "balance": 809523985210929753851512525,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Dominion Energy Inc",
+      "scale": 62964777540025789070246148487,
+      "symbol": "D"
+    },
+    {
+      "address": "0xEBb1B2d8F03a69c5eB091549F7c31Dc8BC587B78",
+      "balance": 1318003518912843423956229607,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "U.S. Bancorp",
+      "scale": 62816049720042087156576043771,
+      "symbol": "USB"
+    },
+    {
+      "address": "0x429F2b6A930862E9bC8B845d5155E2c6DAcb0a79",
+      "balance": 2103107495643590243411378998,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "CSX Corporation",
+      "scale": 62630543220067356409756588621,
+      "symbol": "CSX"
+    },
+    {
+      "address": "0xaED698ada184d7Df2f04Ac6d16d99Ed6d834c7e7",
+      "balance": 1280643821845427120094476742,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Truist Financial Corporation",
+      "scale": 62418581880041154572879905524,
+      "symbol": "TFC"
+    },
+    {
+      "address": "0x531502E3C15d554d8e523E02994e140cB760E5ec",
+      "balance": 123606553214466042411760110,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Humana Inc.",
+      "scale": 61223597400071785533957588240,
+      "symbol": "HUM"
+    },
+    {
+      "address": "0x9B2D6E12a5aE931c92E5E8E55Cb3E92879Acb0C4",
+      "balance": 598905579186943086225691020,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Edwards Lifesciences Corporation",
+      "scale": 60633202800019813056913774309,
+      "symbol": "EW"
+    },
+    {
+      "address": "0xE1CD8c859CF2ECA1bb62e6c0C6Ece41B4F02cD6E",
+      "balance": 191185557526696808376180310,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Lam Research Corporation",
+      "scale": 58824977700004473303191623819,
+      "symbol": "LRCX"
+    },
+    {
+      "address": "0x4605c4Ba32e11E99D1cF970491AFB2bD70b7aDa9",
+      "balance": 235557696894804121731871764,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Sherwin-Williams Company",
+      "scale": 58295820900008105195878268129,
+      "symbol": "SHW"
+    },
+    {
+      "address": "0x00bc31558551375138b53D9c6C943095E663E56F",
+      "balance": 560023715642020085740581655,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "EOG Resources Inc.",
+      "scale": 58029659400019357979914259419,
+      "symbol": "EOG"
+    },
+    {
+      "address": "0xC10fd3D27d05890564255a31C510b41C450b3C06",
+      "balance": 591776761342184595846259435,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Fidelity National Information Services Inc.",
+      "scale": 57461525580020657815404153741,
+      "symbol": "FIS"
+    },
+    {
+      "address": "0xd47380042648a051E2A2Ff392751E322f011c75c",
+      "balance": 373385192889713217436349078,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Waste Management Inc.",
+      "scale": 57127936500013110286782563651,
+      "symbol": "WM"
+    },
+    {
+      "address": "0x6D65D709e834Be7ca8C94d7131b9404504868d76",
+      "balance": 222883169146147684966000185,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Estee Lauder Companies Inc. Class A",
+      "scale": 56924363280007853852315034000,
+      "symbol": "EL"
+    },
+    {
+      "address": "0xF393bacCC42E29A5920249c3ef0aA65E7A7EE0E2",
+      "balance": 338038300566586758387907282,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Moderna Inc.",
+      "scale": 56499472741512569013241612093,
+      "symbol": "MRNA"
+    },
+    {
+      "address": "0xeC4D0FA6f52A4f2b8a81Aa1Aa12CD8419d328709",
+      "balance": 87795686851061411066983599,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Equinix Inc.",
+      "scale": 55925854380003148938588933016,
+      "symbol": "EQIX"
+    },
+    {
+      "address": "0x2E111e84F4180D3A0389eA514291b856c89EA75a",
+      "balance": 227799998812759683197133755,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Dollar General Corporation",
+      "scale": 55811001660008187240316802867,
+      "symbol": "DG"
+    },
+    {
+      "address": "0x481569aD56Cdd827C47c7F19d0aB8Bd51B3D6584",
+      "balance": 113311474857002083137476890,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Charter Communications Inc. Class A",
+      "scale": 54860885760004142997916862523,
+      "symbol": "CHTR"
+    },
+    {
+      "address": "0x2A9Fe4F19C9A0936E35FA00eB0B095d61bfA283B",
+      "balance": 231737559507371702429140184,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Norfolk Southern Corporation",
+      "scale": 54734096100008492628297570859,
+      "symbol": "NSC"
+    },
+    {
+      "address": "0xd9091a197767e188c7531B6CE758a8Ce68e9fFC4",
+      "balance": 559866050439587173690833036,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Fiserv Inc.",
+      "scale": 54620533860020560412826309167,
+      "symbol": "FISV"
+    },
+    {
+      "address": "0x34d9086AdCBd75a51dc6A2670c735B1Efc4DCF5B",
+      "balance": 850764146452178254337663906,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Occidental Petroleum Corporation",
+      "scale": 53419419601050732092421263963,
+      "symbol": "OXY"
+    },
+    {
+      "address": "0x96452329f50804AFdda1dc00DF71f22Cb2607219",
+      "balance": 547990765429956950590461955,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Intercontinental Exchange Inc.",
+      "scale": 53050987560016570043049409538,
+      "symbol": "ICE"
+    },
+    {
+      "address": "0x3648D5Dbb0b21536018F96963f1E2F996C327feF",
+      "balance": 573830691443407413952379254,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Centene Corporation",
+      "scale": 52430911920017556592586047621,
+      "symbol": "CNC"
+    },
+    {
+      "address": "0xf75538ca48717aeCCDbEbC4cb75d9582b71872C3",
+      "balance": 142175838124956380518100737,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "FedEx Corporation",
+      "scale": 51932551227836875043619481900,
+      "symbol": "FDX"
+    },
+    {
+      "address": "0xb3502F28351dB45617fd0124ad2596F6e8954875",
+      "balance": 333733062442729834325084520,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Illinois Tool Works Inc.",
+      "scale": 51314061480008557270165674916,
+      "symbol": "ITW"
+    },
+    {
+      "address": "0xC7C328988A37D072f5624cf66C026a4008Ea9097",
+      "balance": 379530838874936773332847413,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Eaton Corp. Plc",
+      "scale": 50211931560012125063226667153,
+      "symbol": "ETN"
+    },
+    {
+      "address": "0xcBcf59CdE8aB3C55035BA398DE0062CeDb277B0e",
+      "balance": 143160001370564027178645556,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "KLA Corporation",
+      "scale": 49606373820004629435972821355,
+      "symbol": "KLAC"
+    },
+    {
+      "address": "0x77598838Dc1F19548A1C97d8d2CB93BCC05D7FD9",
+      "balance": 283960007527734938219522263,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "General Dynamics Corporation",
+      "scale": 48079795980007472265061780478,
+      "symbol": "GD"
+    },
+    {
+      "address": "0x49349b6bfA944ecd860E5e60c85D6F10c8D9b081",
+      "balance": 221401631526690590468317094,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Pioneer Natural Resources Company",
+      "scale": 47523861720007473309409531683,
+      "symbol": "PXD"
+    },
+    {
+      "address": "0x809A156e2c16B95D37035a756C0dd5fCD08CF887",
+      "balance": 1381806086354293047567848131,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "General Motors Company",
+      "scale": 47520312900046645706952432152,
+      "symbol": "GM"
+    },
+    {
+      "address": "0xEfc8065CdBA8635abD7C1F054F9610FAf521F2b0",
+      "balance": 147417728018335261777437179,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Synopsys Inc.",
+      "scale": 47469984180004981664738222563,
+      "symbol": "SNPS"
+    },
+    {
+      "address": "0x051860026D7099736d39700D2cEB456B9EE9A500",
+      "balance": 143508551138509995345866364,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "McKesson Corporation",
+      "scale": 47353518360004861490004654134,
+      "symbol": "MCK"
+    },
+    {
+      "address": "0x2e72fAF825B3c28975Fe089BC3D669E68A0F8935",
+      "balance": 149057207928083153704722949,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Public Storage",
+      "scale": 47143815360005071916846295278,
+      "symbol": "PSA"
+    },
+    {
+      "address": "0x25F0E63EacE3B0974eD22e8000068882598D9556",
+      "balance": 572717169494335360408167651,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Emerson Electric Co.",
+      "scale": 47100261660019505664639591832,
+      "symbol": "EMR"
+    },
+    {
+      "address": "0xDc757E2875e8462731D8c4C4dB278aE80833b231",
+      "balance": 309409999417864901860748578,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Sempra Energy",
+      "scale": 46903463460020572598180663101,
+      "symbol": "SRE"
+    },
+    {
+      "address": "0xB132Ba03EC0C869DFCf4a30C81a313c9E1E45616",
+      "balance": 3726182732630580631078676810,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Ford Motor Company",
+      "scale": 46875395521331369419368921324,
+      "symbol": "F"
+    },
+    {
+      "address": "0x7e4D31883f3AB4891760fd5130B3c950262f922c",
+      "balance": 1368087986095150275233695405,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Schlumberger NV",
+      "scale": 46788610740046904849724766304,
+      "symbol": "SLB"
+    },
+    {
+      "address": "0x4681669F00d09bF33359597233e166f2Eb95a90d",
+      "balance": 524108834750331495161847296,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Marathon Petroleum Corporation",
+      "scale": 46069168140018249668504838153,
+      "symbol": "MPC"
+    },
+    {
+      "address": "0xF388500dDd748F14474084eC1230E6AF0dDE2616",
+      "balance": 276181777363954670490420720,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Moody's Corporation",
+      "scale": 45158531880404636045329509579,
+      "symbol": "MCO"
+    },
+    {
+      "address": "0xfF2B230fb0E5Ad5C04443dDBf588F3Ac573516f3",
+      "balance": 598484588430202247902946581,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "General Mills Inc.",
+      "scale": 44509300440021569797752097053,
+      "symbol": "GIS"
+    },
+    {
+      "address": "0x016c64c011E853C7795Bd7b15D9DEBC1f29764Cb",
+      "balance": 63970818222725647003657544,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "O'Reilly Automotive Inc.",
+      "scale": 44173130400001777274352996342,
+      "symbol": "ORLY"
+    },
+    {
+      "address": "0x058Af49a5e598BD46391Bd2fd97Ff7915791Cf7F",
+      "balance": 333910711869435438755330462,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Kimberly-Clark Corporation",
+      "scale": 44156354160012130564561244669,
+      "symbol": "KMB"
+    },
+    {
+      "address": "0xFe8394677a5AF7F9AD56884CaB8646B2fDBf9D55",
+      "balance": 499411014637524522144315967,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Sysco Corporation",
+      "scale": 43628547840018362475477855684,
+      "symbol": "SYY"
+    },
+    {
+      "address": "0x4Da950b9e25695987b0B3C71F1878F2f16089474",
+      "balance": 795805809646919349769190037,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Newmont Corporation",
+      "scale": 43490789100029353080650230810,
+      "symbol": "NEM"
+    },
+    {
+      "address": "0x93CB2CE791E23Cac29fCcCAeDCF39A4BE9400ced",
+      "balance": 383935483806531084608305675,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Capital One Financial Corp",
+      "scale": 43392390000014193468915391695,
+      "symbol": "COF"
+    },
+    {
+      "address": "0x5C107604CA28afC1Ff41C2053514f76ce8760c4e",
+      "balance": 396827925247876995920131536,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Valero Energy Corporation",
+      "scale": 43151070240014752123004079869,
+      "symbol": "VLO"
+    },
+    {
+      "address": "0xfc596D6a54763d9d0E523B5333AA702Cfd320C47",
+      "balance": 251428132602543310951391880,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "NXP Semiconductors NV",
+      "scale": 42918783840009397456689048608,
+      "symbol": "NXPI"
+    },
+    {
+      "address": "0x1046256A11bA2314903c3311297C4436ac215f98",
+      "balance": 970964489333809004319657516,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Exelon Corporation",
+      "scale": 42479698020036666190995680342,
+      "symbol": "EXC"
+    },
+    {
+      "address": "0x12D188fe20ba979996753393985430A07fAE58f0",
+      "balance": 247995773890684922070671228,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "L3Harris Technologies Inc",
+      "scale": 42419428080007109315077929329,
+      "symbol": "LHX"
+    },
+    {
+      "address": "0x7500da0F76B84C2a38f820831E865c80A20d0893",
+      "balance": 594006269181424526427632086,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Realty Income Corporation",
+      "scale": 41758642320022818575473572368,
+      "symbol": "O"
+    },
+    {
+      "address": "0x6B4E15824571f828F84c15F3D4faDF5d83b8973a",
+      "balance": 102591288963245791765313324,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Roper Technologies Inc.",
+      "scale": 41460218820003036754208234687,
+      "symbol": "ROP"
+    },
+    {
+      "address": "0x69CF745ce7d037D36Deac6FCB659F865955F7415",
+      "balance": 671341417616022122999513844,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "MetLife Inc.",
+      "scale": 40817559780026383977877000486,
+      "symbol": "MET"
+    },
+    {
+      "address": "0x427DA73A62A47fB5484359511CCdaD1175D8c11B",
+      "balance": 183656865724962116185245130,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "IQVIA Holdings Inc",
+      "scale": 40496230260507275037883814755,
+      "symbol": "IQV"
+    },
+    {
+      "address": "0x3638E72F29EEFb587ab54259Cf6adf7e534AEAC4",
+      "balance": 1393119969051533026436899548,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Freeport-McMoRan Inc.",
+      "scale": 39982619222651948466973563100,
+      "symbol": "FCX"
+    },
+    {
+      "address": "0x66e3C6d9e7DdbB17B3eB00c74e1182FC877ea230",
+      "balance": 466769262176415718773634862,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Phillips 66",
+      "scale": 39778078140018823584281226365,
+      "symbol": "PSX"
+    },
+    {
+      "address": "0x83ad8108106138e125F673a3E47F92B63F6cEae2",
+      "balance": 162504346985316562939640252,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Constellation Brands Inc. Class A",
+      "scale": 39769690020005014683437060360,
+      "symbol": "STZ"
+    },
+    {
+      "address": "0x398699be0377df17b65D20198dFD60EA20BD5B0a",
+      "balance": 263484860358899796513311786,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Marriott International Inc. Class A",
+      "scale": 39720329160110641100203486688,
+      "symbol": "MAR"
+    },
+    {
+      "address": "0x6e31E1401f74A82dB183Af9C650eCE163ac28bb0",
+      "balance": 657143406998723263878516039,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Fortinet Inc.",
+      "scale": 39040891440027001276736121484,
+      "symbol": "FTNT"
+    },
+    {
+      "address": "0x4D35Ade93D91D6dA8B776e068E991F70df859f73",
+      "balance": 279064504997048742768190056,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "HCA Healthcare Inc",
+      "scale": 39032885940509002951257231810,
+      "symbol": "HCA"
+    },
+    {
+      "address": "0x6BCeD2916085A0598900a7fEbe0b535009Aa6EEB",
+      "balance": 1188602572458744557604460085,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Williams Companies Inc.",
+      "scale": 38486952900049541255442395540,
+      "symbol": "WMB"
+    },
+    {
+      "address": "0x7cE4aE8B3F3CC718f8962a276C5AE791E3D74Cb0",
+      "balance": 222473850320513196966859226,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Dollar Tree Inc.",
+      "scale": 37909463100524679486803033141,
+      "symbol": "DLTR"
+    },
+    {
+      "address": "0x66cBc7d26CaFfcc3e17b58c53528a7c1F4aEA7dD",
+      "balance": 703748614149872523537974595,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Corteva Inc",
+      "scale": 37819452120029850127476462026,
+      "symbol": "CTVA"
+    },
+    {
+      "address": "0x425222d116174C27b4D7Ee705d5916DD375cb451",
+      "balance": 237538678222791684111588013,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Ecolab Inc.",
+      "scale": 37483604700007777208315888412,
+      "symbol": "ECL"
+    },
+    {
+      "address": "0xf3E6D20faC51E394ae66F552213333DCD492E533",
+      "balance": 312329266633231797389195750,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "TE Connectivity Ltd.",
+      "scale": 37482636840013366768202610804,
+      "symbol": "TEL"
+    },
+    {
+      "address": "0x4dFaCe3a51022aEbF168013d9F15b4b89Bf6bA22",
+      "balance": 541740144704242681137054908,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Xcel Energy Inc.",
+      "scale": 37304227980023295757318862945,
+      "symbol": "XEL"
+    },
+    {
+      "address": "0x7AcA7F5a24629BE086ee6575bF212a31eC2Ab6f7",
+      "balance": 234777809890686611729508333,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Travelers Companies Inc.",
+      "scale": 37254544500010109313388270492,
+      "symbol": "TRV"
+    },
+    {
+      "address": "0x9899c40FD73F2eeFf4999287cEff97B23A1492DC",
+      "balance": 709178508357290355251714883,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Dow Inc.",
+      "scale": 37125496500030642709644748285,
+      "symbol": "DOW"
+    },
+    {
+      "address": "0xAe48aC6a8387cF0C29473C1DCe33443aB2E05CEA",
+      "balance": 27350057402460392117581421,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Chipotle Mexican Grill Inc.",
+      "scale": 36718350060057597539607882419,
+      "symbol": "CMG"
+    },
+    {
+      "address": "0xBA2D4B68Ce1FfaD962A5FC2bfB144017ED023FE5",
+      "balance": 446192121468210792987913478,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Welltower Inc",
+      "scale": 36645760560019531789207012086,
+      "symbol": "WELL"
+    },
+    {
+      "address": "0x0B0ef0FD8E30B2663Cc4308797aBB624E928857F",
+      "balance": 305035548567192699422980236,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Paychex Inc.",
+      "scale": 36427346820013432807300577020,
+      "symbol": "PAYX"
+    },
+    {
+      "address": "0x309F686E35251a45550415887697324227a0B678",
+      "balance": 163210713650971919196551874,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Motorola Solutions Inc.",
+      "scale": 35625636120007349028080803448,
+      "symbol": "MSI"
+    },
+    {
+      "address": "0xcF47C95538b1E43238D33567824329ca42C5BcB8",
+      "balance": 368883484364659871756875488,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Monster Beverage Corporation",
+      "scale": 35571435960016635340128243124,
+      "symbol": "MNST"
+    },
+    {
+      "address": "0xD93bd3Bff6562988A31cC258aEDdfD58D4511f2e",
+      "balance": 366041645144416884414273563,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Prudential Financial Inc.",
+      "scale": 34836184980016855583115585727,
+      "symbol": "PRU"
+    },
+    {
+      "address": "0x4A72db402212cc1aeFA6a3958edC4521Bc4Cb099",
+      "balance": 272793008402655513810946086,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Electronic Arts Inc.",
+      "scale": 34737463260012597344486189054,
+      "symbol": "EA"
+    },
+    {
+      "address": "0xDEFae7C789062640f5476Ae641274E13F21f8c46",
+      "balance": 284573373622084506724931789,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Yum! Brands Inc.",
+      "scale": 34123194780013377915493275068,
+      "symbol": "YUM"
+    },
+    {
+      "address": "0x5Bcc2BbebB8fBE80e16E9a02D5da24F39d561577",
+      "balance": 105665867030065226680201767,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "SBA Communications Corp. Class A",
+      "scale": 34105450681004969934773319798,
+      "symbol": "SBAC"
+    },
+    {
+      "address": "0x482634937783B3c3E619F04A068F9d37B262d7ff",
+      "balance": 528172718137231169462938674,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Microchip Technology Incorporated",
+      "scale": 34077705360024862768830537061,
+      "symbol": "MCHP"
+    },
+    {
+      "address": "0xb5D7d2D2CBC5E2d256fB9e7caDDC237233c52E1B",
+      "balance": 532410370860419729676155681,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Cognizant Technology Solutions Corporation Class A",
+      "scale": 33972879213544925680137828006,
+      "symbol": "CTSH"
+    },
+    {
+      "address": "0x819E6496D0931215bc1fa8B4E2926f6ac3a6F000",
+      "balance": 334457933024623125001110631,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Digital Realty Trust Inc.",
+      "scale": 33931295880012975376874998889,
+      "symbol": "DLR"
+    },
+    {
+      "address": "0x4725332b82Ce27dbE81B1ED0a3f8D41aBFe8a624",
+      "balance": 585202441975090075027709945,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Devon Energy Corporation",
+      "scale": 33496989360028024909924972290,
+      "symbol": "DVN"
+    },
+    {
+      "address": "0xd1560cd1001eEb19cd772cc1f0fD1a6Ed198CeCb",
+      "balance": 138290428250275383421172831,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "MSCI Inc. Class A",
+      "scale": 33359613240003749724616578827,
+      "symbol": "MSCI"
+    },
+    {
+      "address": "0x2c54C01137Bcaed38D274B8Ce4478439B77e34Ac",
+      "balance": 86058672854920283360223927,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Cintas Corporation",
+      "scale": 33304707840004145079716639776,
+      "symbol": "CTAS"
+    },
+    {
+      "address": "0x562D32Ce674b60a3BD55e6539E34284866759b07",
+      "balance": 1009543162152684474783277102,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "HP Inc.",
+      "scale": 33153399060048847315525216723,
+      "symbol": "HPQ"
+    },
+    {
+      "address": "0xdECE83f1a8C8b4257C35a7B5e46dD7fEcE8E4Fe9",
+      "balance": 1890389284435323612278050121,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Kinder Morgan Inc Class P",
+      "scale": 32760447900092564676387721950,
+      "symbol": "KMI"
+    },
+    {
+      "address": "0x7121F8e567eaC9E904c9A72d066e92290Ba7c9AE",
+      "balance": 668405811202088714113651309,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Johnson Controls International plc",
+      "scale": 32691729840032797911285886348,
+      "symbol": "JCI"
+    },
+    {
+      "address": "0x1A527964bE64D890B286e6102719A4F749CAdD3B",
+      "balance": 267601066787366426039263154,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Hilton Worldwide Holdings Inc",
+      "scale": 32489447100013212633573960737,
+      "symbol": "HLT"
+    },
+    {
+      "address": "0x111BCe6402003a151ABD91f837dC45FdBe638b3d",
+      "balance": 349567953605228347175641305,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Consolidated Edison Inc.",
+      "scale": 32237158260017394771652824359,
+      "symbol": "ED"
+    },
+    {
+      "address": "0x13B248D7a8542d03B925c6Ef17ecA93769979E70",
+      "balance": 313222401387875028538155488,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Simon Property Group Inc.",
+      "scale": 32183603340015612124971461845,
+      "symbol": "SPG"
+    },
+    {
+      "address": "0xD983ba70BB1a61566A02aceAa9849Da6744f1232",
+      "balance": 158417219060279572593735714,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Global Payments Inc.",
+      "scale": 32138549860639939720427406265,
+      "symbol": "GPN"
+    },
+    {
+      "address": "0xC7F4EcF261B44dFfD1ba0D89EAe07FAE265C6f10",
+      "balance": 141838821862849995056515331,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "ResMed Inc.",
+      "scale": 31879695300007137150004943485,
+      "symbol": "RMD"
+    },
+    {
+      "address": "0x609287CF513434D217Ed44719D89DF2b996beF1E",
+      "balance": 64134335956782965609394709,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Parker-Hannifin Corporation",
+      "scale": 31747479075826043217034390605,
+      "symbol": "PH"
+    },
+    {
+      "address": "0x0641E103A98A1fb90e27F4425FdB357e77a710Fc",
+      "balance": 657009949171534415972038626,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Kroger Co.",
+      "scale": 31155413400033828465584027961,
+      "symbol": "KR"
+    },
+    {
+      "address": "0x52fe37DCC5A53f48Dd7E56a020932C01335AB427",
+      "balance": 203624188577179029220668341,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Hershey Company",
+      "scale": 31038684960007422820970779332,
+      "symbol": "HSY"
+    },
+    {
+      "address": "0x8250f0A6b39cBf1b34D287FB360654dAD56E5C4b",
+      "balance": 941430795256583478988391994,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "VICI Properties Inc",
+      "scale": 30982489080048743416521011608,
+      "symbol": "VICI"
+    },
+    {
+      "address": "0x994149C6dB2Aa6458286F0A83EF52354785e86CB",
+      "balance": 312309950807955634767915608,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "WEC Energy Group Inc",
+      "scale": 30940548480016192044365232084,
+      "symbol": "WEC"
+    },
+    {
+      "address": "0xF1a51aDA62be1173dff18551D70C4e6a8c1EF573",
+      "balance": 2112078046986447263813204017,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Warner Bros. Discovery Inc. Series A",
+      "scale": 30519529380111013552736186796,
+      "symbol": "WBD"
+    },
+    {
+      "address": "0x398Ca2713C96a4e68eaD3490c9fa7738c67B9B53",
+      "balance": 80732378747386869518814009,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "IDEXX Laboratories Inc.",
+      "scale": 30461135160003252613130481186,
+      "symbol": "IDXX"
+    },
+    {
+      "address": "0x0ADd0e4e4238E39Fce890a042848a038f095a3FA",
+      "balance": 259582080316251500012276958,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Nucor Corporation",
+      "scale": 30430808880013683748499987723,
+      "symbol": "NUE"
+    },
+    {
+      "address": "0x13C6B711f16E0D597908C69498144a3657C43887",
+      "balance": 374375188109785067749240333,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "DexCom Inc.",
+      "scale": 30193360560019890214932250759,
+      "symbol": "DXCM"
+    },
+    {
+      "address": "0xD30E098f01c0344072FD787BfE95970f936130ea",
+      "balance": 499150417445690494421244743,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Public Service Enterprise Group Inc",
+      "scale": 30153678300026554309505578756,
+      "symbol": "PEG"
+    },
+    {
+      "address": "0xd24dEbfa43a70675a44Be86867772184BEF06788",
+      "balance": 271095499283065744378411098,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Discover Financial Services",
+      "scale": 29549411040014716934255621589,
+      "symbol": "DFS"
+    },
+    {
+      "address": "0x7BA696fEA44BEbd36a3105Cc02178C07E2869EAF",
+      "balance": 221857180906017525922705286,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Trane Technologies plc",
+      "scale": 29427138060012093982474077295,
+      "symbol": "TT"
+    },
+    {
+      "address": "0x89104D77607616a08f7F83A4041631De0D625EB3",
+      "balance": 800907282398991784484874908,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Twitter Inc.",
+      "scale": 29273308320040601008215515125,
+      "symbol": "TWTR"
+    },
+    {
+      "address": "0x4A6e20eF3D2b21ff6b29A645494D8Ec0272d075B",
+      "balance": 466768793461797825424236648,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Otis Worldwide Corporation",
+      "scale": 29222334360058538202174575763,
+      "symbol": "OTIS"
+    },
+    {
+      "address": "0x2A04257c0f939C20D5275Dd210081A77f1E0101A",
+      "balance": 149139860783723471829298711,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Illumina Inc.",
+      "scale": 29118068100008216276528170701,
+      "symbol": "ILMN"
+    },
+    {
+      "address": "0x763D42eA6836e8583F29A11Ab30818AF413Eb0d2",
+      "balance": 246131362370893489903906613,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "International Flavors & Fragrances Inc.",
+      "scale": 28969662900013629106510096094,
+      "symbol": "IFF"
+    },
+    {
+      "address": "0x4fE74DA205873Ce57C7b8Ad58432197474a1C35a",
+      "balance": 49552217205369525406631985,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "TransDigm Group Incorporated",
+      "scale": 28443469680002794630474593368,
+      "symbol": "TDG"
+    },
+    {
+      "address": "0x8f2120b230F349aE0024340dCaE39198689feEB9",
+      "balance": 137426200176806466637472830,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Cummins Inc.",
+      "scale": 28179243900007823193533362527,
+      "symbol": "CMI"
+    },
+    {
+      "address": "0x1c884A6031ba528D18648a8eD38FE249eEF91FE1",
+      "balance": 337865470730981034924342741,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Eversource Energy",
+      "scale": 28127302080019269018965075658,
+      "symbol": "ES"
+    },
+    {
+      "address": "0xc35565d68f091f640fA580a3A1636f42f44253dd",
+      "balance": 170703839737663266882476491,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "M&T Bank Corporation",
+      "scale": 28116655620159262336733117524,
+      "symbol": "MTB"
+    },
+    {
+      "address": "0xbcA59Fce42155f4711b7d93c96f608d8aaBAa9Eb",
+      "balance": 216194672088078697759167147,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Verisk Analytics Inc",
+      "scale": 28115102520008911921302240833,
+      "symbol": "VRSK"
+    },
+    {
+      "address": "0xB86c80568E581857Da981e412919948ea7c91C6e",
+      "balance": 345403698198175173539307538,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Ross Stores Inc.",
+      "scale": 27981155220019801824826460692,
+      "symbol": "ROST"
+    },
+    {
+      "address": "0xca0B938fdF59fBF5C694C6e326907D212DD7F21c",
+      "balance": 553683864638157985669958981,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "DuPont de Nemours Inc.",
+      "scale": 27922821000056320122342741564,
+      "symbol": "DD"
+    },
+    {
+      "address": "0x8E4564B810785BC5078c7c9aB1cd73aFE4292A80",
+      "balance": 328812567946123902706524857,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "PACCAR Inc",
+      "scale": 27682731720019053876097293476,
+      "symbol": "PCAR"
+    },
+    {
+      "address": "0x07661FaF12E91E0C86b969721c787857c01FB7dC",
+      "balance": 325351757588857439325973111,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Hess Corporation",
+      "scale": 27620526060015411142560674027,
+      "symbol": "HES"
+    },
+    {
+      "address": "0x8B77ef5CA90901ec76EEfc96cBfA9466c70C995F",
+      "balance": 129209656461562539917835959,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Enphase Energy Inc.",
+      "scale": 27587558820023538437460082165,
+      "symbol": "ENPH"
+    },
+    {
+      "address": "0xf9Da5E183a414cd301b1D0b5315b649c5f94e8df",
+      "balance": 562473227979295387949800904,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Fastenal Company",
+      "scale": 27324946140133020704612050199,
+      "symbol": "FAST"
+    },
+    {
+      "address": "0x224014Fc712F9AEcB4781B88B7734bb65191Ace7",
+      "balance": 704926491592002342751865086,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Walgreens Boots Alliance Inc",
+      "scale": 27308815141041407997657248135,
+      "symbol": "WBA"
+    },
+    {
+      "address": "0x02769e862956A808fE8Bb1A8C51b424670adf529",
+      "balance": 173317727499849149496656574,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "First Republic Bank",
+      "scale": 27306234180166500150850503343,
+      "symbol": "FRC"
+    },
+    {
+      "address": "0xDe035AF8DcE2Dc7c8E1e5b8964E72C45B6C4c031",
+      "balance": 286058560606447123899721364,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "PPG Industries Inc.",
+      "scale": 27075014021820597719799939053,
+      "symbol": "PPG"
+    },
+    {
+      "address": "0x22Afdc511688d812cfb88f7Db05fB223c70bbE09",
+      "balance": 698546376592002353062487545,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Kraft Heinz Company",
+      "scale": 27061688220041407997646937512,
+      "symbol": "KHC"
+    },
+    {
+      "address": "0xC0B7572e55a75d376389e094777A468b6faEEa38",
+      "balance": 729955319961185573292321617,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Keurig Dr Pepper Inc.",
+      "scale": 26650670340044038814426707679,
+      "symbol": "KDP"
+    },
+    {
+      "address": "0xF02a530Ffb2b43b94530D1c54746A022eb3fE657",
+      "balance": 205176202271398241047693211,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Republic Services Inc.",
+      "scale": 26445161400005728601758952307,
+      "symbol": "RSG"
+    },
+    {
+      "address": "0xE6a4F2520A89Da4b475Fe50EBcF0C65Eab662F34",
+      "balance": 217378956819708064441458350,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "T. Rowe Price Group",
+      "scale": 25970264760006180291935558542,
+      "symbol": "TROW"
+    },
+    {
+      "address": "0xCEAFf85e5b6A41eeE5D73A2aED12B7559472aD24",
+      "balance": 175087213995869331836939893,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Keysight Technologies Inc",
+      "scale": 25834119120005004130668163060,
+      "symbol": "KEYS"
+    },
+    {
+      "address": "0xA68cE18461d3f713ef0113CBE60C62a6821ff275",
+      "balance": 869748735139411474824473600,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Halliburton Company",
+      "scale": 25831538160024860588525175526,
+      "symbol": "HAL"
+    },
+    {
+      "address": "0x54Bd05E3d89F23714Bc93B9a82077b36075CE67C",
+      "balance": 22286148361761065822690352,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Mettler-Toledo International Inc.",
+      "scale": 25782177300000638238934177310,
+      "symbol": "MTD"
+    },
+    {
+      "address": "0x8FEdC147ce5CdbB5d36Fd078fA61c6391107aC10",
+      "balance": 726528107000014828235215702,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Weyerhaeuser Company",
+      "scale": 25544728980020999985171764784,
+      "symbol": "WY"
+    },
+    {
+      "address": "0x8d9a5734030248BD9A2e7F4fF3b2B733Ad42E89f",
+      "balance": 431860800348192613088032819,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "ONEOK Inc.",
+      "scale": 25203397020012651807386911967,
+      "symbol": "OKE"
+    },
+    {
+      "address": "0xddEF2D1D6D39786E132302F3bc8a3df7565dfa10",
+      "balance": 787975636404227034930754242,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Corning Inc",
+      "scale": 24889547760021595772965069246,
+      "symbol": "GLW"
+    },
+    {
+      "address": "0xB3Ec542C71474d0CEba4100150Cd4bF9E5B2e023",
+      "balance": 203095801923467393857130012,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Copart Inc.",
+      "scale": 24678171660006076532606142870,
+      "symbol": "CPRT"
+    },
+    {
+      "address": "0xEBB73D22f1B1ad83eC9A41cFC6121E3D676f8EE5",
+      "balance": 534707258807906193133272780,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "eBay Inc.",
+      "scale": 24382651740016192093806866727,
+      "symbol": "EBAY"
+    },
+    {
+      "address": "0x2822FbFeaB117b1D8Ce1A3aBad9D83a32f2cB5e7",
+      "balance": 149973674272406796746651480,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Old Dominion Freight Line Inc.",
+      "scale": 24355934280002727593203253349,
+      "symbol": "ODFL"
+    },
+    {
+      "address": "0xf1aEe04dA11A246B666CD16e263299CF11a497dB",
+      "balance": 56513783266761779554666370,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "SVB Financial Group",
+      "scale": 24074872260001733238220445334,
+      "symbol": "SIVB"
+    },
+    {
+      "address": "0x0231070B78d74ccf00380e35686b2E440E9314E1",
+      "balance": 330319835825554957519944417,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Equity Residential",
+      "scale": 23971311240010174445042480056,
+      "symbol": "EQR"
+    },
+    {
+      "address": "0x12f95878d115CB84DdD99674A77429E5fe268328",
+      "balance": 347066108157371526860568136,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Tyson Foods Inc. Class A",
+      "scale": 23970080760008842628473139432,
+      "symbol": "TSN"
+    },
+    {
+      "address": "0x502155151b523049c10d0c1c59851b9e8A050098",
+      "balance": 403583362508721407495736816,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "ON Semiconductor Corporation",
+      "scale": 23855813280012491278592504263,
+      "symbol": "ON"
+    },
+    {
+      "address": "0x52Dbd2fd8eC55beE6c037d9F6EBb54fC5E8266da",
+      "balance": 251728674049806776752819345,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "DTE Energy Company",
+      "scale": 23791671900005950193223247181,
+      "symbol": "DTE"
+    },
+    {
+      "address": "0x7d93248A8Aa60246c4f17A3d526A670450d3267B",
+      "balance": 221710434243025787696533882,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "State Street Corporation",
+      "scale": 23580101684524756974212303466,
+      "symbol": "STT"
+    },
+    {
+      "address": "0x6f618c9f7ba0a2c013d85032771690A5929C4078",
+      "balance": 64357406984254604398684562,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Rockwell Automation Inc.",
+      "scale": 23574855843495015745395601315,
+      "symbol": "ROK"
+    },
+    {
+      "address": "0xdB67044865D19eeB3DEDF525D9487aCaA4F59D95",
+      "balance": 206717810702774748853340847,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "D.R. Horton Inc.",
+      "scale": 23485877601082297225251146659,
+      "symbol": "DHI"
+    },
+    {
+      "address": "0x6897b0B5c504811eb5De7C0DB74f5bA2dB21E28D",
+      "balance": 565560851203917170995700403,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Southwest Airlines Co.",
+      "scale": 23465120460017796082829004300,
+      "symbol": "LUV"
+    },
+    {
+      "address": "0x716AC72A1223C3706342E865E2b937B3DF71f56D",
+      "balance": 115300532326569763307168300,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Equifax Inc.",
+      "scale": 23175407700003673430236692832,
+      "symbol": "EFX"
+    },
+    {
+      "address": "0x611814B712A23063f2108f9C45d196cF48cA17f9",
+      "balance": 117365966249697919553677567,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Tractor Supply Company",
+      "scale": 23107012260003750302080446322,
+      "symbol": "TSCO"
+    },
+    {
+      "address": "0xA5F6092F084B60876d6681E2161C62547893f84A",
+      "balance": 432897206021423163961677132,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Edison International",
+      "scale": 22985444520011978576836038323,
+      "symbol": "EIX"
+    },
+    {
+      "address": "0x5bd34Ddf27A534f2201119AA85328Bdb7e6bc8BF",
+      "balance": 664152829635431812652582533,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Fifth Third Bancorp",
+      "scale": 22953122520021364568187347417,
+      "symbol": "FITB"
+    },
+    {
+      "address": "0xa8c85f0BBc45CA7106BDEf1482B6276d1689fAA8",
+      "balance": 253448963736323721299219570,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "LyondellBasell Industries NV",
+      "scale": 22645665660008263676278700780,
+      "symbol": "LYB"
+    },
+    {
+      "address": "0x598F9D88b8541144a2Ac47C138Df547384C7F266",
+      "balance": 190146388710205215185989262,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Extra Space Storage Inc.",
+      "scale": 22400857080004289794784814011,
+      "symbol": "EXR"
+    },
+    {
+      "address": "0x90D861267718c73a4Fe44D608cb013f92257f226",
+      "balance": 49625021955754622522756105,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Laboratory Corporation of America Holdings",
+      "scale": 22348896508147044245377477244,
+      "symbol": "LH"
+    },
+    {
+      "address": "0xBE4F74F2401Da305a743EB7d4415Dd76Cc13994E",
+      "balance": 261451625301039054786587121,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Entergy Corporation",
+      "scale": 22204058880006698960945213413,
+      "symbol": "ETR"
+    },
+    {
+      "address": "0x0388CF994420346633C13986263bA31311a7980C",
+      "balance": 783536718835596192844549045,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Coterra Energy Inc.",
+      "scale": 22111406940026164403807155451,
+      "symbol": "CTRA"
+    },
+    {
+      "address": "0xb6c4c8564401BB55206E1F3B53DB4bA1cBD6C696",
+      "balance": 379994911114887397992759423,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Zimmer Biomet Holdings Inc.",
+      "scale": 21447634980006885112602007241,
+      "symbol": "ZBH"
+    },
+    {
+      "address": "0xD73D882CBAaa91d1b6019F660FD90E58dbEB6a62",
+      "balance": 71391454540359510460545850,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "West Pharmaceutical Services Inc.",
+      "scale": 21431001360002459640489539454,
+      "symbol": "WST"
+    },
+    {
+      "address": "0xc4f7a7D359fE363A1f3d79C7823cBe133908FFC7",
+      "balance": 146647960269109952907439637,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Willis Towers Watson Public Limited Company",
+      "scale": 21346998448836730890047092560,
+      "symbol": "WTW"
+    },
+    {
+      "address": "0xCDa4B0D8930005ddBB7E8916E20B0A8BA06eA6aA",
+      "balance": 361981928462056808036422473,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Duke Realty Corporation",
+      "scale": 21317116500012537943191963578,
+      "symbol": "DRE"
+    },
+    {
+      "address": "0xF77756dbDa2643D9f8E0e26E50888dD2C30d2E9D",
+      "balance": 560541589518219692651141185,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "FirstEnergy Corp.",
+      "scale": 21244527000019481780307348859,
+      "symbol": "FE"
+    },
+    {
+      "address": "0x7228632d7c1121578e1D282449FF95FE147B5A76",
+      "balance": 97422238533035282974732483,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "STERIS Plc",
+      "scale": 20748014820003466964717025268,
+      "symbol": "STE"
+    },
+    {
+      "address": "0xBF5Cc8E6b06FDe83fA5b24DC0B0E1e68d43409FF",
+      "balance": 325542271368628316628571094,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Hartford Financial Services Group Inc.",
+      "scale": 20665424100011631371683371429,
+      "symbol": "HIG"
+    },
+    {
+      "address": "0xdcDfC4F328c7b8FB1Df3fa0134E58b555CF615f3",
+      "balance": 50797966173824018716910483,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Ulta Beauty Inc",
+      "scale": 20538634440001826175981283090,
+      "symbol": "ULTA"
+    },
+    {
+      "address": "0x46D406D390aaA202F7dBd7186AA4D0f4f93E5989",
+      "balance": 741990650052573959513506578,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "PPL Corporation",
+      "scale": 20330544540026947426040486493,
+      "symbol": "PPL"
+    },
+    {
+      "address": "0x9cd5a529C4767191A5f91dda33D86B8a502EaEf3",
+      "balance": 52630400235195888399481770,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Northern Trust Corporation",
+      "scale": 20237445180449764804111600518,
+      "symbol": "NTRS"
+    },
+    {
+      "address": "0x83502cF4b66b99E27c12fa27A16ea87679aa549D",
+      "balance": 253631759694902659441184978,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Lennar Corporation Class A",
+      "scale": 20125680840009305097340558815,
+      "symbol": "LEN"
+    },
+    {
+      "address": "0x42B573D87B2c1ae02aE6c294383B4Bd81Ed88f4B",
+      "balance": 304255923991221647344513712,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "McCormick & Company Incorporated",
+      "scale": 20019276240009008778352655486,
+      "symbol": "MKC"
+    },
+    {
+      "address": "0x57A7BB2FCeF52fD2856E6E1bd7590aadF4cae159",
+      "balance": 388227948660138424980417689,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Ventas Inc.",
+      "scale": 19989857820014339861575019582,
+      "symbol": "VTR"
+    },
+    {
+      "address": "0xcE89B727fB72B25eF652bE60D9dF2d2b7F572816",
+      "balance": 603276747482175298452053672,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Delta Air Lines Inc.",
+      "scale": 19781445300022517824701547946,
+      "symbol": "DAL"
+    },
+    {
+      "address": "0x6C68aeF7E652A54c129A1b37AbcA27aEaEc9c760",
+      "balance": 42306958415299578181009966,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "W.W. Grainger Inc.",
+      "scale": 19712082000001584700421818990,
+      "symbol": "GWW"
+    },
+    {
+      "address": "0x5d405436223E0B87fc48Ea7C25f46E86ed8272bA",
+      "balance": 59569991767688140551118217,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Waters Corporation",
+      "scale": 19703371260002232311859448882,
+      "symbol": "WAT"
+    },
+    {
+      "address": "0x79Db6c57334a78385cD05394ba7178FD150d15aB",
+      "balance": 138533873792584298329111094,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Genuine Parts Company",
+      "scale": 19642718700005207415701670889,
+      "symbol": "GPC"
+    },
+    {
+      "address": "0xD90d40798ee6809Ff3d2284970Ee06be58669621",
+      "balance": 139006050016729418283952767,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Gartner Inc.",
+      "scale": 19554058200002983270581716047,
+      "symbol": "IT"
+    },
+    {
+      "address": "0xf6f5C558E4b99f308aC1C14Bf98F1Ea89f3a2aBF",
+      "balance": 188117584160519946058626802,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Vulcan Materials Company",
+      "scale": 19546960560004839480053941373,
+      "symbol": "VMC"
+    },
+    {
+      "address": "0xb0D655DE17055b8e91b3dB6547732331b6C596A8",
+      "balance": 60267594714906299157404775,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Martin Marietta Materials Inc.",
+      "scale": 19473665820002285093700842595,
+      "symbol": "MLM"
+    },
+    {
+      "address": "0x1e120484560447eE95A516c361Fc4f3ea24aa1E7",
+      "balance": 213250729186583922214996886,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Take-Two Interactive Software Inc.",
+      "scale": 19464369840525813416077785003,
+      "symbol": "TTWO"
+    },
+    {
+      "address": "0x6fEDa10Efc49dca8C8bF56e5457b23F9ADB61811",
+      "balance": 341122186954779651572793226,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Fortive Corp.",
+      "scale": 19307516520013045220348427207,
+      "symbol": "FTV"
+    },
+    {
+      "address": "0xb0229aa93e5B1cDE0EFcf4b413F0bBab8D664F90",
+      "balance": 111340593681855824479848056,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Mid-America Apartment Communities Inc.",
+      "scale": 19038128820004318144175520152,
+      "symbol": "MAA"
+    },
+    {
+      "address": "0xe95E8171b4B0CB16e1626Bac45E88E6aE8F4C754",
+      "balance": 162534295689235270095616007,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Diamondback Energy Inc.",
+      "scale": 19016513280006310764729904384,
+      "symbol": "FANG"
+    },
+    {
+      "address": "0x0F177198F647Dd420dBc68Ef101c636f6E4F7997",
+      "balance": 347840002633628854845615977,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "CMS Energy Corporation",
+      "scale": 18698147340011366371145154384,
+      "symbol": "CMS"
+    },
+    {
+      "address": "0xD22675fFa6A79FBb28BB164731A8Ac4a9f974721",
+      "balance": 621599249181194267455944164,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "CenterPoint Energy Inc.",
+      "scale": 18492578400024818805732544056,
+      "symbol": "CNP"
+    },
+    {
+      "address": "0x0D40A94fBD3227355D5f2aebF3450736Bf9b55dC",
+      "balance": 68247407270491033963830488,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "United Rentals Inc.",
+      "scale": 18461606880002729508966036170,
+      "symbol": "URI"
+    },
+    {
+      "address": "0xc97294B192D2E2434320d0b24Ba270D9dd314f3e",
+      "balance": 898177198894402439923988485,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Regions Financial Corporation",
+      "scale": 18367724460036105597560076012,
+      "symbol": "RF"
+    },
+    {
+      "address": "0xe313dB7F72c3757B9f87BbA0972F8600BB77c1F2",
+      "balance": 320123808523844052958996202,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Match Group Inc.",
+      "scale": 18333586740010476155947041004,
+      "symbol": "MTCH"
+    },
+    {
+      "address": "0xceeabC75C2Fa9a8004DDa3Ab77D238Bd1094797C",
+      "balance": 1383368851550499258530221357,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Huntington Bancshares Incorporated",
+      "scale": 18094465320056449500741469779,
+      "symbol": "HBAN"
+    },
+    {
+      "address": "0x5443fdBb71A5D5D6F395e66Dd350f87ae30c050d",
+      "balance": 251329677584461669657844955,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Kellogg Company",
+      "scale": 18083173620046415538330342155,
+      "symbol": "K"
+    },
+    {
+      "address": "0x0eD3b4f81002f847C673eFB6189e2be3ca59F51e",
+      "balance": 137485672368397002525829120,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Quanta Services Inc.",
+      "scale": 18025747260005631602997474171,
+      "symbol": "PWR"
+    },
+    {
+      "address": "0x7dDdf01Db271dB11cDCBEBbA2728F22687991ec7",
+      "balance": 112626135343339261032667418,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Nasdaq Inc.",
+      "scale": 17857984860104656660738967333,
+      "symbol": "NDAQ"
+    },
+    {
+      "address": "0x92Bd0df002891544f3530278D7eE5B0C79B82134",
+      "balance": 173609251811921067774911737,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Catalent Inc",
+      "scale": 17833143120007188078932225088,
+      "symbol": "CTLT"
+    },
+    {
+      "address": "0xAE301Bc1A4ec3D653295922b7Bf4e1738298B66C",
+      "balance": 118666061068397880485348075,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Clorox Company",
+      "scale": 17766683400004931602119514652,
+      "symbol": "CLX"
+    },
+    {
+      "address": "0x88d2Ebb30Bc87ac805bA65f57e7680b0446544e6",
+      "balance": 322461609575282374130749265,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Constellation Energy Corporation",
+      "scale": 17735389260013424717625869251,
+      "symbol": "CEG"
+    },
+    {
+      "address": "0x2508f857464286FeC133C56Ea38621389F84812D",
+      "balance": 44801580133429058869433955,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Teledyne Technologies Incorporated",
+      "scale": 17722161840001866570941130566,
+      "symbol": "TDY"
+    },
+    {
+      "address": "0xe3F020DB8C8e9cd3E92e4725A0598E04202c76D6",
+      "balance": 41450609266761826738860387,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Monolithic Power Systems Inc.",
+      "scale": 17657960460001733238173261140,
+      "symbol": "MPWR"
+    },
+    {
+      "address": "0x7850e929e2360132E027CEDF30B09911BA572Eda",
+      "balance": 185647630121644579158038111,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Raymond James Financial Inc.",
+      "scale": 17398896600007878355420841962,
+      "symbol": "RJF"
+    },
+    {
+      "address": "0xbcD2cd4495d3CA09fD486e314cFCD3D3c6f7Fd51",
+      "balance": 57017885578752351082673044,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Molina Healthcare Inc.",
+      "scale": 17387604900002421247648917327,
+      "symbol": "MOH"
+    },
+    {
+      "address": "0x181Ca3F0ae1AD8211A456D8DE86530679dF54b0e",
+      "balance": 53350703717025963161387311,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "EPAM Systems Inc.",
+      "scale": 17254685460002282974036838613,
+      "symbol": "EPAM"
+    },
+    {
+      "address": "0x890f14B4eDF7ABa3CfD5fa9e577b364d93241614",
+      "balance": 304045153525330302277432247,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Hologic Inc.",
+      "scale": 17202803640010474669697722568,
+      "symbol": "HOLX"
+    },
+    {
+      "address": "0x9915eeE6Be482A01490267f2F2D6B9b55dd6BE7b",
+      "balance": 137251029088868246129633845,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Dover Corporation",
+      "scale": 17144026800005911131753870366,
+      "symbol": "DOV"
+    },
+    {
+      "address": "0xb5e6643Ec81b5fAb5D7b9b8959570da62b9Eed62",
+      "balance": 1238504881418035688600445174,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Hewlett Packard Enterprise Co.",
+      "scale": 17066598000053581964311399555,
+      "symbol": "HPE"
+    },
+    {
+      "address": "0x9E66BF970879866a2DbADf2df373Ca4A7C60F214",
+      "balance": 93343863939286887989688430,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "VeriSign Inc.",
+      "scale": 16972715580004060713112010312,
+      "symbol": "VRSN"
+    },
+    {
+      "address": "0x048BE6563bE94b469d8D327663A0831d5F879B37",
+      "balance": 63571591230355719079673809,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Essex Property Trust Inc.",
+      "scale": 16947551220002769644280920326,
+      "symbol": "ESS"
+    },
+    {
+      "address": "0x7601848F052154c821846B4D3e7c59E3274BdA2B",
+      "balance": 350418861639911241769901699,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Mosaic Company",
+      "scale": 16844635440015360088758230098,
+      "symbol": "MOS"
+    },
+    {
+      "address": "0xEdD0F4bE314993A7abB1C40E3FA6800e60805248",
+      "balance": 120979559625813605548774500,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "PerkinElmer Inc.",
+      "scale": 16621382400005374186394451226,
+      "symbol": "PKI"
+    },
+    {
+      "address": "0xcfa8CF7E369cC1F3e476473E669649A8654b620E",
+      "balance": 383125212935995674348362147,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Ingersoll Rand Inc.",
+      "scale": 16577828700017064004325651638,
+      "symbol": "IR"
+    },
+    {
+      "address": "0xEED94526eb27733d8a11AF66e8417E2d4C81596F",
+      "balance": 74886406630803260504988034,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "FLEETCOR Technologies Inc.",
+      "scale": 16411356780003369196739495012,
+      "symbol": "FLT"
+    },
+    {
+      "address": "0x88C7D9F55275af50249FD1BD6D69BF50a32dbFc4",
+      "balance": 156520740951222294999319514,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Skyworks Solutions Inc.",
+      "scale": 16395548400007048777705000680,
+      "symbol": "SWKS"
+    },
+    {
+      "address": "0x641A970514569Bb9230c841f8Dc191e999826643",
+      "balance": 907554148093658376543264999,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "KeyCorp",
+      "scale": 16381353120040906341623456735,
+      "symbol": "KEY"
+    },
+    {
+      "address": "0x4e5bF73B0580A255B8269105ba3E930CBA8bE6C4",
+      "balance": 162689013625991540349890007,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Expeditors International of Washington Inc.",
+      "scale": 16290051660007374008459650110,
+      "symbol": "EXPD"
+    },
+    {
+      "address": "0xDC7B7C0aa8EF4E67E29FceF5b76d421ac096603B",
+      "balance": 145160221390390593596845992,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Cincinnati Financial Corporation",
+      "scale": 16215849060006609609406403154,
+      "symbol": "CINF"
+    },
+    {
+      "address": "0xF4dF1C890fa3c6970eb7b5F6d12bEC6b87E2971f",
+      "balance": 125656084262495419136471236,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Jacobs Engineering Group Inc.",
+      "scale": 16170682260005737504580863529,
+      "symbol": "J"
+    },
+    {
+      "address": "0x518b37435f8D5AB9a034216c2783bFc3B4Eb798b",
+      "balance": 143157960439137477879726273,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Stanley Black & Decker Inc.",
+      "scale": 16110997560006560862522120274,
+      "symbol": "SWK"
+    },
+    {
+      "address": "0x786f22f43a2C5531D14D5cA6671C072FF9d15321",
+      "balance": 115988329597106201112545204,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Quest Diagnostics Incorporated",
+      "scale": 15850965840005402893798887455,
+      "symbol": "DGX"
+    },
+    {
+      "address": "0xcA7884D2C1994BcE201c1324112304e5d2b7121f",
+      "balance": 479594372550639556101312635,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Synchrony Financial",
+      "scale": 15773859660022449360443898687,
+      "symbol": "SYF"
+    },
+    {
+      "address": "0x12727a56462a3Ae846b35a7f13b326F7BcBa5916",
+      "balance": 50306371632324948439496791,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Zebra Technologies Corporation Class A",
+      "scale": 15688042740002367675051560503,
+      "symbol": "ZBRA"
+    },
+    {
+      "address": "0x3EEdf013428f645aFDf5c6a60216dF7A39e336C0",
+      "balance": 113544573454371766662094840,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "SolarEdge Technologies Inc.",
+      "scale": 15530664180002545628233337905,
+      "symbol": "SEDG"
+    },
+    {
+      "address": "0x42298A4A45703E27CD461970c1bb596D9559f3E5",
+      "balance": 179841092437325016688637198,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Westinghouse Air Brake Technologies Corporation",
+      "scale": 15507698160008562674983311363,
+      "symbol": "WAB"
+    },
+    {
+      "address": "0xA9828230569cfa718c68239769e349059b67E7E0",
+      "balance": 191371945861887822488528591,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Seagate Technology Holdings PLC",
+      "scale": 15462853980009138112177511471,
+      "symbol": "STX"
+    },
+    {
+      "address": "0x09499046c52E39C1113f05cd51e89835856060cb",
+      "balance": 359970005671685862916036899,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "International Paper Company",
+      "scale": 15338322660017328314137083963,
+      "symbol": "IP"
+    },
+    {
+      "address": "0x3212fe659df0BdDB7598c68Ea9F3909481122586",
+      "balance": 676071914271300335825542700,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Marathon Oil Corporation",
+      "scale": 15252183120032728699664174457,
+      "symbol": "MRO"
+    },
+    {
+      "address": "0x0063F9721F5dFd4924C5f6D58bB7B8563EBc773B",
+      "balance": 152862206538054939936458251,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Teradyne Inc.",
+      "scale": 15125716080007461945060063542,
+      "symbol": "TER"
+    },
+    {
+      "address": "0x5EdB05d5E2561dDc9974B0F736772F30D5505c75",
+      "balance": 156170081321552999445971705,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "CarMax Inc.",
+      "scale": 15017315760007678447000554028,
+      "symbol": "KMX"
+    },
+    {
+      "address": "0x109A5eA45cd2f523b87Eff0b6783522Df5ACC36d",
+      "balance": 184602875856731317508368224,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Darden Restaurants Inc.",
+      "scale": 14976080400006143268682491632,
+      "symbol": "DRI"
+    },
+    {
+      "address": "0x98291407d6ab23bEd04060d266cf50551C413054",
+      "balance": 144407129848126079128253079,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Garmin Ltd.",
+      "scale": 14908592820007151873920871747,
+      "symbol": "GRMN"
+    },
+    {
+      "address": "0x92B441eb55ab6AB443830133786389E8a73E29C0",
+      "balance": 36334855200176830087210680,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Domino's Pizza Inc.",
+      "scale": 14906011860001799823169912789,
+      "symbol": "DPZ"
+    },
+    {
+      "address": "0xFA7c7E0448d81057Fce7B19A3435346E053E4687",
+      "balance": 38259240096324789083388188,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Pool Corporation",
+      "scale": 14839229520001903675210916612,
+      "symbol": "POOL"
+    },
+    {
+      "address": "0xAc8bF9430AD7a5b41c3E17527d2071F0FBE738B9",
+      "balance": 580526246930689764847786629,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Paramount Global Class B",
+      "scale": 14745347100829069310235152213,
+      "symbol": "PARA"
+    },
+    {
+      "address": "0x61EAED1E5A83475C770D580F6D7398E6f1E3670d",
+      "balance": 180702795945929327308167785,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Incyte Corporation",
+      "scale": 14736313740009054070672691832,
+      "symbol": "INCY"
+    },
+    {
+      "address": "0x716DE89EF5f0c14F601A0B1809b17518Ef7359E3",
+      "balance": 36788058152577211449224429,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "FactSet Research Systems Inc.",
+      "scale": 14703083880001847422788550776,
+      "symbol": "FDS"
+    },
+    {
+      "address": "0x7D4ba4d350CAD686FcbC65f82b5C79d4A77CA670",
+      "balance": 229869895439651435110577024,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Principal Financial Group Inc.",
+      "scale": 14681790960011560348564889423,
+      "symbol": "PFG"
+    },
+    {
+      "address": "0x6c24A4c75ffF501AD0ca3839Bb685fAf46cf3104",
+      "balance": 227372899527665300093454877,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Evergy Inc.",
+      "scale": 14633720580011472334699906545,
+      "symbol": "EVRG"
+    },
+    {
+      "address": "0x304f3dDD03fcCbEEd63932E4d357Bb65AED8bE49",
+      "balance": 306269492543448533229528519,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "V.F. Corporation",
+      "scale": 14630494380015456551466770471,
+      "symbol": "VFC"
+    },
+    {
+      "address": "0x537A888dAbaDFcC6ABab75e238D7bBbf47c02D00",
+      "balance": 301016796801163811730161335,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Western Digital Corporation",
+      "scale": 14623396740015198836188269839,
+      "symbol": "WDC"
+    },
+    {
+      "address": "0xB1CF418ACc1B2C4684FF3c504B231eB9aA604ecF",
+      "balance": 214138067167261422814901813,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "NetApp Inc.",
+      "scale": 14595651420010832738577185098,
+      "symbol": "NTAP"
+    },
+    {
+      "address": "0x14ba424626c08d6305C03aF934ab7F00371021C5",
+      "balance": 239206260869895475606074929,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Trimble Inc.",
+      "scale": 14560485840012130104524393925,
+      "symbol": "TRMB"
+    },
+    {
+      "address": "0x3013a91887392C64832343d3eF900A4366dac7Dd",
+      "balance": 47436100563974078282982782,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Cooper Companies Inc.",
+      "scale": 14377882920002436025921717017,
+      "symbol": "COO"
+    },
+    {
+      "address": "0x961A63788D9dBEE0672571322b55a51e9DE5d6A3",
+      "balance": 45904297630729487644418448,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Paycom Software Inc.",
+      "scale": 14305616040002369270512355582,
+      "symbol": "PAYC"
+    },
+    {
+      "address": "0x396Bb0e29cb2265AB6E8d245BfA076550d701f49",
+      "balance": 200031414673551658079500602,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Expedia Group Inc.",
+      "scale": 14112426660007326448341920499,
+      "symbol": "EXPE"
+    },
+    {
+      "address": "0x53F2B26c4A603cae90E5ec7DbCbB33c6d3a58797",
+      "balance": 248516252996134861719312811,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Alliant Energy Corp",
+      "scale": 14110753560013003865138280687,
+      "symbol": "LNT"
+    },
+    {
+      "address": "0x7440bC03F7E198f60565D823f2Be847145ADD6Fe",
+      "balance": 167073534371402171854097226,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "J.M. Smucker Company",
+      "scale": 14045966940005628597828145903,
+      "symbol": "SJM"
+    },
+    {
+      "address": "0x76f69A5f3f8bdec4Dce89B88796DD84Ac0ea8566",
+      "balance": 81749562699461446925774494,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "J.B. Hunt Transport Services Inc.",
+      "scale": 14035583100004300538553074226,
+      "symbol": "JBHT"
+    },
+    {
+      "address": "0xF7d37A12A09f0Cd9Ffc77db2F9c26EFdD2d9Ce00",
+      "balance": 29350801805022841533389111,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Generac Holdings Inc.",
+      "scale": 14010772772236194977158466611,
+      "symbol": "GNRC"
+    },
+    {
+      "address": "0x18B0A8cf794991Dc0fa162B237790745cdfDcF97",
+      "balance": 71578471304570633830820400,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Jack Henry & Associates Inc.",
+      "scale": 13993642500262695429366169180,
+      "symbol": "JKHY"
+    },
+    {
+      "address": "0x1338E17E7eD27513fd714Ba29927E8C65D6B3e53",
+      "balance": 164292821482855415757552954,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Camden Property Trust",
+      "scale": 13957569060005517144584242447,
+      "symbol": "CPT"
+    },
+    {
+      "address": "0xD4B2DCe0EDFFE942c1e24b9519e1CFF939b4E6b8",
+      "balance": 525876671084708460341020161,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Healthpeak Properties Inc.",
+      "scale": 13909438680027915291539658980,
+      "symbol": "PEAK"
+    },
+    {
+      "address": "0x09C69A000090Ee5F19C6105280a54e6F48a8E924",
+      "balance": 39015314913059774968631057,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Tyler Technologies Inc.",
+      "scale": 13803619320002086940225031369,
+      "symbol": "TYL"
+    },
+    {
+      "address": "0x5FD7CD6E739d160751a6c648B9F9e451954ce9c8",
+      "balance": 132792635101380940715031941,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "IDEX Corporation",
+      "scale": 13786257840003898619059284968,
+      "symbol": "IEX"
+    },
+    {
+      "address": "0x9c63f9c2E0A9AB9edc36D445e52826B4618d36cc",
+      "balance": 555494139106904456462921945,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "NortonLifeLock Inc.",
+      "scale": 13720705980029893095543537078,
+      "symbol": "NLOK"
+    },
+    {
+      "address": "0xfb395f734914f6f5b9227DF77248013157eF3fFd",
+      "balance": 136424925627464181596052462,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Leidos Holdings Inc.",
+      "scale": 13662957000007372535818403948,
+      "symbol": "LDOS"
+    },
+    {
+      "address": "0x87de4acC02e02b1Cf9cd5b5270623701Fe2c3640",
+      "balance": 202344611046736991640043852,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Omnicom Group Inc",
+      "scale": 13640050980010953263008359956,
+      "symbol": "OMC"
+    },
+    {
+      "address": "0x4c1ebb149779E93d3cb7638854639FF333717AFe",
+      "balance": 170141803745055682009306384,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Xylem Inc.",
+      "scale": 13573913880009254944317990694,
+      "symbol": "XYL"
+    },
+    {
+      "address": "0x79f22cB35E97BE075f1A4223f770ee2674Baa47C",
+      "balance": 255204580068689459074970261,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "LKQ Corporation",
+      "scale": 13525843500013931310540925030,
+      "symbol": "LKQ"
+    },
+    {
+      "address": "0x6905e868bD24C2ad0550A778683e99274FdA2043",
+      "balance": 3020186834385039062488797,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "NVR Inc.",
+      "scale": 13464868320000165614960937511,
+      "symbol": "NVR"
+    },
+    {
+      "address": "0x93A7E99efC72B168A8650723feE4eA8225DDa934",
+      "balance": 278858055570576395197783549,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Hormel Foods Corporation",
+      "scale": 13307107140015429423604802216,
+      "symbol": "HRL"
+    },
+    {
+      "address": "0x1775cb11dd71c7a5bc8230895070Fa18233Fcc37",
+      "balance": 292558910829510283047274202,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "UDR Inc.",
+      "scale": 13290976140546170489716952726,
+      "symbol": "UDR"
+    },
+    {
+      "address": "0x26d45DD29b085A65C1aeDa0d63d0D464e954b20B",
+      "balance": 208658191210304864046091354,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Textron Inc.",
+      "scale": 13180962720392789695135953909,
+      "symbol": "TXT"
+    },
+    {
+      "address": "0xfb00BD979543253660eC3687A802a4D49B9C0aA8",
+      "balance": 278721432399134664349189155,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Iron Mountain Inc.",
+      "scale": 13083208860528600865335650811,
+      "symbol": "IRM"
+    },
+    {
+      "address": "0x2DB749e619904aECc6d4F76d6B475CC14C59E680",
+      "balance": 203096343001184121281305725,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "W. R. Berkley Corporation",
+      "scale": 12988035960387998815878718695,
+      "symbol": "WRB"
+    },
+    {
+      "address": "0x51B31d12db4396ec73D33157CBbD8d22EF69cd8E",
+      "balance": 36890426509874479714712935,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Bio-Techne Corporation",
+      "scale": 12985455000070490125520285287,
+      "symbol": "TECH"
+    },
+    {
+      "address": "0x5C3B4daF1123C1Ca7e67cD157Fc2c167F300643f",
+      "balance": 127934167892838601313183859,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "C.H. Robinson Worldwide Inc.",
+      "scale": 12898347600246107161398686816,
+      "symbol": "CHRW"
+    },
+    {
+      "address": "0x2B73EE1f392e3dDB09E3e054238C679FB585d119",
+      "balance": 231544156216730925788957640,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Masco Corporation",
+      "scale": 12688644600452783269074211042,
+      "symbol": "MAS"
+    },
+    {
+      "address": "0xf899fe3D662121ab533a7C34C117fE5F9b79ae6e",
+      "balance": 62797355853756173070454558,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "FMC Corporation",
+      "scale": 12670959773216146243826929545,
+      "symbol": "FMC"
+    },
+    {
+      "address": "0x16c83ff2B8cb535C9ef36f3773d82A6D2Ac752bA",
+      "balance": 91591495731430347858362613,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Packaging Corporation of America",
+      "scale": 12665415961041268569652141638,
+      "symbol": "PKG"
+    },
+    {
+      "address": "0xB2c87da7161ddc362E780084fC8C44C6F0619E8d",
+      "balance": 122562017091813172930426491,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Citrix Systems Inc.",
+      "scale": 12571210920241908186827069573,
+      "symbol": "CTXS"
+    },
+    {
+      "address": "0x797DCeBFA5851cC3EC2A1A6B05e70a9ABb4cCF9a",
+      "balance": 300228326972644160201211254,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "United Airlines Holdings Inc.",
+      "scale": 12540562020594027355839798789,
+      "symbol": "UAL"
+    },
+    {
+      "address": "0xeac38b1d850b34F9742BE7dC3b7a4c486ac84cc1",
+      "balance": 595456142013683492240291465,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Kimco Realty Corporation",
+      "scale": 12510558361180986316507759709,
+      "symbol": "KIM"
+    },
+    {
+      "address": "0xAA9260377A9797B780f5638f4A35b603daf6CB09",
+      "balance": 361692978379282524579362088,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Howmet Aerospace Inc.",
+      "scale": 12471198720719620717475420638,
+      "symbol": "HWM"
+    },
+    {
+      "address": "0x604b07d5F0769DE44A163046ce768e67C6F9c6D5",
+      "balance": 65210394018501579928386967,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Signature Bank",
+      "scale": 12259560000231981498420071614,
+      "symbol": "SBNY"
+    },
+    {
+      "address": "0x76B280127e3891d4c303F3771A3db374976Cd209",
+      "balance": 333430698019103757043740897,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Las Vegas Sands Corp.",
+      "scale": 11870157660696980896242956259,
+      "symbol": "LVS"
+    },
+    {
+      "address": "0x48E3E59E5C99eA4fc464f6293E8ccEaa33F8DA8e",
+      "balance": 1163466265701006560877334825,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Viatris Inc.",
+      "scale": 11797568162899690993439122686,
+      "symbol": "VTRS"
+    },
+    {
+      "address": "0xe07a128278668C553fc4F7d01BD59154944b13a7",
+      "balance": 127055678873231922951945525,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Live Nation Entertainment Inc.",
+      "scale": 11584961580272126768077048055,
+      "symbol": "LYV"
+    },
+    {
+      "address": "0xaD7B7bA8A4F87f1C80e8560b6a8e43B751dB6c62",
+      "balance": 682810676934374195182998174,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Host Hotels & Resorts Inc.",
+      "scale": 11532697141469065625804817001,
+      "symbol": "HST"
+    },
+    {
+      "address": "0x3Aa52f7029C8B718897A73fEe5FD9AC1e603EbB1",
+      "balance": 403885409385322566165867755,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "NiSource Inc",
+      "scale": 11510758980870614677433834132,
+      "symbol": "NI"
+    },
+    {
+      "address": "0xe9F004FEF040519BCC498eD81B7d6e55022D0413",
+      "balance": 124115848796159109909473940,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Eastman Chemical Company",
+      "scale": 11439782580269203840890090526,
+      "symbol": "EMN"
+    },
+    {
+      "address": "0x4FC11aF8bB2e2464B423735BD9b054cd91863F7A",
+      "balance": 44538065523993564143000033,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Teleflex Incorporated",
+      "scale": 11337189420097476006435857000,
+      "symbol": "TFX"
+    },
+    {
+      "address": "0x06dF341b3048D861639D25E47A45DEE2cC5B5A67",
+      "balance": 52142707410150730231312063,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Nordson Corporation",
+      "scale": 11192978280115589849269768688,
+      "symbol": "NDSN"
+    },
+    {
+      "address": "0xa40B6A924FE8f8FD0F6daD5c6e0bD51C2d23f518",
+      "balance": 367426332645232468370073383,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Interpublic Group of Companies Inc.",
+      "scale": 11140391220818354767531629927,
+      "symbol": "IPG"
+    },
+    {
+      "address": "0xc6A36D159BC22C30728C3DbA9065AcD3e431aC37",
+      "balance": 250313516197197293395449593,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Loews Corporation",
+      "scale": 10986884100429802802706604550,
+      "symbol": "L"
+    },
+    {
+      "address": "0x34fca288bDC5eC3DEDA358C8778BdF8c942f5Db7",
+      "balance": 246801899361352927676814405,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Molson Coors Beverage Company Class B",
+      "scale": 10941072060423638647072323186,
+      "symbol": "TAP"
+    },
+    {
+      "address": "0x7E60Dc83ffF4E4A73B4895e25B97cA9e72530D2C",
+      "balance": 99710531233219925793761896,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "PTC Inc.",
+      "scale": 10767765120229766780074206238,
+      "symbol": "PTC"
+    },
+    {
+      "address": "0x3Ed96BC1609F34Ae0F3Be84fD92dE0708755a10A",
+      "balance": 51692138450423621509297169,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Snap-on Incorporated",
+      "scale": 10728728100119549576378490703,
+      "symbol": "SNA"
+    },
+    {
+      "address": "0x0F74F67810d078107CF20edf4a05226fB613e08f",
+      "balance": 122141545266275778368916799,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Etsy Inc.",
+      "scale": 10681302960283733724221631083,
+      "symbol": "ETSY"
+    },
+    {
+      "address": "0x8a1257108aa0107FaFa03BB69ABEb19f5FD653eA",
+      "balance": 77376378400919211197869498,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Henry Schein Inc.",
+      "scale": 10623612890394599080788802131,
+      "symbol": "HSIC"
+    },
+    {
+      "address": "0x311B670d82c060269cB0A47eaBD3fea33DD139e2",
+      "balance": 46904764214973813734224813,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Charles River Laboratories International Inc.",
+      "scale": 10600970580109785026186265776,
+      "symbol": "CRL"
+    },
+    {
+      "address": "0x4C4165bc58712aC504223eAfc53be1E4f72349E5",
+      "balance": 302941038462861942690179068,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Fox Corporation Class A",
+      "scale": 10594422071100077478867457487,
+      "symbol": "FOXA"
+    },
+    {
+      "address": "0x67127433ea121c9D671DF483cf53035828013F5e",
+      "balance": 102766704914558298582033327,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Qorvo Inc.",
+      "scale": 10576774080241085441701417966,
+      "symbol": "QRVO"
+    },
+    {
+      "address": "0xc6a78B251bC80d094D210d4f06aa6bB8d7E7078E",
+      "balance": 140852627281906210231605611,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Lamb Weston Holdings Inc.",
+      "scale": 10535801340331718093789768394,
+      "symbol": "LW"
+    },
+    {
+      "address": "0x8b70D665dF1cd68dbeda0E424746538806304468",
+      "balance": 342973958798920141913064466,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "MGM Resorts International",
+      "scale": 10426433160816201079858086936,
+      "symbol": "MGM"
+    },
+    {
+      "address": "0x9d291fAE780d859c15cb4991fc092e8359f3Bb58",
+      "balance": 38357488094997426639346855,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Everest Re Group Ltd.",
+      "scale": 10355779380091905002573360653,
+      "symbol": "RE"
+    },
+    {
+      "address": "0xf63468833B9b9449c02F872B8B2c55db6c292EbB",
+      "balance": 231626844041251243356669956,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "PulteGroup Inc.",
+      "scale": 10319000700556958748756643330,
+      "symbol": "PHM"
+    },
+    {
+      "address": "0x3DF89d12caAe2aAd52A663D4E9a61F9E7AcDa798",
+      "balance": 254949041828909130641399517,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "WestRock Company",
+      "scale": 10299966120614171090869358600,
+      "symbol": "WRK"
+    },
+    {
+      "address": "0xbCE4b7d2C4513Eb867a73006d93635FF36689b72",
+      "balance": 126812987766051088785261980,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Hasbro Inc.",
+      "scale": 10142527560310233948911214738,
+      "symbol": "HAS"
+    },
+    {
+      "address": "0xf3cE15b413913F27B23C9E1a4F40c384511daA9F",
+      "balance": 36650170687302589377966504,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "MarketAxess Holdings Inc.",
+      "scale": 10069292820090312697410622034,
+      "symbol": "MKTX"
+    },
+    {
+      "address": "0xc3E63F70dd1E4bdec9fA9240Ded1f50A61428561",
+      "balance": 127900790564295122272909273,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Comerica Incorporated",
+      "scale": 9966054420318435704877727090,
+      "symbol": "CMA"
+    },
+    {
+      "address": "0x854080e1dd10fd5D3A443f5E7CFAEB5A19C858fd",
+      "balance": 894479236490073501921419754,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Lumen Technologies Inc.",
+      "scale": 9875075582247509926498078580,
+      "symbol": "LUMN"
+    },
+    {
+      "address": "0x8C2830A3CCb8A677B1bAF25F65CF83e32Eec3362",
+      "balance": 201960140556609418084114157,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Campbell Soup Company",
+      "scale": 9778934820512443390581915886,
+      "symbol": "CPB"
+    },
+    {
+      "address": "0xbB7a8A02273ab5cBdC7D569064fDf2B8845f0339",
+      "balance": 147986811149250010200063989,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Regency Centers Corporation",
+      "scale": 9206284320398850749989799936,
+      "symbol": "REG"
+    },
+    {
+      "address": "0x463C39E3f1925C74f346B6f337790a492FF87237",
+      "balance": 90782774109407451491821444,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Globe Life Inc.",
+      "scale": 9123693600246890592548508179,
+      "symbol": "GL"
+    },
+    {
+      "address": "0x742342232900cBb64493040efC7a335C7357569f",
+      "balance": 311640340674285821104046871,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Juniper Networks Inc.",
+      "scale": 9093689940850325714178895953,
+      "symbol": "JNPR"
+    },
+    {
+      "address": "0x5019D15cF1fE6014628C0B58508c13582283Fc85",
+      "balance": 54832752821425439234712425,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Whirlpool Corporation",
+      "scale": 9059492220150178574560765288,
+      "symbol": "WHR"
+    },
+    {
+      "address": "0x399DA7a620c2f6371Ef39D95847537209f58f415",
+      "balance": 57929770404681234124372042,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "F5 Inc.",
+      "scale": 8786233080163595318765875628,
+      "symbol": "FFIV"
+    },
+    {
+      "address": "0x5fA1aADf5115F671b6a270CF1682C66663202C52",
+      "balance": 240548064950265016877714983,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "NRG Energy Inc.",
+      "scale": 8712675720685049734983122285,
+      "symbol": "NRG"
+    },
+    {
+      "address": "0xe21275A89641667a52EcdD1C01cA7Be6d2aD73D1",
+      "balance": 192238801661964423838706944,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Fortune Brands Home & Security Inc.",
+      "scale": 8649824820379338035576161293,
+      "symbol": "FBHS"
+    },
+    {
+      "address": "0xa5FeC880838379Ee436bF0dAAAb349689980309d",
+      "balance": 165866525635198236171891550,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Robert Half International Inc.",
+      "scale": 8628209280336364801763828108,
+      "symbol": "RHI"
+    },
+    {
+      "address": "0xc5942b4e4A486bA0B4F49ed7e1650a31a357318E",
+      "balance": 411111494966822560881693456,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Nielsen Holdings Plc",
+      "scale": 8444315881016033177439118307,
+      "symbol": "NLSN"
+    },
+    {
+      "address": "0x0B77949b06650Aa767505BADF030E305F2d597Bc",
+      "balance": 143969094346354556524616029,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Sealed Air Corporation",
+      "scale": 8314240020429653645443475384,
+      "symbol": "SEE"
+    },
+    {
+      "address": "0x05fB64e456624ab8E0a1abf680e813f36A6433D4",
+      "balance": 250954095777194266970844804,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Tapestry Inc.",
+      "scale": 8276493480831222805733029155,
+      "symbol": "TPR"
+    },
+    {
+      "address": "0x5323B85f6fd8b7F4D22f1504B04949f9174D59Da",
+      "balance": 196141901098826455616724924,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Caesars Entertainment Inc",
+      "scale": 8222293320591901173544383275,
+      "symbol": "CZR"
+    },
+    {
+      "address": "0x52697b4F99222C00C24D501C19134494508d70C6",
+      "balance": 38818019202320652978205556,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Huntington Ingalls Industries Inc.",
+      "scale": 8040013020119797679347021795,
+      "symbol": "HII"
+    },
+    {
+      "address": "0x782Bf4766815c4A1E2b9D9D524aD455362a159a7",
+      "balance": 223479533271951539523108204,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Lincoln National Corporation",
+      "scale": 8020393200556728048460476891,
+      "symbol": "LNC"
+    },
+    {
+      "address": "0x91F0Eeb39F7B05646EEb5b9434aaE5415026D765",
+      "balance": 249970954048331264946379226,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Organon & Co.",
+      "scale": 7891607820785951668735053621,
+      "symbol": "OGN"
+    },
+    {
+      "address": "0x929CF0CF9d2ee66B024BB2f320D5f4b91a8E085F",
+      "balance": 172202112596012821260051635,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Pinnacle West Capital Corporation",
+      "scale": 7877795160353403987178739949,
+      "symbol": "PNW"
+    },
+    {
+      "address": "0x9FC7Ac796AF3d5fEbb12b2A7CbE309eBd0C7A64A",
+      "balance": 273721789086357171908387769,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Rollins Inc.",
+      "scale": 7788106800680913642828091613,
+      "symbol": "ROL"
+    },
+    {
+      "address": "0x5877218507d0a9D5ABfD9aAdBA6c706DB4461aD2",
+      "balance": 146129214279619001476869675,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Zions Bancorporation N.A.",
+      "scale": 7686421500471720380998523130,
+      "symbol": "ZION"
+    },
+    {
+      "address": "0x76a1A23640C68196000D9782016dF051a2e3F27E",
+      "balance": 329649462433316276379312999,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Royal Caribbean Group",
+      "scale": 7677508140677566683723620687,
+      "symbol": "RCL"
+    },
+    {
+      "address": "0x7de9b1aB32150bDC4F16C6eFbFb78e26C86eFc49",
+      "balance": 88344853837881560570894942,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Pentair plc",
+      "scale": 7559055832519162118439429105,
+      "symbol": "PNR"
+    },
+    {
+      "address": "0xD5C52e21044B6d2c4199acAe8BE62582e14837a8",
+      "balance": 210295756459013369396329937,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "DENTSPLY SIRONA Inc.",
+      "scale": 7545436560691540986630603670,
+      "symbol": "XRAY"
+    },
+    {
+      "address": "0x99817A590156039F6C0Cb11753fAD51D2a2Cc81A",
+      "balance": 375981198922969494821000405,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Newell Brands Inc",
+      "scale": 7346702641536077030505179000,
+      "symbol": "NWL"
+    },
+    {
+      "address": "0xe3EdeBBC88573EbfC4EB583441d5a7EAf8EF080C",
+      "balance": 145413719028719984221891307,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "DXC Technology Co.",
+      "scale": 7177414832066971280015778109,
+      "symbol": "DXC"
+    },
+    {
+      "address": "0xfd488865EbEdB449209998Fa3924ABc0B6C76A24",
+      "balance": 124589659657594329762355931,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Universal Health Services Inc. Class B",
+      "scale": 6957682920230342405670237645,
+      "symbol": "UHS"
+    },
+    {
+      "address": "0xEd01E42d0d9f41D3a625A4a8c9B4EF7D2468458a",
+      "balance": 67838168185828593335589062,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Federal Realty Investment Trust",
+      "scale": 6847609500245814171406664411,
+      "symbol": "FRT"
+    },
+    {
+      "address": "0xEc90aa70111DeF4CB88789d1330709B68ac18762",
+      "balance": 49150660067713452979953748,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Mohawk Industries Inc.",
+      "scale": 6454980960188932286547020046,
+      "symbol": "MHK"
+    },
+    {
+      "address": "0x47B900F2A373328659947CebcEA3079228DECC6C",
+      "balance": 376757714695751196392234176,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "News Corporation Class A",
+      "scale": 6144943141521304248803607766,
+      "symbol": "NWSA"
+    },
+    {
+      "address": "0xFA3d7D66E5AF203F975eC34d0C5EBdaF2d268739",
+      "balance": 99194482458848383438427512,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Wynn Resorts Limited",
+      "scale": 5951693760413541151616561573,
+      "symbol": "WYNN"
+    },
+    {
+      "address": "0x6dF51c785385bc5Ad33E4E628D956fbc5E38a939",
+      "balance": 325527083323814730482801007,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Invesco Ltd.",
+      "scale": 5488411441471676185269517199,
+      "symbol": "IVZ"
+    },
+    {
+      "address": "0x058ad84c96BF6890554a9ef73155f72F98035d57",
+      "balance": 158232522536230508435571879,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Penn National Gaming Inc.",
+      "scale": 5259673860746463769491564428,
+      "symbol": "PENN"
+    },
+    {
+      "address": "0x6Da284134F09566C600C8a94a9d5BD853A1de782",
+      "balance": 59522683978956787441077677,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "DaVita Inc.",
+      "scale": 5218378500283021043212558922,
+      "symbol": "DVA"
+    },
+    {
+      "address": "0x6a18587b1A388df7da62A3aBa63B7673D40fcF36",
+      "balance": 398045789016768584218860001,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Norwegian Cruise Line Holdings Ltd.",
+      "scale": 5146756861918983231415781140,
+      "symbol": "NCLH"
+    },
+    {
+      "address": "0x467365C313EF03fd026aAA8f692C74d72D0bFe2d",
+      "balance": 151274267107873625686417505,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Vornado Realty Trust",
+      "scale": 4547328900812892126374313582,
+      "symbol": "VNO"
+    },
+    {
+      "address": "0xDcD981e36b5989D7A24338ac7f19a7f98158CB29",
+      "balance": 143001933036743363678439427,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Fox Corporation Class B",
+      "scale": 4526035980783963256636321561,
+      "symbol": "FOX"
+    },
+    {
+      "address": "0xb7Ce5793f3590875248d6113d7242B2757b0183B",
+      "balance": 300753710414632710325240102,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "DISH Network Corporation Class A",
+      "scale": 4393822122769269923060146024,
+      "symbol": "DISH"
+    },
+    {
+      "address": "0x3287FE6dA921e255269638681DF4a6015B5B3763",
+      "balance": 45002163203641787162442304,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "Ralph Lauren Corporation Class A",
+      "scale": 4367069519668056289877049060,
+      "symbol": "RL"
+    },
+    {
+      "address": "0x81cC4637721a6C9E95A34E148F12539527BF4936",
+      "balance": 65770061893920723039323447,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "PVH Corp.",
+      "scale": 4068560820401106079276960677,
+      "symbol": "PVH"
+    },
+    {
+      "address": "0x162727A52DFc5547eC1b308F6F70aDaF57f91477",
+      "balance": 118783259740927138542464368,
+      "decimals": 18,
+      "fee": 1000000000000000,
+      "k": 1,
+      "name": "News Corporation Class B",
+      "scale": 1960239139111259072861457536,
+      "symbol": "NWS"
+    }
+  ]
+}

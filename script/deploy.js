@@ -4,17 +4,18 @@ async function main() {
   const pool = await hre.ethers.deployContract(
     "Pool",
     [
-      "Mulitswap",
-      "β2",
+      "Mulitswap Beta 1.1",
+      "β1.1",
       BigInt(5e17),
-      BigInt(1e16),
+      process.env.FEE_RECIPIENT,
+      BigInt(1e18),
       process.env.WRAPPED_NATIVE_TOKEN
     ],
     {}
   );
 
   await pool.waitForDeployment();
-  emit log(`Pool deployed to ${pool.target}`);
+  console.log(`Pool deployed to ${pool.target}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
