@@ -28,4 +28,5 @@ block_coinbase = '0x0000000000000000000000000000000000000000' # the address of `
 block_timestamp = 0                                           # the value of `block.timestamp` in tests
 block_difficulty = 0                                          # the value of `block.difficulty` in tests
 fs_permissions = [{ access = "write", path = "./"}]
-gas_reports = ["Pool"]
+# gas_reports = ["Pool", "LPToken", "Users", "FloatingPoint"]
+gas_reports = ["*"]

@@ -3,12 +3,12 @@ pragma solidity 0.8.19;
 
 import {Pool} from "../contracts/Pool.sol";
 import {IUsers} from "../contracts/Users.sol";
-import {FloatingPoint as FP, UFloat} from "../contracts/libraries/FloatingPoint/src/FloatingPoint.sol";
+import {FloatingPoint, UFloat} from "../contracts/libraries/FloatingPoint/src/FloatingPoint.sol";
 import {PoolUtils} from "./PoolUtils.t.sol";
 
 contract PoolMintable is Pool {
-    using FP for uint256;
-    using FP for UFloat;
+    using FloatingPoint for uint256;
+    using FloatingPoint for UFloat;
 
     constructor(
         string memory name_,
@@ -57,7 +57,7 @@ contract PoolMintable is Pool {
 }
 
 contract LPTokenTest is PoolUtils {
-    using FP for uint256;
+    using FloatingPoint for uint256;
 
     PoolMintable private pool;
 

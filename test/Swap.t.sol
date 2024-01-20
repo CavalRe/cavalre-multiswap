@@ -2,11 +2,11 @@
 pragma solidity 0.8.19;
 
 import {Pool, PoolTest, Token} from "./Pool.t.sol";
-import {IPool, AssetState, QuoteState, FP, UFloat} from "../contracts/Pool.sol";
+import {IPool, AssetState, QuoteState, FloatingPoint, UFloat} from "../contracts/Pool.sol";
 
 contract SwapTest is PoolTest {
-    using FP for uint256;
-    using FP for UFloat;
+    using FloatingPoint for uint256;
+    using FloatingPoint for UFloat;
 
     function setUp() public {
         uint256 startBalance = type(uint256).max / 2;

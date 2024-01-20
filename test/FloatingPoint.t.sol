@@ -2,13 +2,13 @@
 pragma solidity 0.8.19;
 
 // import {Pool, FixedPointMathLib} from "../contracts/Pool.sol";
-import {FloatingPoint as FP, UFloat} from "../contracts/libraries/FloatingPoint/src/FloatingPoint.sol";
+import {FloatingPoint, UFloat} from "../contracts/libraries/FloatingPoint/src/FloatingPoint.sol";
 import {PoolUtils} from "./PoolUtils.t.sol";
 
 contract FloatingPointTest is PoolUtils {
-    using FP for uint256;
-    using FP for int256;
-    using FP for UFloat;
+    using FloatingPoint for uint256;
+    using FloatingPoint for int256;
+    using FloatingPoint for UFloat;
 
     UFloat internal ZERO;
     UFloat internal HALF;
@@ -74,28 +74,28 @@ contract FloatingPointTest is PoolUtils {
     }
 
     function setUp() public {
-        ZERO = FP.normalize(UFloat(0, 0));
-        ONE = FP.normalize(UFloat(1, 0));
-        TWO = FP.normalize(UFloat(2, 0));
-        THREE = FP.normalize(UFloat(3, 0));
-        FOUR = FP.normalize(UFloat(4, 0));
-        FIVE = FP.normalize(UFloat(5, 0));
-        SIX = FP.normalize(UFloat(6, 0));
-        SEVEN = FP.normalize(UFloat(7, 0));
-        EIGHT = FP.normalize(UFloat(8, 0));
-        NINE = FP.normalize(UFloat(9, 0));
-        TEN = FP.normalize(UFloat(10, 0));
+        ZERO = FloatingPoint.normalize(UFloat(0, 0));
+        ONE = FloatingPoint.normalize(UFloat(1, 0));
+        TWO = FloatingPoint.normalize(UFloat(2, 0));
+        THREE = FloatingPoint.normalize(UFloat(3, 0));
+        FOUR = FloatingPoint.normalize(UFloat(4, 0));
+        FIVE = FloatingPoint.normalize(UFloat(5, 0));
+        SIX = FloatingPoint.normalize(UFloat(6, 0));
+        SEVEN = FloatingPoint.normalize(UFloat(7, 0));
+        EIGHT = FloatingPoint.normalize(UFloat(8, 0));
+        NINE = FloatingPoint.normalize(UFloat(9, 0));
+        TEN = FloatingPoint.normalize(UFloat(10, 0));
 
-        HALF = FP.normalize(UFloat(5, -1));
-        ONEnHALF = FP.normalize(UFloat(15, -1));
-        TWOnHALF = FP.normalize(UFloat(25, -1));
-        THREEnHALF = FP.normalize(UFloat(35, -1));
-        FOURnHALF = FP.normalize(UFloat(45, -1));
-        FIVEnHALF = FP.normalize(UFloat(55, -1));
-        SIXnHALF = FP.normalize(UFloat(65, -1));
-        SEVENnHALF = FP.normalize(UFloat(75, -1));
-        EIGHTnHALF = FP.normalize(UFloat(85, -1));
-        NINEnHALF = FP.normalize(UFloat(95, -1));
+        HALF = FloatingPoint.normalize(UFloat(5, -1));
+        ONEnHALF = FloatingPoint.normalize(UFloat(15, -1));
+        TWOnHALF = FloatingPoint.normalize(UFloat(25, -1));
+        THREEnHALF = FloatingPoint.normalize(UFloat(35, -1));
+        FOURnHALF = FloatingPoint.normalize(UFloat(45, -1));
+        FIVEnHALF = FloatingPoint.normalize(UFloat(55, -1));
+        SIXnHALF = FloatingPoint.normalize(UFloat(65, -1));
+        SEVENnHALF = FloatingPoint.normalize(UFloat(75, -1));
+        EIGHTnHALF = FloatingPoint.normalize(UFloat(85, -1));
+        NINEnHALF = FloatingPoint.normalize(UFloat(95, -1));
 
         ZERO_unnormalized = UFloat(0, 0);
         HALF_unnormalized = UFloat(1, -1);
@@ -227,15 +227,15 @@ contract FloatingPointTest is PoolUtils {
     function testGasBlank() public pure {}
 
     function testGasNormalize() public view {
-        FP.normalize(ONE_unnormalized);
+        FloatingPoint.normalize(ONE_unnormalized);
     }
 
     function testGasNormalizeNormalized() public view {
-        FP.normalize(ONE);
+        FloatingPoint.normalize(ONE);
     }
 
     function testGasAlign() public view {
-        FP.align(ONE, TWO_unnormalized);
+        FloatingPoint.align(ONE, TWO_unnormalized);
     }
 
     function testGasAdd() public view {
@@ -271,48 +271,48 @@ contract FloatingPointTest is PoolUtils {
     // }
 
     // function testMSB() public view {
-    //     assertEq(FP.msb(0), 0, "0");
-    //     assertEq(FP.msb(1), 1, "1");
-    //     assertEq(FP.msb(2), 2, "2");
-    //     assertEq(FP.msb(3), 2, "3");
-    //     assertEq(FP.msb(4), 3, "4");
-    //     assertEq(FP.msb(5), 3, "5");
-    //     assertEq(FP.msb(6), 3, "6");
-    //     assertEq(FP.msb(7), 3, "7");
-    //     assertEq(FP.msb(8), 4, "8");
-    //     assertEq(FP.msb(9), 4, "9");
-    //     assertEq(FP.msb(10), 4, "10");
-    //     assertEq(FP.msb(11), 4, "11");
-    //     assertEq(FP.msb(12), 4, "12");
-    //     assertEq(FP.msb(13), 4, "13");
-    //     assertEq(FP.msb(14), 4, "14");
-    //     assertEq(FP.msb(15), 4, "15");
-    //     assertEq(FP.msb(16), 5, "16");
-    //     assertEq(FP.msb(17), 5, "17");
-    //     assertEq(FP.msb(18), 5, "18");
-    //     assertEq(FP.msb(19), 5, "19");
-    //     assertEq(FP.msb(20), 5, "20");
-    //     assertEq(FP.msb(21), 5, "21");
-    //     assertEq(FP.msb(22), 5, "22");
-    //     assertEq(FP.msb(23), 5, "23");
-    //     assertEq(FP.msb(24), 5, "24");
-    //     assertEq(FP.msb(25), 5, "25");
-    //     assertEq(FP.msb(26), 5, "26");
-    //     assertEq(FP.msb(27), 5, "27");
-    //     assertEq(FP.msb(28), 5, "28");
-    //     assertEq(FP.msb(29), 5, "29");
-    //     assertEq(FP.msb(30), 5, "30");
+    //     assertEq(FloatingPoint.msb(0), 0, "0");
+    //     assertEq(FloatingPoint.msb(1), 1, "1");
+    //     assertEq(FloatingPoint.msb(2), 2, "2");
+    //     assertEq(FloatingPoint.msb(3), 2, "3");
+    //     assertEq(FloatingPoint.msb(4), 3, "4");
+    //     assertEq(FloatingPoint.msb(5), 3, "5");
+    //     assertEq(FloatingPoint.msb(6), 3, "6");
+    //     assertEq(FloatingPoint.msb(7), 3, "7");
+    //     assertEq(FloatingPoint.msb(8), 4, "8");
+    //     assertEq(FloatingPoint.msb(9), 4, "9");
+    //     assertEq(FloatingPoint.msb(10), 4, "10");
+    //     assertEq(FloatingPoint.msb(11), 4, "11");
+    //     assertEq(FloatingPoint.msb(12), 4, "12");
+    //     assertEq(FloatingPoint.msb(13), 4, "13");
+    //     assertEq(FloatingPoint.msb(14), 4, "14");
+    //     assertEq(FloatingPoint.msb(15), 4, "15");
+    //     assertEq(FloatingPoint.msb(16), 5, "16");
+    //     assertEq(FloatingPoint.msb(17), 5, "17");
+    //     assertEq(FloatingPoint.msb(18), 5, "18");
+    //     assertEq(FloatingPoint.msb(19), 5, "19");
+    //     assertEq(FloatingPoint.msb(20), 5, "20");
+    //     assertEq(FloatingPoint.msb(21), 5, "21");
+    //     assertEq(FloatingPoint.msb(22), 5, "22");
+    //     assertEq(FloatingPoint.msb(23), 5, "23");
+    //     assertEq(FloatingPoint.msb(24), 5, "24");
+    //     assertEq(FloatingPoint.msb(25), 5, "25");
+    //     assertEq(FloatingPoint.msb(26), 5, "26");
+    //     assertEq(FloatingPoint.msb(27), 5, "27");
+    //     assertEq(FloatingPoint.msb(28), 5, "28");
+    //     assertEq(FloatingPoint.msb(29), 5, "29");
+    //     assertEq(FloatingPoint.msb(30), 5, "30");
     // }
 
     function testNormalize() public {
         assertEq(
             msb(ONE_unnormalized.normalize().mantissa),
-            FP.SIGNIFICANT_DIGITS,
+            FloatingPoint.SIGNIFICANT_DIGITS,
             "mantissa (from unnormalized)"
         );
         assertEq(
             msb(ONE.mantissa),
-            FP.SIGNIFICANT_DIGITS,
+            FloatingPoint.SIGNIFICANT_DIGITS,
             "mantissa (from normalized)"
         );
         assertEq(
@@ -323,7 +323,7 @@ contract FloatingPointTest is PoolUtils {
     }
 
     function testAlign() public {
-        (a, b) = FP.align(ONE, TWO_unnormalized);
+        (a, b) = FloatingPoint.align(ONE, TWO_unnormalized);
         assertEq(a, ONE, "a!=ONE");
         assertEq(b, TWO_unnormalized, "b!=TWO_unnormalized");
         assertEq(a.exponent, b.exponent, "exponent");
@@ -331,7 +331,7 @@ contract FloatingPointTest is PoolUtils {
 
     function testONE() public {
         a = UFloat(1, 0);
-        a = FP.normalize(a);
+        a = FloatingPoint.normalize(a);
         assertEq(msb(a.mantissa), 18, "msb");
         if (failed) {
             emit log_named_uint("ONE.mantissa", a.mantissa);
@@ -1115,7 +1115,7 @@ contract FloatingPointTest is PoolUtils {
     //                 b = floats[j];
     //                 c = floats[k];
     //                 assertEq(
-    //                     FP.mulDiv(a, b, c),
+    //                     FloatingPoint.mulDiv(a, b, c),
     //                     a.times(b).divide(c),
     //                     "muDiv(a,b,c)!=(a*b)/c"
     //                 );
@@ -1133,7 +1133,7 @@ contract FloatingPointTest is PoolUtils {
     //                 b = floats[j];
     //                 c = floats[k];
     //                 assertEq(
-    //                     FP.mulDivAdd(a, b, c),
+    //                     FloatingPoint.mulDivAdd(a, b, c),
     //                     a.times(c).divide(b.plus(c)),
     //                     "muDivAdd(a,b,c)!=(a*b)/(c+b)"
     //                 );
@@ -1143,10 +1143,10 @@ contract FloatingPointTest is PoolUtils {
     // }
 
     // function testEncode() public {
-    //     uint256 x = FP.encode(1, 1);
+    //     uint256 x = FloatingPoint.encode(1, 1);
     //     uint256 m;
     //     uint256 e;
-    //     (m, e) = FP.decode(x);
+    //     (m, e) = FloatingPoint.decode(x);
     //     assertEq(
     //         x,
     //         0x0000000000000000000000000000000000000000000000000000000000000081,

@@ -4,7 +4,7 @@
 pragma solidity 0.8.19;
 
 import {IPool, PoolState, AssetState, QuoteState, PoolStateExternal, AssetStateExternal} from "./interfaces/IPool.sol";
-import {LPToken, FloatingPoint as FP, UFloat} from "./LPToken.sol";
+import {LPToken, FloatingPoint, UFloat} from "./LPToken.sol";
 import {IWrappedNative} from "./interfaces/IWrappedNative.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -12,10 +12,10 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 contract Pool is IPool, LPToken, ReentrancyGuard {
     using SafeERC20 for IERC20;
-    using FP for uint256;
-    using FP for int256;
-    using FP for UFloat;
-    using FP for uint256[];
+    using FloatingPoint for uint256;
+    using FloatingPoint for int256;
+    using FloatingPoint for UFloat;
+    using FloatingPoint for uint256[];
 
     uint256 private _isInitialized;
 
@@ -363,7 +363,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         UFloat memory amount
     ) internal pure returns (UFloat memory) {
         if (amount.mantissa == 0) return UFloat(0, 0);
-        UFloat memory denom = FP.plus(balance, amount);
+        UFloat memory denom = balance.plus(amount);
         return scale.times(amount).divide(denom);
     }
 

@@ -6,12 +6,12 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "forge-std/Test.sol";
 
 import {Token} from "./Token.t.sol";
-import {Pool, FP, UFloat, PoolState, AssetState, IPool} from "../contracts/Pool.sol";
+import {Pool, FloatingPoint, UFloat, PoolState, AssetState, IPool} from "../contracts/Pool.sol";
 import {PoolUtils} from "./PoolUtils.t.sol";
 
 contract ContractTest is Context, PoolUtils {
-    using FP for uint256;
-    using FP for UFloat;
+    using FloatingPoint for uint256;
+    using FloatingPoint for UFloat;
 
     uint256 private constant NTOKENS = 10;
 

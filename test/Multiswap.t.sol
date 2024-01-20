@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {console} from "forge-std/console.sol";
 import {PoolTest} from "./Pool.t.sol";
-import {Pool, FP, UFloat, AssetState, AssetStateExternal, QuoteState, IPool} from "../contracts/Pool.sol";
+import {Pool, FloatingPoint, UFloat, AssetState, AssetStateExternal, QuoteState, IPool} from "../contracts/Pool.sol";
 import {Token} from "./Token.t.sol";
 
 struct State {
@@ -13,8 +13,8 @@ struct State {
 }
 
 contract MultiswapTest is PoolTest {
-    using FP for uint256;
-    using FP for UFloat;
+    using FloatingPoint for uint256;
+    using FloatingPoint for UFloat;
 
     function setUp() public {
         uint256 startBalance = type(uint256).max / 2;

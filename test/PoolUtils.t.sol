@@ -2,14 +2,14 @@
 pragma solidity 0.8.19;
 
 import {Pool, PoolState, AssetState, QuoteState, IPool, IERC20Metadata} from "../contracts/Pool.sol";
-import {FloatingPoint as FP, UFloat} from "../contracts/libraries/FloatingPoint/src/FloatingPoint.sol";
+import {FloatingPoint, UFloat} from "../contracts/libraries/FloatingPoint/src/FloatingPoint.sol";
 import {Token} from "./Token.t.sol";
 import {Test} from "forge-std/Test.sol";
 
 contract PoolUtils is Test {
-    using FP for uint256;
-    using FP for int256;
-    using FP for UFloat;
+    using FloatingPoint for uint256;
+    using FloatingPoint for int256;
+    using FloatingPoint for UFloat;
 
     UFloat internal ZERO_FLOAT = UFloat(0, 0);
     UFloat internal HALF_FLOAT = UFloat(5, -1).normalize();

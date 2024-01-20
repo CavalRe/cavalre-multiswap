@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import {Pool, IPool, FP, UFloat, AssetState, QuoteState} from "../contracts/Pool.sol";
+import {Pool, IPool, FloatingPoint, UFloat, AssetState, QuoteState} from "../contracts/Pool.sol";
 import {PoolTest, Token} from "./Pool.t.sol";
 
 contract StakeTest is PoolTest {
-    using FP for uint256;
-    using FP for UFloat;
+    using FloatingPoint for uint256;
+    using FloatingPoint for UFloat;
 
     function setUp() public {
         uint256 startBalance = type(uint256).max / 2;
