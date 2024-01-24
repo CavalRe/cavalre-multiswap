@@ -23,12 +23,12 @@ library FloatingPoint {
      *   Conversions   *
      ******************/
 
-    function toUInt(int256 a) public pure returns (uint256) {
+    function toUInt(int256 a) internal pure returns (uint256) {
         require(a >= 0, "Value must be non-negative");
         return uint256(a);
     }
 
-    function toInt(uint256 a) public pure returns (int256) {
+    function toInt(uint256 a) internal pure returns (int256) {
         require(a <= uint256(type(int256).max), "Value out of int256 range");
         return int256(a);
     }
@@ -36,7 +36,7 @@ library FloatingPoint {
     function toUInt(
         UFloat memory a,
         uint256 decimals
-    ) public pure returns (uint256) {
+    ) internal pure returns (uint256) {
         if (a.exponent + toInt(decimals) >= 0) {
             return a.mantissa * 10 ** toUInt(a.exponent + toInt(decimals));
         } else {
@@ -44,14 +44,14 @@ library FloatingPoint {
         }
     }
 
-    function toUInt(UFloat memory a) public pure returns (uint256) {
+    function toUInt(UFloat memory a) internal pure returns (uint256) {
         return toUInt(a, SIGNIFICANT_DIGITS);
     }
 
     // function toInt(
     //     Float memory a,
     //     uint256 decimals
-    // ) public pure returns (int256) {
+    // ) internal pure returns (int256) {
     //     if (a.exponent + toInt(decimals) >= 0) {
     //         return
     //             a.mantissa * int256(10 ** toUInt(a.exponent + toInt(decimals)));
@@ -62,43 +62,43 @@ library FloatingPoint {
     //     }
     // }
 
-    // function toInt(Float memory a) public pure returns (int256) {
+    // function toInt(Float memory a) internal pure returns (int256) {
     //     return toInt(a, SIGNIFICANT_DIGITS);
     // }
 
     //--------------
     //   toUFloat
     //--------------
-    // function toUFloat(Float memory a) public pure returns (UFloat memory) {
+    // function toUFloat(Float memory a) internal pure returns (UFloat memory) {
     //     return UFloat(toUInt(a.mantissa), a.exponent);
     // }
 
     function toUFloat(
         uint256 a,
         uint256 decimals
-    ) public pure returns (UFloat memory) {
+    ) internal pure returns (UFloat memory) {
         return normalize(UFloat(a, -toInt(decimals)));
     }
 
-    function toUFloat(uint256 a) public pure returns (UFloat memory) {
+    function toUFloat(uint256 a) internal pure returns (UFloat memory) {
         return toUFloat(a, SIGNIFICANT_DIGITS);
     }
 
     //-------------
     //   toFloat
     //-------------
-    // function toFloat(UFloat memory a) public pure returns (Float memory) {
+    // function toFloat(UFloat memory a) internal pure returns (Float memory) {
     //     return Float(toInt(a.mantissa), a.exponent);
     // }
 
     // function toFloat(
     //     uint256 a,
     //     uint256 decimals
-    // ) public pure returns (Float memory) {
+    // ) internal pure returns (Float memory) {
     //     return normalize(Float(toInt(a), -toInt(decimals)));
     // }
 
-    // function toFloat(uint256 a) public pure returns (Float memory) {
+    // function toFloat(uint256 a) internal pure returns (Float memory) {
     //     return toFloat(a, SIGNIFICANT_DIGITS);
     // }
 
@@ -108,7 +108,7 @@ library FloatingPoint {
     function toUFloatArray(
         uint256[] memory a,
         uint8[] memory decimals
-    ) public pure returns (UFloat[] memory) {
+    ) internal pure returns (UFloat[] memory) {
         UFloat[] memory result = new UFloat[](a.length);
         for (uint256 i = 0; i < a.length; i++) {
             result[i] = toUFloat(a[i], decimals[i]);
@@ -118,7 +118,7 @@ library FloatingPoint {
 
     function toUFloatArray(
         uint256[] memory a
-    ) public pure returns (UFloat[] memory) {
+    ) internal pure returns (UFloat[] memory) {
         UFloat[] memory result = new UFloat[](a.length);
         for (uint256 i = 0; i < a.length; i++) {
             result[i] = toUFloat(a[i]);
@@ -136,7 +136,7 @@ library FloatingPoint {
     function isEqual(
         UFloat memory a,
         UFloat memory b
-    ) public pure returns (bool) {
+    ) internal pure returns (bool) {
         (a, b) = align(a, b);
         return a.mantissa == b.mantissa;
     }
@@ -144,7 +144,7 @@ library FloatingPoint {
     // function isEqual(
     //     Float memory a,
     //     Float memory b
-    // ) public pure returns (bool) {
+    // ) internal pure returns (bool) {
     //     (a, b) = align(a, b);
     //     return a.mantissa == b.mantissa;
     // }
@@ -152,7 +152,7 @@ library FloatingPoint {
     //--------
     //   gt
     //--------
-    // function gt(UFloat memory a, UFloat memory b) public pure returns (bool) {
+    // function gt(UFloat memory a, UFloat memory b) internal pure returns (bool) {
     //     (a, b) = align(a, b);
     //     return a.mantissa > b.mantissa;
     // }
@@ -160,12 +160,12 @@ library FloatingPoint {
     // function gte(
     //     UFloat memory a,
     //     UFloat memory b
-    // ) public pure returns (bool) {
+    // ) internal pure returns (bool) {
     //     (a, b) = align(a, b);
     //     return a.mantissa >= b.mantissa;
     // }
 
-    // function lt(UFloat memory a, UFloat memory b) public pure returns (bool) {
+    // function lt(UFloat memory a, UFloat memory b) internal pure returns (bool) {
     //     (a, b) = align(a, b);
     //     return a.mantissa < b.mantissa;
     // }
@@ -173,12 +173,12 @@ library FloatingPoint {
     // function lte(
     //     UFloat memory a,
     //     UFloat memory b
-    // ) public pure returns (bool) {
+    // ) internal pure returns (bool) {
     //     (a, b) = align(a, b);
     //     return a.mantissa <= b.mantissa;
     // }
 
-    // function equal(uint256 a, uint256 b) public pure returns (bool) {
+    // function equal(uint256 a, uint256 b) internal pure returns (bool) {
     //     if (a == b) return true;
     //     (uint256 mantissaA, uint256 exponent) = decode(a);
     //     (uint256 mantissaB, uint256 exponentB) = decode(b);
@@ -200,7 +200,7 @@ library FloatingPoint {
     // Must return a UFloat with non-negative exponent
     function integerPart(
         UFloat memory number
-    ) public pure returns (UFloat memory) {
+    ) internal pure returns (UFloat memory) {
         if (number.exponent < 0) {
             uint256 temp = number.mantissa;
             for (uint256 i = 0; i < toUInt(-number.exponent); i++) {
@@ -215,7 +215,7 @@ library FloatingPoint {
 
     // function integerPart(
     //     Float memory number
-    // ) public pure returns (Float memory) {
+    // ) internal pure returns (Float memory) {
     //     if (number.exponent < 0) {
     //         return
     //             Float(
@@ -238,7 +238,7 @@ library FloatingPoint {
     function shift(
         UFloat memory a,
         int256 i
-    ) public pure returns (UFloat memory) {
+    ) internal pure returns (UFloat memory) {
         uint256 mantissa = a.mantissa;
         if (i > 0) {
             mantissa /= 10 ** toUInt(i);
@@ -251,7 +251,7 @@ library FloatingPoint {
     //---------------
     //   Normalize
     //---------------
-    function normalize(UFloat memory a) public pure returns (UFloat memory) {
+    function normalize(UFloat memory a) internal pure returns (UFloat memory) {
         uint256 mantissa = a.mantissa;
         int256 exponent = a.exponent;
         bool isLarge = mantissa > NORMALIZED_MANTISSA_MAX;
@@ -286,7 +286,7 @@ library FloatingPoint {
     function align(
         UFloat memory a,
         UFloat memory b
-    ) public pure returns (UFloat memory, UFloat memory) {
+    ) internal pure returns (UFloat memory, UFloat memory) {
         if (a.mantissa == 0 && b.mantissa == 0) {
             return (UFloat(0, 0), UFloat(0, 0));
         } else if (a.mantissa == 0) {
@@ -315,7 +315,7 @@ library FloatingPoint {
     // function align(
     //     Float memory a,
     //     Float memory b
-    // ) public pure returns (Float memory, Float memory) {
+    // ) internal pure returns (Float memory, Float memory) {
     //     if (a.exponent > b.exponent) {
     //         a.mantissa *= toInt(10 ** toUInt(a.exponent - b.exponent));
     //         a.exponent = b.exponent;
@@ -336,7 +336,7 @@ library FloatingPoint {
     function plus(
         UFloat memory a,
         UFloat memory b
-    ) public pure returns (UFloat memory) {
+    ) internal pure returns (UFloat memory) {
         a = normalize(a);
         b = normalize(b);
 
@@ -347,7 +347,7 @@ library FloatingPoint {
     // function plus(
     //     Float memory a,
     //     Float memory b
-    // ) public pure returns (Float memory) {
+    // ) internal pure returns (Float memory) {
     //     (a, b) = align(a, b);
     //     return normalize(Float(a.mantissa + b.mantissa, a.exponent));
     // }
@@ -358,7 +358,7 @@ library FloatingPoint {
     function minus(
         UFloat memory a,
         UFloat memory b
-    ) public pure returns (UFloat memory) {
+    ) internal pure returns (UFloat memory) {
         a = normalize(a);
         b = normalize(b);
 
@@ -369,7 +369,7 @@ library FloatingPoint {
     // function minus(
     //     Float memory a,
     //     Float memory b
-    // ) public pure returns (Float memory) {
+    // ) internal pure returns (Float memory) {
     //     (a, b) = align(a, b);
     //     return normalize(Float(a.mantissa - b.mantissa, a.exponent));
     // }
@@ -380,7 +380,7 @@ library FloatingPoint {
     function times(
         UFloat memory a,
         UFloat memory b
-    ) public pure returns (UFloat memory) {
+    ) internal pure returns (UFloat memory) {
         // if (a.mantissa == 0 || b.mantissa == 0) return UFloat(0, 0);
         a = normalize(a);
         b = normalize(b);
@@ -400,7 +400,7 @@ library FloatingPoint {
     // function times(
     //     Float memory a,
     //     Float memory b
-    // ) public pure returns (Float memory) {
+    // ) internal pure returns (Float memory) {
     //     return
     //         normalize(
     //             Float(
@@ -416,7 +416,7 @@ library FloatingPoint {
     function divide(
         UFloat memory a,
         UFloat memory b
-    ) public pure returns (UFloat memory) {
+    ) internal pure returns (UFloat memory) {
         // if (a.mantissa == 0) return UFloat(0, 0);
         a = normalize(a);
         b = normalize(b);
@@ -438,7 +438,7 @@ library FloatingPoint {
     // function divide(
     //     Float memory a,
     //     Float memory b
-    // ) public pure returns (Float memory) {
+    // ) internal pure returns (Float memory) {
     //     return
     //         normalize(
     //             Float(
@@ -452,7 +452,7 @@ library FloatingPoint {
     //     UFloat memory a,
     //     UFloat memory b,
     //     UFloat memory c
-    // ) public pure returns (UFloat memory) {
+    // ) internal pure returns (UFloat memory) {
     //     return
     //         normalize(
     //             UFloat(
@@ -470,7 +470,7 @@ library FloatingPoint {
     //     UFloat memory a,
     //     UFloat memory b,
     //     UFloat memory db
-    // ) public pure returns (UFloat memory) {
+    // ) internal pure returns (UFloat memory) {
     //     (b, db) = align(b, db);
 
     //     // Normalize result
