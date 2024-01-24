@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 import {Pool, PoolState, AssetState, QuoteState, IPool, IERC20Metadata} from "../contracts/Pool.sol";
-import {FloatingPoint, UFloat} from "../contracts/libraries/FloatingPoint/src/FloatingPoint.sol";
+import {FloatingPoint, UFloat} from "@cavalre/floating-point/FloatingPoint.sol";
 import {Token} from "./Token.t.sol";
 import {Test} from "forge-std/Test.sol";
 

@@ -4,7 +4,7 @@
 pragma solidity 0.8.19;
 
 import {ILPToken} from "./ILPToken.sol";
-import {UFloat} from "../libraries/FloatingPoint/src/FloatingPoint.sol";
+import {UFloat} from "@cavalre/floating-point/FloatingPoint.sol";
 
 struct PoolState {
     address token;

@@ -5,7 +5,7 @@ pragma solidity 0.8.19;
 
 import {IUsers} from "./interfaces/IUsers.sol";
 import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
-import {FloatingPoint, UFloat} from "./libraries/FloatingPoint/src/FloatingPoint.sol";
+import {FloatingPoint, UFloat} from "@cavalre/floating-point/FloatingPoint.sol";
 
 contract Users is IUsers, Ownable2Step {
     using FloatingPoint for uint256;

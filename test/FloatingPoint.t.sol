@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 // import {Pool, FixedPointMathLib} from "../contracts/Pool.sol";
-import {FloatingPoint, UFloat} from "../contracts/libraries/FloatingPoint/src/FloatingPoint.sol";
+import {FloatingPoint, UFloat} from "@cavalre/floating-point/FloatingPoint.sol";
 import {PoolUtils} from "./PoolUtils.t.sol";
 
 contract FloatingPointTest is PoolUtils {

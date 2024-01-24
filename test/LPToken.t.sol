@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {Pool} from "../contracts/Pool.sol";
 import {IUsers} from "../contracts/Users.sol";
-import {FloatingPoint, UFloat} from "../contracts/libraries/FloatingPoint/src/FloatingPoint.sol";
+import {FloatingPoint, UFloat} from "@cavalre/floating-point/FloatingPoint.sol";
 import {PoolUtils} from "./PoolUtils.t.sol";
 
 contract PoolMintable is Pool {

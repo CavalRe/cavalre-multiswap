@@ -1,5 +1,5 @@
 {
-  "name": "amm",
+  "name": "multiswap",
   "version": "0.1.0",
   "description": "Multiswap",
   "main": "index.js",
@@ -10,15 +10,16 @@
   "license": "",
   "dependencies": {
     "@cavalre/command": "github:CavalRe/command",
+    "@cavalre/floating-point": "github:CavalRe/floating-point",
     "@openzeppelin/contracts": "^4.9.2",
-    "dotenv": "^16.3.1",
-    "forge-std": "github:foundry-rs/forge-std#v1.6.0",
     "solady": "^0.0.110"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.4",
     "@nomicfoundation/hardhat-verify": "^2.0.0",
+    "dotenv": "^16.3.1",
     "ethers": "^6.1.0",
+    "forge-std": "github:foundry-rs/forge-std#v1.6.0",
     "hardhat": "^2.18.3"
   }
 }
