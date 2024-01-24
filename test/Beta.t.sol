@@ -30,7 +30,8 @@ pragma solidity 0.8.19;
 // (9) 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
 
 import {PoolTest, Token} from "./Pool.t.sol";
-import {Pool, AssetState, AssetStateExternal, QuoteState, FloatingPoint, UFloat} from "../contracts/Pool.sol";
+import {Pool, AssetState, AssetStateExternal, QuoteState} from "../contracts/Pool.sol";
+import {FloatingPoint, UFloat} from "@cavalre/floating-point/FloatingPoint.sol";
 import {Users, IUsers} from "../contracts/Users.sol";
 
 contract BetaTest is PoolTest {

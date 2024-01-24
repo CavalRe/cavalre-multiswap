@@ -3,8 +3,9 @@ pragma solidity 0.8.19;
 
 import {console} from "forge-std/console.sol";
 import {PoolTest} from "./Pool.t.sol";
-import {Pool, FloatingPoint, UFloat, AssetState, AssetStateExternal, QuoteState, IPool} from "../contracts/Pool.sol";
+import {Pool, AssetState, AssetStateExternal, QuoteState, IPool} from "../contracts/Pool.sol";
 import {Token} from "./Token.t.sol";
+import {FloatingPoint, UFloat} from "@cavalre/floating-point/FloatingPoint.sol";
 
 struct State {
     AssetState[] assets;

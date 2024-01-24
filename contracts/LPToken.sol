@@ -11,7 +11,8 @@
 pragma solidity 0.8.19;
 
 import {ILPToken} from "./interfaces/ILPToken.sol";
-import {Users, FloatingPoint, UFloat} from "./Users.sol";
+import {Users} from "./Users.sol";
+import {FloatingPoint, UFloat} from "@cavalre/floating-point/FloatingPoint.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract LPToken is ILPToken, ERC20, Users {

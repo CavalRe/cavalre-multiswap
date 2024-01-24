@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.19;
 
-import {Pool, IPool, FloatingPoint, UFloat} from "../contracts/Pool.sol";
+import {Pool, IPool} from "../contracts/Pool.sol";
 import {PoolTest, Token} from "./Pool.t.sol";
+import {FloatingPoint, UFloat} from "@cavalre/floating-point/FloatingPoint.sol";
 
 contract UnstakeTest is PoolTest {
     using FloatingPoint for uint256;

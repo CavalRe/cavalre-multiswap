@@ -6,8 +6,9 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "forge-std/Test.sol";
 
 import {Token} from "./Token.t.sol";
-import {Pool, FloatingPoint, UFloat, PoolState, AssetState, IPool} from "../contracts/Pool.sol";
+import {Pool, PoolState, AssetState, IPool} from "../contracts/Pool.sol";
 import {PoolUtils} from "./PoolUtils.t.sol";
+import {FloatingPoint, UFloat} from "@cavalre/floating-point/FloatingPoint.sol";
 
 contract ContractTest is Context, PoolUtils {
     using FloatingPoint for uint256;

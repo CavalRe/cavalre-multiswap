@@ -2,7 +2,8 @@
 pragma solidity 0.8.19;
 
 import {Pool, PoolTest, Token} from "./Pool.t.sol";
-import {IPool, AssetState, QuoteState, FloatingPoint, UFloat} from "../contracts/Pool.sol";
+import {IPool, AssetState, QuoteState} from "../contracts/Pool.sol";
+import {FloatingPoint, UFloat} from "@cavalre/floating-point/FloatingPoint.sol";
 
 contract SwapTest is PoolTest {
     using FloatingPoint for uint256;

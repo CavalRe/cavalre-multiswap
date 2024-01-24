@@ -2,9 +2,9 @@
 pragma solidity 0.8.19;
 
 import {Pool, AssetState} from "../contracts/Pool.sol";
-import {FloatingPoint, UFloat} from "./Pool.t.sol";
 import {Token} from "./Token.t.sol";
 import {PoolUtils} from "./PoolUtils.t.sol";
+import {FloatingPoint, UFloat} from "@cavalre/floating-point/FloatingPoint.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 
