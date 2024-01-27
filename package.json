@@ -9,9 +9,9 @@
   "author": "",
   "license": "",
   "dependencies": {
-    "@cavalre/command": "github:CavalRe/command",
-    "@cavalre/floating-point": "github:CavalRe/floating-point",
-    "@openzeppelin/contracts": "^4.9.2",
+    "@cavalre/contracts": "github:CavalRe/cavalre-contracts",
+    "@openzeppelin/contracts": "^4.9.5",
+    "@openzeppelin/contracts-upgradeable": "^5.0.1",
     "solady": "^0.0.110"
   },
   "devDependencies": {

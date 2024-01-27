@@ -1,4 +1,4 @@
-@cavalre/floating-point/=node_modules/@cavalre/floating-point/contracts/
+@cavalre/=node_modules/@cavalre/contracts/
 @openzeppelin/=node_modules/@openzeppelin/
 ds-test/=test/libraries/ds-test/src/
 forge-std/=node_modules/forge-std/src/
