@@ -7,7 +7,7 @@ import {IPool, PoolState, AssetState, QuoteState, PoolStateExternal, AssetStateE
 import {LPToken} from "./LPToken.sol";
 import {IWrappedNative} from "./interfaces/IWrappedNative.sol";
 import {FloatingPoint, UFloat} from "@cavalre/floating-point/FloatingPoint.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 

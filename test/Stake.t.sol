@@ -5,6 +5,8 @@ import {Pool, IPool, AssetState, QuoteState} from "../contracts/Pool.sol";
 import {PoolTest, Token} from "./Pool.t.sol";
 import {FloatingPoint, UFloat} from "@cavalre/floating-point/FloatingPoint.sol";
 
+import {IERC20Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
+
 contract StakeTest is PoolTest {
     using FloatingPoint for uint256;
     using FloatingPoint for UFloat;
@@ -95,7 +97,14 @@ contract StakeTest is PoolTest {
         payToken.mint(amount);
         payToken.approve(address(pool), 0);
 
-        vm.expectRevert("ERC20: insufficient allowance");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IERC20Errors.ERC20InsufficientAllowance.selector,
+                address(pool),
+                0,
+                amount
+            )
+        );
         pool.stake(address(payToken), amount, 0);
     }
 

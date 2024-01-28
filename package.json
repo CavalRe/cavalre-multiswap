@@ -10,6 +10,7 @@
   "license": "",
   "dependencies": {
     "@cavalre/contracts": "github:CavalRe/cavalre-contracts",
+    "@cavalre/openzeppelin": "github:CavalRe/openzeppellin",
     "@openzeppelin/contracts": "^4.9.5",
     "solady": "^0.0.110"
   },

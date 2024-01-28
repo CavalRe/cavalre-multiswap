@@ -6,6 +6,83 @@ import {FloatingPoint, UFloat} from "@cavalre/floating-point/FloatingPoint.sol";
 import {Token} from "./Token.t.sol";
 import {Test} from "forge-std/Test.sol";
 
+contract PoolMintable is Pool {
+    using FloatingPoint for uint256;
+    using FloatingPoint for UFloat;
+
+    constructor(
+        string memory name_,
+        string memory symbol_,
+        uint256 protocolFee_,
+        address protocolFeeRecipient_,
+        uint256 tokensPerShare_,
+        address wrappedNativeAddress_
+    )
+        Pool(
+            name_,
+            symbol_,
+            protocolFee_,
+            protocolFeeRecipient_,
+            tokensPerShare_,
+            wrappedNativeAddress_
+        )
+    {}
+
+    function mint(uint256 shares) public {
+        super._mint(_msgSender(), shares);
+    }
+
+    function burn(uint256 shares) public {
+        super._burn(_msgSender(), shares);
+    }
+
+    function mintTokens(UFloat memory amount) public {
+        super._mintTokens(_msgSender(), amount);
+    }
+
+    function burnTokens(UFloat memory amount) public {
+        super._burnTokens(_msgSender(), amount);
+    }
+
+    function distributeTokens(UFloat memory amount) public {
+        super._distributeTokens(amount);
+    }
+
+    function allocateShares(address account, uint256 shares) public {
+        super._allocateShares(account, shares);
+    }
+
+    function increaseAllowance(
+        address spender,
+        uint256 addedValue
+    ) public virtual returns (bool) {
+        address owner = _msgSender();
+        super._approve(owner, spender, allowance(owner, spender) + addedValue);
+        return true;
+    }
+
+    function decreaseAllowance(
+        address spender,
+        uint256 subtractedValue
+    ) public virtual returns (bool) {
+        address owner = _msgSender();
+        uint256 currentAllowance = allowance(owner, spender);
+        require(
+            currentAllowance >= subtractedValue,
+            "ERC20: decreased allowance below zero"
+        );
+        unchecked {
+            super._approve(owner, spender, currentAllowance - subtractedValue);
+        }
+
+        return true;
+    }
+
+    function spendAllowance(address owner, uint256 amount) public {
+        super._spendAllowance(owner, _msgSender(), amount);
+    }
+}
+
 contract PoolUtils is Test {
     using FloatingPoint for uint256;
     using FloatingPoint for int256;
@@ -539,10 +616,7 @@ contract PoolUtils is Test {
         emit log_named_string("Fee", toString(q.fee));
         emit log_named_string("Discount", toString(q.discount));
         emit log_named_string("Pool allocation", toString(q.poolAlloc));
-        emit log_named_string(
-            "Last pool balance",
-            toString(q.lastPoolBalance)
-        );
+        emit log_named_string("Last pool balance", toString(q.lastPoolBalance));
         emit log_named_string("Scaled pool out", toString(q.scaledPoolOut));
         emit log_named_string("Shares in", toString(q.sharesIn));
         emit log_named_string("Pool in", toString(q.poolIn));

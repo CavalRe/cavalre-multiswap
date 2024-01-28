@@ -4,57 +4,7 @@ pragma solidity 0.8.19;
 import {Pool} from "../contracts/Pool.sol";
 import {IUsers} from "../contracts/Users.sol";
 import {FloatingPoint, UFloat} from "@cavalre/floating-point/FloatingPoint.sol";
-import {PoolUtils} from "./PoolUtils.t.sol";
-
-contract PoolMintable is Pool {
-    using FloatingPoint for uint256;
-    using FloatingPoint for UFloat;
-
-    constructor(
-        string memory name_,
-        string memory symbol_,
-        uint256 protocolFee_,
-        address protocolFeeRecipient_,
-        uint256 tokensPerShare_
-    )
-        Pool(
-            name_,
-            symbol_,
-            protocolFee_,
-            protocolFeeRecipient_,
-            tokensPerShare_,
-            address(1234)
-        )
-    {}
-
-    function mint(uint256 shares) public {
-        super._mint(_msgSender(), shares);
-    }
-
-    function burn(uint256 shares) public {
-        super._burn(_msgSender(), shares);
-    }
-
-    function mintTokens(UFloat memory amount) public {
-        super._mintTokens(_msgSender(), amount);
-    }
-
-    function burnTokens(UFloat memory amount) public {
-        super._burnTokens(_msgSender(), amount);
-    }
-
-    function distributeTokens(UFloat memory amount) public {
-        super._distributeTokens(amount);
-    }
-
-    function allocateShares(address account, uint256 shares) public {
-        super._allocateShares(account, shares);
-    }
-
-    function spendAllowance(address owner, uint256 amount) public {
-        super._spendAllowance(owner, _msgSender(), amount);
-    }
-}
+import {PoolMintable, PoolUtils} from "./PoolUtils.t.sol";
 
 contract LPTokenTest is PoolUtils {
     using FloatingPoint for uint256;
@@ -76,7 +26,8 @@ contract LPTokenTest is PoolUtils {
             "P",
             protocolFee,
             feeRecipient,
-            tokensPerShare
+            tokensPerShare,
+            address(WAVAX)
         );
     }
 

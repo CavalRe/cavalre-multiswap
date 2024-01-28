@@ -46,4 +46,34 @@ contract Token is ERC20, Test {
         require(success, "Transfer failed");
         emit Withdrawal(_msgSender(), wad);
     }
+
+    function increaseAllowance(
+        address spender,
+        uint256 addedValue
+    ) public virtual returns (bool) {
+        address owner = _msgSender();
+        super._approve(owner, spender, allowance(owner, spender) + addedValue);
+        return true;
+    }
+
+    function decreaseAllowance(
+        address spender,
+        uint256 subtractedValue
+    ) public virtual returns (bool) {
+        address owner = _msgSender();
+        uint256 currentAllowance = allowance(owner, spender);
+        require(
+            currentAllowance >= subtractedValue,
+            "ERC20: decreased allowance below zero"
+        );
+        unchecked {
+            super._approve(owner, spender, currentAllowance - subtractedValue);
+        }
+
+        return true;
+    }
+
+    function spendAllowance(address owner, uint256 amount) public {
+        super._spendAllowance(owner, _msgSender(), amount);
+    }
 }

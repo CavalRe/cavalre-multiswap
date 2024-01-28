@@ -4,7 +4,7 @@
 pragma solidity 0.8.19;
 
 import {IUsers} from "./interfaces/IUsers.sol";
-import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {Ownable, Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {FloatingPoint, UFloat} from "@cavalre/floating-point/FloatingPoint.sol";
 
 contract Users is IUsers, Ownable2Step {
@@ -17,6 +17,8 @@ contract Users is IUsers, Ownable2Step {
 
     mapping(address => bool) internal _isBlocked;
     mapping(address => UFloat) internal _discount; // 18 decimals
+
+    constructor() Ownable(_msgSender()) {}
 
     function isAllowed(address user_) public view returns (bool) {
         return !_isBlocked[user_];

@@ -70,28 +70,33 @@ contract LPToken is ILPToken, ERC20, Users {
         return super.transferFrom(from, to, shares);
     }
 
-    function _transfer(
-        address from,
-        address to,
-        uint256 shares // 18 decimals
-    ) internal override {
+    function _update(address from, address to, uint256 shares) internal override {
         if (_isBlocked[to]) revert UserNotAllowed(to);
-        return super._transfer(from, to, shares);
+        return super._update(from, to, shares);
     }
 
-    function _mint(
-        address account,
-        uint256 shares // 18 decimals
-    ) internal override {
-        if (_isBlocked[account]) revert UserNotAllowed(account);
-        super._mint(account, shares);
-        _totalTokens = totalSupply().toUFloat().times(_tokensPerShare);
-    }
+    // function _transfer(
+    //     address from,
+    //     address to,
+    //     uint256 shares // 18 decimals
+    // ) internal override {
+    //     if (_isBlocked[to]) revert UserNotAllowed(to);
+    //     return super._transfer(from, to, shares);
+    // }
 
-    function _burn(address account, uint256 shares) internal override {
-        super._burn(account, shares);
-        _totalTokens = totalSupply().toUFloat().times(_tokensPerShare);
-    }
+    // function _mint(
+    //     address account,
+    //     uint256 shares // 18 decimals
+    // ) internal override {
+    //     if (_isBlocked[account]) revert UserNotAllowed(account);
+    //     super._mint(account, shares);
+    //     _totalTokens = totalSupply().toUFloat().times(_tokensPerShare);
+    // }
+
+    // function _burn(address account, uint256 shares) internal override {
+    //     super._burn(account, shares);
+    //     _totalTokens = totalSupply().toUFloat().times(_tokensPerShare);
+    // }
 
     function _mintTokens(address account, UFloat memory amount) internal {
         if (_isBlocked[account]) revert UserNotAllowed(account);

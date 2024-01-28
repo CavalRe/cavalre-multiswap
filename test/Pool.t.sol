@@ -6,7 +6,7 @@ import {PoolState, AssetState, QuoteState} from "../contracts/interfaces/IPool.s
 import {Token} from "./Token.t.sol";
 import {FixedPointMathLib} from "../contracts/libraries/FixedPointMath/src/FixedPointMathLib.sol";
 import {FloatingPoint, UFloat} from "@cavalre/floating-point/FloatingPoint.sol";
-import {PoolUtils} from "./PoolUtils.t.sol";
+import {PoolMintable, PoolUtils} from "./PoolUtils.t.sol";
 
 contract PoolTest is PoolUtils {
     using FixedPointMathLib for uint256;
@@ -47,7 +47,7 @@ contract PoolTest is PoolUtils {
         string memory symbol_,
         uint256 protocolFee_ // 18 decimals
     ) public {
-        pool = new Pool(
+        pool = new PoolMintable(
             name_,
             symbol_,
             protocolFee_, // 18 decimals
