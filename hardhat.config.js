@@ -6,7 +6,7 @@ require('dotenv').config();
 module.exports = {
   defaultNetwork: "avax",
   solidity: {
-    version: "0.8.19",
+    version: "0.8.24",
     settings: {
       evmVersion: "london",
       optimizer: {
