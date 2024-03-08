@@ -231,22 +231,14 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         asset_.balance += increaseAmount;
         asset_.balance -= decreaseAmount;
         asset_.lastUpdated = _txCount;
-        emit BalanceUpdate(
-            _txCount,
-            token,
-            asset_.balance
-        );
+        emit BalanceUpdate(_txCount, token, asset_.balance);
     }
 
     function _updatePoolBalance() private {
         _poolState.tokensPerShare = _tokensPerShare;
         _poolState.balance = _totalTokens;
         _poolState.lastUpdated = _txCount;
-        emit BalanceUpdate(
-            _txCount,
-            address(this),
-            _poolState.balance
-        );
+        emit BalanceUpdate(_txCount, address(this), _poolState.balance);
     }
 
     function _checkUser(address user_) private view {
@@ -275,7 +267,77 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         return isLP;
     }
 
-    function _disable(
+    struct Order {
+        address token;
+        uint256 amount;
+    }
+
+    function _checkInvariant(
+        Order[] memory payOrders,
+        Order[] memory receiveOrders
+    ) private {
+        // Determine final balances
+        address token;
+        for (uint256 i; i < payOrders.length; i++) {
+            token = payOrders[i].token;
+            if (token == address(this)) {
+                _poolState.balance -= payOrders[i].amount;
+            } else if (_assetState[token].decimals != 0) {
+                _assetState[token].balance += payOrders[i].amount;
+            }
+        }
+        for (uint256 i; i < receiveOrders.length; i++) {
+            token = receiveOrders[i].token;
+            if (token == address(this)) {
+                _poolState.balance += receiveOrders[i].amount;
+            } else if (_assetState[token].decimals != 0) {
+                _assetState[token].balance -=
+                    receiveOrders[i].amount;
+            }
+        }
+
+        // Determine value in
+        uint256 valueIn;
+        for (uint256 i; i < payOrders.length; i++) {
+            token = payOrders[i].token;
+            if (token == address(this)) {
+                valueIn += _poolState.scale.fullMulDiv(payOrders[i].amount, _poolState.balance);
+            } else if (_assetState[token].decimals != 0) {
+                valueIn += _assetState[token].scale.fullMulDiv(payOrders[i].amount, _assetState[token].balance);
+            }
+        }
+
+        // Determine value out
+        uint256 valueOut;
+        for (uint256 i; i < receiveOrders.length; i++) {
+            token = receiveOrders[i].token;
+            if (token == address(this)) {
+                valueOut += _poolState.scale.fullMulDiv(receiveOrders[i].amount, _poolState.balance);
+            } else if (_assetState[token].decimals != 0) {
+                valueOut += _assetState[token].scale.fullMulDiv(receiveOrders[i].amount, _assetState[token].balance);
+            }
+        }
+
+        if (valueIn < valueOut) revert InvariantViolation(valueIn, valueOut);
+
+    }
+
+    function multiswap(
+        Order[] memory payOrders,
+        Order[] memory receiveOrders
+    ) public nonReentrant onlyInitialized {
+        _checkInvariant(payOrders, receiveOrders);
+
+        for (uint256 i; i < payOrders.length; i++) {
+            _payTokenToPool(_msgSender(), payOrders[i].token, payOrders[i].amount);
+        }
+
+        for (uint256 i; i < receiveOrders.length; i++) {
+            _payTokenToSender(_msgSender(), receiveOrders[i].token, receiveOrders[i].amount);
+        }
+    }
+
+    function _liquidate(
         address receiver
     ) private returns (uint256[] memory receiveAmounts, uint256 feeAmount) {
         receiveAmounts = new uint256[](_assetAddresses.length);

@@ -130,6 +130,8 @@ interface IPool is ILPToken {
 
     error InvalidUnstake(address receiveToken);
 
+    error InvariantViolation(uint256 valueIn, uint256 valueOut);
+
     error LengthMismatch(uint256 expected, uint256 actual);
 
     error LPTokenFirst();
