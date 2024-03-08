@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Unlicense
-pragma solidity 0.8.19;
+pragma solidity 0.8.24;
 
 import "../contracts/LPToken.sol";
 import "../contracts/Pool.sol";

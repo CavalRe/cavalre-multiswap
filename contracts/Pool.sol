@@ -112,9 +112,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         _payTokenToPool(_msgSender(), token_, balance_);
 
         _poolState.balance += scale_;
-        _poolState.meanBalance += scale_;
         _poolState.scale += scale_;
-        _poolState.meanScale += scale_;
 
         uint256 conversion_ = 10 ** (18 - decimals_);
         balance_ *= conversion_; // Convert to canonical
@@ -127,8 +125,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             conversion_,
             fee_,
             balance_,
-            balance_,
-            scale_,
             scale_,
             0
         );
@@ -151,9 +147,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
 
         uint256 scale_ = asset_.scale;
         _poolState.balance -= scale_;
-        _poolState.meanBalance -= scale_;
         _poolState.scale -= scale_;
-        _poolState.meanScale -= scale_;
 
         uint256 index_ = asset_.index;
         uint256 lastIndex_ = _assetAddresses.length - 1;
@@ -234,42 +228,24 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
     ) private {
         AssetState storage asset_ = _assetState[token];
         if (asset_.decimals == 0) revert AssetNotFound(token);
-        uint256 lastBalance = asset_.balance;
         asset_.balance += increaseAmount;
         asset_.balance -= decreaseAmount;
-        asset_.meanBalance = _geometricMean(
-            asset_.balance,
-            lastBalance,
-            asset_.meanBalance,
-            _txCount - asset_.lastUpdated
-        );
         asset_.lastUpdated = _txCount;
         emit BalanceUpdate(
             _txCount,
             token,
-            asset_.balance,
-            asset_.meanBalance,
-            _userAssetBalance(token)
+            asset_.balance
         );
     }
 
     function _updatePoolBalance() private {
-        uint256 lastPoolBalance = _poolState.balance;
         _poolState.tokensPerShare = _tokensPerShare;
         _poolState.balance = _totalTokens;
-        _poolState.meanBalance = _geometricMean(
-            _poolState.balance,
-            lastPoolBalance,
-            _poolState.meanBalance,
-            _txCount - _poolState.lastUpdated
-        );
         _poolState.lastUpdated = _txCount;
         emit BalanceUpdate(
             _txCount,
             address(this),
-            _poolState.balance,
-            _poolState.meanBalance,
-            balanceOf(_msgSender())
+            _poolState.balance
         );
     }
 
@@ -299,23 +275,6 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         return isLP;
     }
 
-    function distributeFee(uint256 amount) internal {
-        uint256 totalShares = totalSupply();
-        if (totalShares == 0) return; // Last LP token has been burned
-        uint256 protocolAmount = amount.mulWadUp(_protocolFee);
-        uint256 lpAmount = amount - protocolAmount;
-        _totalTokens += amount;
-        if (protocolAmount != 0) {
-            _allocateShares(
-                _protocolFeeRecipient,
-                protocolAmount.divWadUp(_tokensPerShare)
-            );
-        }
-        _tokensPerShare = _totalTokens.divWadUp(totalSupply());
-
-        emit DistributeFee(_txCount, lpAmount, protocolAmount);
-    }
-
     function _disable(
         address receiver
     ) private returns (uint256[] memory receiveAmounts, uint256 feeAmount) {
@@ -323,7 +282,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
 
         // Burn all LP tokens
         _burn(receiver, totalSupply());
-        emit BalanceUpdate(_txCount, address(this), 0, 0, 0);
+        emit BalanceUpdate(_txCount, address(this), 0);
 
         for (uint256 i; i < _assetAddresses.length; i++) {
             address token = _assetAddresses[i];
@@ -333,7 +292,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             }
             delete _assetState[token];
             receiveAmounts[i] = balance;
-            emit BalanceUpdate(_txCount, token, 0, 0, 0);
+            emit BalanceUpdate(_txCount, token, 0);
         }
 
         _txCount = 0;
@@ -345,9 +304,7 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         _poolState.omega = 0;
         _poolState.tokensPerShare = 0;
         _poolState.balance = 0;
-        _poolState.meanBalance = 0;
         _poolState.scale = 0;
-        _poolState.meanScale = 0;
         _poolState.lastUpdated = 0;
         delete _assetAddresses;
         _tradingPaused = false;
@@ -364,14 +321,13 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         if (!isAllowed_) {
             if (user_ == owner() || user_ == protocolFeeRecipient())
                 revert CannotModify(user_);
-            uint256 balance = balanceOf(user_);
-            if (balance > 0) {
-                _removeLiquidity(
-                    user_,
-                    balance,
-                    new uint256[](_assetAddresses.length)
-                );
-            }
+            // if (balance > 0) {
+            //     _removeLiquidity(
+            //         user_,
+            //         balance,
+            //         new uint256[](_assetAddresses.length)
+            //     );
+            // }
             _discount[user_] = 0;
             emit UserBlocked(user_);
         }
