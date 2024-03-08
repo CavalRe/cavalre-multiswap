@@ -324,16 +324,17 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
 
     function multiswap(
         Order[] memory payOrders,
-        Order[] memory receiveOrders
+        Order[] memory receiveOrders,
+        address sender
     ) public nonReentrant onlyInitialized {
         _checkInvariant(payOrders, receiveOrders);
 
         for (uint256 i; i < payOrders.length; i++) {
-            _payTokenToPool(_msgSender(), payOrders[i].token, payOrders[i].amount);
+            _payTokenToPool(sender, payOrders[i].token, payOrders[i].amount);
         }
 
         for (uint256 i; i < receiveOrders.length; i++) {
-            _payTokenToSender(_msgSender(), receiveOrders[i].token, receiveOrders[i].amount);
+            _payTokenToSender(sender, receiveOrders[i].token, receiveOrders[i].amount);
         }
     }
 
