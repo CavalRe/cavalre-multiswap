@@ -1,6 +1,6 @@
 [profile.default]
 src = 'contracts'                                             # the source directory
-test = 'test'                                       # the test directory
+test = 'tests'                                       # the test directory
 out = 'artifacts/foundry/contracts'                    # the output directory (for artifacts)
 libs = []                                                     # a list of library directories
 libraries = []                                                # a list of deployed libraries to link against

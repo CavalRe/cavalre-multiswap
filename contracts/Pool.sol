@@ -6,6 +6,7 @@ pragma solidity 0.8.24;
 import {IPool, PoolState, AssetState} from "./interfaces/IPool.sol";
 import {LPToken, FixedPointMathLib} from "./LPToken.sol";
 import {IWrappedNative} from "./interfaces/IWrappedNative.sol";
+
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -282,17 +283,20 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
             token = payOrders[i].token;
             if (token == address(this)) {
                 _poolState.balance -= payOrders[i].amount;
-            } else if (_assetState[token].decimals != 0) {
-                _assetState[token].balance += payOrders[i].amount;
+            } else {
+                AssetState storage asset_ = _assetState[token];
+                if (asset_.decimals == 0) revert AssetNotFound(token);
+                asset_.balance += payOrders[i].amount;
             }
         }
         for (uint256 i; i < receiveOrders.length; i++) {
             token = receiveOrders[i].token;
             if (token == address(this)) {
                 _poolState.balance += receiveOrders[i].amount;
-            } else if (_assetState[token].decimals != 0) {
-                _assetState[token].balance -=
-                    receiveOrders[i].amount;
+            } else {
+                AssetState storage asset_ = _assetState[token];
+                if (asset_.decimals == 0) revert AssetNotFound(token);
+                asset_.balance -= receiveOrders[i].amount;
             }
         }
 
@@ -301,9 +305,16 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         for (uint256 i; i < payOrders.length; i++) {
             token = payOrders[i].token;
             if (token == address(this)) {
-                valueIn += _poolState.scale.fullMulDiv(payOrders[i].amount, _poolState.balance);
-            } else if (_assetState[token].decimals != 0) {
-                valueIn += _assetState[token].scale.fullMulDiv(payOrders[i].amount, _assetState[token].balance);
+                valueIn += _poolState.scale.fullMulDiv(
+                    payOrders[i].amount,
+                    _poolState.balance
+                );
+            } else {
+                AssetState memory asset_ = _assetState[token];
+                valueIn += asset_.scale.fullMulDiv(
+                    payOrders[i].amount,
+                    asset_.balance
+                );
             }
         }
 
@@ -312,27 +323,36 @@ contract Pool is IPool, LPToken, ReentrancyGuard {
         for (uint256 i; i < receiveOrders.length; i++) {
             token = receiveOrders[i].token;
             if (token == address(this)) {
-                valueOut += _poolState.scale.fullMulDiv(receiveOrders[i].amount, _poolState.balance);
-            } else if (_assetState[token].decimals != 0) {
-                valueOut += _assetState[token].scale.fullMulDiv(receiveOrders[i].amount, _assetState[token].balance);
+                valueOut += _poolState.scale.fullMulDiv(
+                    receiveOrders[i].amount,
+                    _poolState.balance
+                );
+            } else {
+                AssetState memory asset_ = _assetState[token];
+                valueOut += asset_.scale.fullMulDiv(
+                    receiveOrders[i].amount,
+                    asset_.balance
+                );
             }
         }
 
         if (valueIn < valueOut) revert InvariantViolation(valueIn, valueOut);
-
     }
 
     function multiswap(
         Order[] memory payOrders,
         Order[] memory receiveOrders,
-        address sender //,
-        // bytes calldata data
+        address sender //, bytes calldata data
     ) public nonReentrant onlyInitialized {
         _checkInvariant(payOrders, receiveOrders);
 
         for (uint256 i; i < receiveOrders.length; i++) {
             if (receiveOrders[i].amount == 0) continue;
-            _payTokenToSender(sender, receiveOrders[i].token, receiveOrders[i].amount);
+            _payTokenToSender(
+                sender,
+                receiveOrders[i].token,
+                receiveOrders[i].amount
+            );
         }
 
         // Flashloan here
