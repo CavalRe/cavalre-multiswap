@@ -30,6 +30,18 @@ struct AssetState {
     uint256 lastUpdated;
 }
 
+struct State {
+    PoolState pool;
+    mapping(address => AssetState) assets;
+    address[] assetAddresses;
+    mapping(address => uint256) discount;
+}
+
+struct Order {
+    address token;
+    uint256 amount;
+}
+
 interface IPool is ILPToken {
     event AssetAdded(
         address indexed token,
